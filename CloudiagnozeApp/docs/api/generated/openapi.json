@@ -1,0 +1,308 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "CloudDiagnoze API",
+    "description": "\n    ## \ud83c\udf29\ufe0f Scanner d'infrastructure cloud multi-dimensionnel\n    \n    CloudDiagnoze analyse votre infrastructure cloud sous toutes ses dimensions.\n    \n    ### \ud83c\udfaf Fonctionnalit\u00e9s\n    - **Multi-provider** : AWS (GCP, Azure en d\u00e9veloppement)\n    - **\u00c9v\u00e9nements 2CBP** : Format standardis\u00e9\n    - **Scan asynchrone** : R\u00e9ponse imm\u00e9diate + traitement background\n    ",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/scans": {
+      "post": {
+        "tags": [
+          "\ud83d\ude80 Scans"
+        ],
+        "summary": "Create Scan",
+        "description": "Lance un scan d'infrastructure cloud",
+        "operationId": "create_scan_api_v1_scans_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events/latest/{count}": {
+      "get": {
+        "tags": [
+          "\ud83d\udcca \u00c9v\u00e9nements"
+        ],
+        "summary": "Get Latest Events",
+        "description": "R\u00e9cup\u00e9ration des derni\u00e8re \u00e9v\u00e9nements g\u00e9n\u00e9r\u00e9s",
+        "operationId": "get_latest_events_api_v1_events_latest__count__get",
+        "parameters": [
+          {
+            "name": "count",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Count"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events/by-type/{metric_type}": {
+      "get": {
+        "tags": [
+          "\ud83d\udcca \u00c9v\u00e9nements"
+        ],
+        "summary": "Get Events By Type",
+        "description": "Filtre les \u00e9v\u00e9nements par type",
+        "operationId": "get_events_by_type_api_v1_events_by_type__metric_type__get",
+        "parameters": [
+          {
+            "name": "metric_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Metric Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events/clear": {
+      "delete": {
+        "tags": [
+          "\ud83d\udcca \u00c9v\u00e9nements"
+        ],
+        "summary": "Clear Events",
+        "description": "Vide le store d'\u00e9v\u00e9nements",
+        "operationId": "clear_events_api_v1_events_clear_delete",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AuthMode": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "role_arn": {
+            "type": "string",
+            "title": "Role Arn",
+            "description": "ARN du r\u00f4le AWS \u00e0 assumer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "role_arn"
+        ],
+        "title": "AuthMode"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ScanRequest": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "title": "Provider"
+          },
+          "services": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Services"
+          },
+          "auth_mode": {
+            "$ref": "#/components/schemas/AuthMode"
+          },
+          "client_id": {
+            "type": "string",
+            "title": "Client Id",
+            "description": "Identifiant du client"
+          },
+          "regions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Regions",
+            "description": "R\u00e9gions sp\u00e9cifiques \u00e0 scanner (optionnel)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider",
+          "services",
+          "auth_mode",
+          "client_id"
+        ],
+        "title": "ScanRequest"
+      },
+      "ScanResponse": {
+        "properties": {
+          "scan_id": {
+            "type": "string",
+            "title": "Scan Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scan_id",
+          "status",
+          "message"
+        ],
+        "title": "ScanResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "examples": {
+      "scan_request": {
+        "provider": "aws",
+        "services": [
+          "ec2",
+          "s3"
+        ],
+        "auth_mode": {
+          "type": "sts",
+          "role_arn": "arn:aws:iam::123456789012:role/CloudDiagnozeRole"
+        },
+        "client_id": "mon-client-prod",
+        "regions": [
+          "us-east-1",
+          "eu-west-1"
+        ]
+      },
+      "scan_response": {
+        "scan_id": "scan-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "status": "QUEUED",
+        "message": "Scan for provider 'aws' and services ['ec2', 's3'] has been queued."
+      }
+    }
+  }
+}

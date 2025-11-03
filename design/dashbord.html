@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CloudDiagnoze - Global Infrastructure Overview</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings:
+                'FILL' 0,
+                'wght' 400,
+                'GRAD' 0,
+                'opsz' 24
+        }
+        .glass-card {
+            background-color: rgba(25, 41, 58, 0.5); /* A semi-transparent dark blue */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(49, 75, 102, 0.6);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-gray-200 font-display">
+<div class="flex min-h-screen w-full">
+<!-- SideNavBar -->
+<aside class="flex w-64 flex-col gap-4 border-r border-slate-800 bg-background-dark/80 p-4">
+<div class="flex items-center gap-3">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="CloudDiagnoze company logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAgXeOveCrpLoaMwnJT4m7a_O2eT3tUhlhMb_L98GWNsNCAzOj73_GZ_piQzJ6he9RpczeTSs-LGtXvlFfEc2PNoWtro4H904fYCbVPldL92yGttHmj8jcg37QLRsNw-nCOFFBgJ4jZ9MwN3_oq65JX3aZCUrF7Mplk-FJV97yY1w_vR2XuZdwUCNWdQ2qXd6MBAcqu-HCKc7wr6cKI85HtIn7ce8ZEpZ0csnsttBcX57Hi7kjqpzmDAiKk0rQBKDf_KcylPBi8Es2k");'></div>
+<div class="flex flex-col">
+<h1 class="text-white text-base font-bold leading-normal">CloudDiagnoze</h1>
+<p class="text-slate-400 text-sm font-normal leading-normal">Multi-Cloud Scanner</p>
+</div>
+</div>
+<nav class="flex flex-col gap-2 mt-4">
+<a class="flex items-center gap-3 rounded-lg bg-primary/20 px-3 py-2 text-primary" href="#">
+<span class="material-symbols-outlined text-2xl">dashboard</span>
+<p class="text-sm font-medium leading-normal">Dashboard</p>
+</a>
+<a class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-300 hover:bg-white/5" href="#">
+<span class="material-symbols-outlined text-2xl">search</span>
+<p class="text-sm font-medium leading-normal">Scans</p>
+</a>
+<a class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-300 hover:bg-white/5" href="#">
+<span class="material-symbols-outlined text-2xl">notifications</span>
+<p class="text-sm font-medium leading-normal">Alerts</p>
+</a>
+<a class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-300 hover:bg-white/5" href="#">
+<span class="material-symbols-outlined text-2xl">pie_chart</span>
+<p class="text-sm font-medium leading-normal">Reports</p>
+</a>
+<a class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-300 hover:bg-white/5" href="#">
+<span class="material-symbols-outlined text-2xl">settings</span>
+<p class="text-sm font-medium leading-normal">Settings</p>
+</a>
+</nav>
+<div class="mt-auto flex flex-col gap-2">
+<div class="flex h-8 shrink-0 cursor-pointer items-center justify-center gap-x-2 rounded-lg bg-slate-800/50 pl-2 pr-4 hover:bg-primary/20">
+<span class="material-symbols-outlined text-xl text-[#4285F4]">cloud</span>
+<p class="text-white text-sm font-medium leading-normal">GCP</p>
+</div>
+<div class="flex h-8 shrink-0 cursor-pointer items-center justify-center gap-x-2 rounded-lg bg-slate-800/50 pl-2 pr-4 hover:bg-primary/20">
+<span class="material-symbols-outlined text-xl text-[#0078D4]">grid_view</span>
+<p class="text-white text-sm font-medium leading-normal">Azure</p>
+</div>
+<div class="flex h-8 shrink-0 cursor-pointer items-center justify-center gap-x-2 rounded-lg bg-slate-800/50 pl-2 pr-4 hover:bg-primary/20">
+<span class="material-symbols-outlined text-xl text-[#FF9900]">cloud_queue</span>
+<p class="text-white text-sm font-medium leading-normal">AWS</p>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex-col overflow-y-auto">
+<!-- TopNavBar -->
+<header class="sticky top-0 z-10 flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-800 bg-background-dark/80 px-10 py-3 backdrop-blur-md">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-white">
+<span class="material-symbols-outlined text-primary text-xl">public</span>
+<h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">Global Infrastructure Overview</h2>
+</div>
+</div>
+<div class="flex flex-1 items-center justify-end gap-4">
+<label class="flex flex-col min-w-40 !h-10 w-full max-w-sm">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full">
+<div class="text-slate-400 flex border-none bg-slate-800/50 items-center justify-center pl-4 rounded-l-lg border-r-0">
+<span class="material-symbols-outlined">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border-none bg-slate-800/50 focus:border-none h-full placeholder:text-slate-400 px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal" placeholder="Search resources, alerts, reports..." value=""/>
+</div>
+</label>
+<button class="relative flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 w-10 bg-slate-800/50 text-slate-300 hover:bg-primary/20 hover:text-primary">
+<span class="material-symbols-outlined">notifications</span>
+<div class="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full border-2 border-background-dark bg-red-500"></div>
+</button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="User profile picture" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDgIZi22elVW6yUQsWX7KozZRC4qXizWtfcT6xG4NGoDq_Vco32i8oP9T8lcLB7d9IwqbO8q0DqHY8-VK00xHQWs6YCLpyhKRnm2kuKluBSdiFvGjG_0SGbDKjtB3suOP9FMlGh69E-ENp08-opaDoL08OCKbWUkPtjiCBfXCAGShGDAPDvrEkFP-0pB5oAYtRtz4yVdcIfcXjzNyplMInRTHiHHwCNZ70Xrc9WE2oUSnti6F_ajrJxEg8PUXzqIGlzhmjrrejurm9F");'></div>
+</div>
+</header>
+<!-- Dashboard Content -->
+<div class="p-6">
+<!-- Stats Row -->
+<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+<div class="flex flex-col gap-2 rounded-xl glass-card p-6">
+<p class="text-slate-300 text-base font-medium leading-normal">Total Resources</p>
+<p class="text-white tracking-light text-3xl font-bold leading-tight">1,482</p>
+<p class="text-green-400 text-base font-medium leading-normal">+2.5%</p>
+</div>
+<div class="flex flex-col gap-2 rounded-xl glass-card p-6">
+<p class="text-slate-300 text-base font-medium leading-normal">Monthly Cost</p>
+<p class="text-white tracking-light text-3xl font-bold leading-tight">$12,850</p>
+<p class="text-red-400 text-base font-medium leading-normal">-1.2%</p>
+</div>
+<div class="flex flex-col gap-2 rounded-xl glass-card p-6">
+<p class="text-slate-300 text-base font-medium leading-normal">Active Alerts</p>
+<p class="text-white tracking-light text-3xl font-bold leading-tight">15</p>
+<p class="text-green-400 text-base font-medium leading-normal">+8.0%</p>
+</div>
+<div class="flex flex-col gap-2 rounded-xl glass-card p-6">
+<p class="text-slate-300 text-base font-medium leading-normal">Scans This Month</p>
+<p class="text-white tracking-light text-3xl font-bold leading-tight">72</p>
+<p class="text-green-400 text-base font-medium leading-normal">+11.4%</p>
+</div>
+</div>
+<!-- Charts Row -->
+<div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+<div class="flex flex-col gap-2 rounded-xl glass-card p-6 lg:col-span-2">
+<p class="text-white text-base font-medium leading-normal">Global CPU Utilization</p>
+<p class="text-white tracking-light text-[32px] font-bold leading-tight truncate">42%</p>
+<div class="flex gap-1">
+<p class="text-slate-400 text-base font-normal leading-normal">Last 24h</p>
+<p class="text-green-400 text-base font-medium leading-normal">+5.2%</p>
+</div>
+<div class="flex min-h-[220px] flex-1 flex-col gap-8 py-4">
+<svg fill="none" height="100%" preserveaspectratio="none" viewbox="-3 0 478 150" width="100%" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 109C18.1538 109 18.1538 21 36.3077 21C54.4615 21 54.4615 41 72.6154 41C90.7692 41 90.7692 93 108.923 93C127.077 93 127.077 33 145.231 33C163.385 33 163.385 101 181.538 101C199.692 101 199.692 61 217.846 61C236 61 236 45 254.154 45C272.308 45 272.308 121 290.462 121C308.615 121 308.615 149 326.769 149C344.923 149 344.923 1 363.077 1C381.231 1 381.231 81 399.385 81C417.538 81 417.538 129 435.692 129C453.846 129 453.846 25 472 25V149H326.769H0V109Z" fill="url(#paint0_linear_1131_5935)"></path>
+<path d="M0 109C18.1538 109 18.1538 21 36.3077 21C54.4615 21 54.4615 41 72.6154 41C90.7692 41 90.7692 93 108.923 93C127.077 93 127.077 33 145.231 33C163.385 33 163.385 101 181.538 101C199.692 101 199.692 61 217.846 61C236 61 236 45 254.154 45C272.308 45 272.308 121 290.462 121C308.615 121 308.615 149 326.769 149C344.923 149 344.923 1 363.077 1C381.231 1 381.231 81 399.385 81C417.538 81 417.538 129 435.692 129C453.846 129 453.846 25 472 25" stroke="#137fec" stroke-linecap="round" stroke-width="3"></path>
+<defs>
+<lineargradient gradientunits="userSpaceOnUse" id="paint0_linear_1131_5935" x1="236" x2="236" y1="1" y2="149">
+<stop stop-color="#137fec" stop-opacity="0.4"></stop>
+<stop offset="1" stop-color="#137fec" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+</svg>
+<div class="flex justify-around">
+<p class="text-slate-400 text-[13px] font-bold leading-normal tracking-[0.015em]">12am</p>
+<p class="text-slate-400 text-[13px] font-bold leading-normal tracking-[0.015em]">4am</p>
+<p class="text-slate-400 text-[13px] font-bold leading-normal tracking-[0.015em]">8am</p>
+<p class="text-slate-400 text-[13px] font-bold leading-normal tracking-[0.015em]">12pm</p>
+<p class="text-slate-400 text-[13px] font-bold leading-normal tracking-[0.015em]">4pm</p>
+<p class="text-slate-400 text-[13px] font-bold leading-normal tracking-[0.015em]">8pm</p>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-2 rounded-xl glass-card p-6">
+<p class="text-white text-base font-medium leading-normal">Resource Distribution</p>
+<p class="text-white tracking-light text-[32px] font-bold leading-tight truncate">By Provider</p>
+<div class="flex min-h-[220px] flex-1 items-center justify-center py-4">
+<div class="relative flex h-48 w-48 items-center justify-center">
+<svg class="h-full w-full -rotate-90 transform" viewbox="0 0 36 36">
+<circle class="stroke-current text-[#4285F4]" cx="18" cy="18" fill="transparent" r="15.9155" stroke-dasharray="45 100" stroke-dashoffset="0" stroke-width="4"></circle>
+<circle class="stroke-current text-[#0078D4]" cx="18" cy="18" fill="transparent" r="15.9155" stroke-dasharray="35 100" stroke-dashoffset="-45" stroke-width="4"></circle>
+<circle class="stroke-current text-[#FF9900]" cx="18" cy="18" fill="transparent" r="15.9155" stroke-dasharray="20 100" stroke-dashoffset="-80" stroke-width="4"></circle>
+</svg>
+<div class="absolute flex flex-col items-center">
+<span class="text-3xl font-bold text-white">1482</span>
+<span class="text-sm text-slate-400">Total</span>
+</div>
+</div>
+</div>
+<div class="flex justify-around text-xs font-medium text-slate-300">
+<div class="flex items-center gap-2"><div class="h-2 w-2 rounded-full bg-[#4285F4]"></div>GCP 45%</div>
+<div class="flex items-center gap-2"><div class="h-2 w-2 rounded-full bg-[#0078D4]"></div>Azure 35%</div>
+<div class="flex items-center gap-2"><div class="h-2 w-2 rounded-full bg-[#FF9900]"></div>AWS 20%</div>
+</div>
+</div>
+</div>
+<!-- Security & Alerts Row -->
+<div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+<div class="flex flex-col gap-2 rounded-xl glass-card p-6">
+<p class="text-white text-base font-medium leading-normal">Security Issues by Severity</p>
+<p class="text-white tracking-light text-[32px] font-bold leading-tight truncate">38 Total</p>
+<div class="flex gap-1">
+<p class="text-slate-400 text-base font-normal leading-normal">This Month</p>
+<p class="text-red-400 text-base font-medium leading-normal">-3.1%</p>
+</div>
+<div class="grid min-h-[200px] grid-flow-col gap-6 grid-rows-[1fr_auto] items-end justify-items-center px-3 pt-4">
+<div class="w-full rounded-t-md bg-red-500" style="height: 50%;"></div>
+<p class="text-slate-400 text-[13px] font-bold leading-normal tracking-[0.015em]">Critical</p>
+<div class="w-full rounded-t-md bg-orange-500" style="height: 40%;"></div>
+<p class="text-slate-400 text-[13px] font-bold leading-normal tracking-[0.015em]">High</p>
+<div class="w-full rounded-t-md bg-yellow-500" style="height: 70%;"></div>
+<p class="text-slate-400 text-[13px] font-bold leading-normal tracking-[0.015em]">Medium</p>
+<div class="w-full rounded-t-md bg-blue-500" style="height: 10%;"></div>
+<p class="text-slate-400 text-[13px] font-bold leading-normal tracking-[0.015em]">Low</p>
+</div>
+</div>
+<div class="flex flex-col gap-4 rounded-xl glass-card p-6">
+<div class="flex items-center justify-between">
+<p class="text-white text-base font-medium leading-normal">Recent Critical Alerts</p>
+<a class="text-sm text-primary hover:underline" href="#">View All</a>
+</div>
+<div class="flex flex-col gap-3">
+<div class="flex items-start gap-3 rounded-lg bg-slate-800/40 p-3">
+<div class="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/20 text-red-400"><span class="material-symbols-outlined text-lg">error</span></div>
+<div class="flex-1">
+<p class="font-medium text-white">Unrestricted SSH access</p>
+<p class="text-sm text-slate-400">VM instance 'prod-db-1' in GCP has an open SSH port to the world.</p>
+</div>
+<p class="text-xs text-slate-500">2 min ago</p>
+</div>
+<div class="flex items-start gap-3 rounded-lg bg-slate-800/40 p-3">
+<div class="flex h-8 w-8 items-center justify-center rounded-full bg-orange-500/20 text-orange-400"><span class="material-symbols-outlined text-lg">warning</span></div>
+<div class="flex-1">
+<p class="font-medium text-white">Public S3 Bucket</p>
+<p class="text-sm text-slate-400">AWS bucket 'user-uploads-prod' has public read access.</p>
+</div>
+<p class="text-xs text-slate-500">45 min ago</p>
+</div>
+<div class="flex items-start gap-3 rounded-lg bg-slate-800/40 p-3">
+<div class="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/20 text-red-400"><span class="material-symbols-outlined text-lg">error</span></div>
+<div class="flex-1">
+<p class="font-medium text-white">MFA not enabled for root</p>
+<p class="text-sm text-slate-400">Azure subscription 'Main-Sub' root account lacks MFA.</p>
+</div>
+<p class="text-xs text-slate-500">3 hours ago</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

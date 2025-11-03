@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CloudDiagnoze - Connexion</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .form-input:focus-within {
+            box-shadow: 0 0 0 2px theme('colors.primary / 50%');
+        }
+    </style>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark">
+<div class="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden p-4">
+<!-- Background Decoration -->
+<div aria-hidden="true" class="absolute top-0 left-0 -translate-x-1/3 -translate-y-1/3 w-[50vw] h-[50vw] max-w-lg max-h-lg rounded-full bg-primary/20 blur-3xl"></div>
+<div aria-hidden="true" class="absolute bottom-0 right-0 translate-x-1/3 translate-y-1/3 w-[50vw] h-[50vw] max-w-lg max-h-lg rounded-full bg-[#8B5CF6]/10 blur-3xl"></div>
+<!-- Login Card -->
+<div class="relative w-full max-w-md space-y-8 rounded-xl bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-lg border border-white/10 p-8 shadow-2xl shadow-black/20">
+<div class="text-center">
+<div class="inline-flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-primary text-4xl">cloud_sync</span>
+<h1 class="font-bold text-3xl text-zinc-900 dark:text-white">CloudDiagnoze</h1>
+</div>
+<p class="mt-2 text-base text-zinc-600 dark:text-zinc-400">Scannez et sécurisez votre infrastructure cloud.</p>
+</div>
+<form class="space-y-6">
+<!-- Email/Username Field -->
+<div class="flex flex-col">
+<label class="text-zinc-800 dark:text-zinc-300 text-base font-medium leading-normal pb-2" for="email">Adresse e-mail ou nom d'utilisateur</label>
+<div class="flex w-full items-stretch rounded-lg border border-zinc-300 dark:border-[#324d67] focus-within:border-primary dark:focus-within:border-primary transition-all duration-300 form-input">
+<input autocomplete="username" class="peer h-12 flex-1 resize-none overflow-hidden bg-transparent p-3 text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-[#92adc9] focus:outline-none" id="email" placeholder="Entrez votre e-mail ou nom d'utilisateur" type="email"/>
+<div class="flex items-center justify-center px-3 text-zinc-400 dark:text-[#92adc9] peer-focus:text-primary transition-colors duration-300">
+<span class="material-symbols-outlined">person</span>
+</div>
+</div>
+</div>
+<!-- Password Field -->
+<div class="flex flex-col">
+<label class="text-zinc-800 dark:text-zinc-300 text-base font-medium leading-normal pb-2" for="password">Mot de passe</label>
+<div class="flex w-full items-stretch rounded-lg border border-zinc-300 dark:border-[#324d67] focus-within:border-primary dark:focus-within:border-primary transition-all duration-300 form-input">
+<input autocomplete="current-password" class="peer h-12 flex-1 resize-none overflow-hidden bg-transparent p-3 text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-[#92adc9] focus:outline-none" id="password" placeholder="Entrez votre mot de passe" type="password"/>
+<button aria-label="Toggle password visibility" class="flex items-center justify-center px-3 text-zinc-400 dark:text-[#92adc9] peer-focus:text-primary transition-colors duration-300" type="button">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</div>
+</div>
+<!-- Forgot Password Link -->
+<div class="flex justify-end">
+<a class="text-sm font-medium text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-sm" href="#">Mot de passe oublié ?</a>
+</div>
+<!-- Login Button -->
+<button class="flex w-full min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] transition-all duration-300 hover:bg-primary/90 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background-dark" type="submit">
+<span class="truncate">Se Connecter</span>
+</button>
+</form>
+<!-- Separator -->
+<div class="relative flex items-center py-2">
+<div class="flex-grow border-t border-zinc-300 dark:border-zinc-700"></div>
+<span class="flex-shrink mx-4 text-xs text-zinc-500 dark:text-zinc-400">OU CONNECTEZ-VOUS AVEC</span>
+<div class="flex-grow border-t border-zinc-300 dark:border-zinc-700"></div>
+</div>
+<!-- SSO Buttons -->
+<div class="grid grid-cols-2 gap-4">
+<button class="flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 px-4 text-sm font-medium text-zinc-800 dark:text-zinc-200 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background-dark">
+<img alt="Google logo" class="h-5 w-5" data-alt="Google logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgRzygJY0M0F06YRaVS02kgZBxueLtwAKmq-RElopCjZXjjYVjprOkT0dAZIcAAcEca4wxnOOljFMdl7iAVmlTcH7w-vYpgaWybXP003jDT-fZCJwVnLI2xpm6GgCeSP2m7GT5deE6S9ikUhUmAODG9149FBxG8Jsby9W3zVRFltsgy-zb18AAlkf3zqEi-3Qf7XNl8FpZHxx4bE1p6jq6-lExEJxuqPHYqHGYgVSNyJUO2DMxmug8iwfeBo-5WJHsDjY7x2fVVcaP"/>
+<span>Google</span>
+</button>
+<button class="flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 px-4 text-sm font-medium text-zinc-800 dark:text-zinc-200 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background-dark">
+<img alt="Microsoft logo" class="h-5 w-5" data-alt="Microsoft logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNN9cUNhFzuvKOS1WPtMVsW98KeVZLlFGUT1jcQ1qFfoYGKGM9_5tmTzX0OZb2HmdJ8VqiZyICK6ovMdjXW_SUzZUzEgWSvI3Bc71p8A13In7CCXEWFgUeJOEYb9VHcZo8zt6lDvcGB2Oshcr0yVb2l_pfiYvv79eBCHR6Fx5ixi_-2GrM_bWmUppp9qqNeD64aWLhYqAEqEJ3CGlqsXdDPvOuYEd3UOiovNOeix72oeoRKCeX8R5QdxcsqGvxY1iTChlgr0H6M_CS"/>
+<span>Microsoft</span>
+</button>
+</div>
+<!-- Sign Up Link -->
+<p class="text-center text-sm text-zinc-600 dark:text-zinc-400">
+                Pas encore de compte ?
+                <a class="font-bold text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-sm" href="#">Inscrivez-vous</a>
+</p>
+</div>
+</div>
+</body></html>

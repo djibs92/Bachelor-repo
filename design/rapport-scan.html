@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CloudDiagnoze - Rapport de Scan</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+<div class="relative flex min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-white/10 px-6 md:px-10 py-3 sticky top-0 z-50 bg-background-dark/80 backdrop-blur-sm">
+<div class="flex items-center gap-4 text-white">
+<div class="size-6 text-primary">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M24 45.8096C19.6865 45.8096 15.4698 44.5305 11.8832 42.134C8.29667 39.7376 5.50128 36.3314 3.85056 32.3462C2.19985 28.361 1.76794 23.9758 2.60947 19.7452C3.451 15.5145 5.52816 11.6284 8.57829 8.5783C11.6284 5.52817 15.5145 3.45101 19.7452 2.60948C23.9758 1.76795 28.361 2.19986 32.3462 3.85057C36.3314 5.50129 39.7376 8.29668 42.134 11.8833C44.5305 15.4698 45.8096 19.6865 45.8096 24L24 24L24 45.8096Z" fill="currentColor"></path>
+</svg>
+</div>
+<h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">CloudDiagnoze</h2>
+</div>
+<div class="hidden md:flex flex-1 justify-end gap-8">
+<div class="flex items-center gap-9">
+<a class="text-white text-sm font-medium leading-normal" href="#">Dashboard</a>
+<a class="text-primary text-sm font-bold leading-normal" href="#">Scans</a>
+<a class="text-white text-sm font-medium leading-normal" href="#">Reports</a>
+<a class="text-white text-sm font-medium leading-normal" href="#">Settings</a>
+</div>
+<div class="flex items-center gap-2">
+<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-white/5 hover:bg-white/10 text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-2.5">
+<span class="material-symbols-outlined text-white" style="font-size: 20px;">notifications</span>
+</button>
+<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-white/5 hover:bg-white/10 text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-2.5">
+<span class="material-symbols-outlined text-white" style="font-size: 20px;">help</span>
+</button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="User avatar image with an abstract pattern" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBkip0JD_Rf5-9xGcuSn6b_r3afWvq8wmxkscj3H1upTERRNNUt_ZKTSefez0JA0CIfib6r29OgCOYqZZkATHiwU-Z4HsuW92wCHzM5HV0PCJl9F6haI8gMiFx_3r-PDV5WptDcrdqSiIChYz1-BV4Y22l54pQIY1t20mv0iO2zqwcEbVjgWwriyOLFwPjmZNORQbyITc-hVfTUDZq_eVpK7VXl92gPdfezDqOXAPw9j6z7HyUb-G4XrGO26N4xfDjbgh-M-SwiVc0y");'></div>
+</div>
+</div>
+</header>
+<main class="px-4 md:px-10 flex flex-1 justify-center py-5">
+<div class="layout-content-container flex flex-col w-full max-w-7xl flex-1 gap-6">
+<div class="flex flex-wrap justify-between items-start gap-4 p-4">
+<div class="flex min-w-72 flex-col gap-2">
+<p class="text-white text-3xl md:text-4xl font-black leading-tight tracking-[-0.033em]">Rapport de Scan - InfraScan_Prod</p>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-green-400" style="font-size: 20px;">check_circle</span>
+<p class="text-gray-400 text-base font-normal leading-normal">Scan terminé - 24 Oct 2023 14:30</p>
+</div>
+</div>
+</div>
+<div class="flex flex-wrap gap-4 p-4">
+<div class="flex min-w-[158px] flex-1 flex-col gap-2 rounded-xl p-6 border border-white/10 bg-white/5">
+<p class="text-gray-300 text-base font-medium leading-normal">Total Anomalies</p>
+<p class="text-white tracking-light text-4xl font-bold leading-tight">128</p>
+<p class="text-green-400 text-sm font-medium leading-normal flex items-center gap-1"><span class="material-symbols-outlined" style="font-size: 16px;">arrow_upward</span>+5% vs last scan</p>
+</div>
+<div class="flex min-w-[158px] flex-1 flex-col gap-2 rounded-xl p-6 border border-white/10 bg-white/5">
+<p class="text-gray-300 text-base font-medium leading-normal">Risques Critiques</p>
+<p class="text-red-500 tracking-light text-4xl font-bold leading-tight">15</p>
+<p class="text-red-400 text-sm font-medium leading-normal flex items-center gap-1"><span class="material-symbols-outlined" style="font-size: 16px;">arrow_upward</span>+2% vs last scan</p>
+</div>
+<div class="flex min-w-[158px] flex-1 flex-col gap-2 rounded-xl p-6 border border-white/10 bg-white/5">
+<p class="text-gray-300 text-base font-medium leading-normal">Ressources Scannées</p>
+<p class="text-white tracking-light text-4xl font-bold leading-tight">2,450</p>
+<p class="text-gray-400 text-sm font-medium leading-normal">sur 3 providers</p>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4">
+<div class="lg:col-span-1 flex flex-col gap-4 p-6 rounded-xl border border-white/10 bg-white/5">
+<h3 class="text-white text-lg font-bold">Répartition par Sévérité</h3>
+<div class="flex items-center justify-center flex-1 relative">
+<img class="w-full max-w-[250px] h-auto" data-alt="Donut chart showing anomaly distribution by severity: 15 critical, 35 high, 50 medium, 28 low" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDH1g0e62MjNkJh_vznAx2fXamzrriQxQB7rjJZlL32L-slbEqcpEEtJe-d7q9YMpNDUMpbXpNAwEOE6QlFPInJkgStqqAgofnFgT95WrtWKjQ7zjDW7ZXl9uBEf_heghSYwPFoJCQfadNZkzAxFYPlzaoIIOnZiqQpxXCyg_F4g86sGAxMouu8yjVL1pZRoHtVr53OWm6n7FESnemjiq7yYIHbe6Cu2zYIDm1oDhcv2GWxuRalY406bcRrcecq4ZPfb2w0cR_L3r5r"/>
+</div>
+<div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+<div class="flex items-center gap-2"><span class="size-3 rounded-full bg-[#FF4757]"></span><span class="text-white">Critique</span></div>
+<div class="flex items-center gap-2"><span class="size-3 rounded-full bg-[#FFA500]"></span><span class="text-white">Élevé</span></div>
+<div class="flex items-center gap-2"><span class="size-3 rounded-full bg-[#FFD700]"></span><span class="text-white">Moyen</span></div>
+<div class="flex items-center gap-2"><span class="size-3 rounded-full bg-[#2E86C1]"></span><span class="text-white">Faible</span></div>
+</div>
+</div>
+<div class="lg:col-span-2 flex flex-col gap-4 p-6 rounded-xl border border-white/10 bg-white/5">
+<h3 class="text-white text-lg font-bold">Anomalies par Fournisseur</h3>
+<div class="flex items-center justify-center flex-1">
+<img class="w-full h-auto" data-alt="Bar chart showing anomalies by cloud provider: AWS has 50, Azure has 45, and GCP has 33." src="https://lh3.googleusercontent.com/aida-public/AB6AXuChVX2li8qh9hToPpkvq0FQYiljHV2XgGrHP3TRYmPV_gr0ZfZwtSfERc17LnsRHPO5iu3yAnw6gTZA_2CWfEK5KpKyVZz4CFELC5ncUTetW8I7Kh0PL4fkjQal1TIzD8mB1FzLn_tTe4gsuOO0VNgRNVaee6ltHanD3saTlZJe3lt3F-1nGUxkkI_9yDzhBSMHsFZBY4nFrMIrLpsoxc5AS6TRqp_5yrWpL8Qr7LuodxH1TRrHAoGIkxMZWFt4iVplg8J9VhVNChkX"/>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-4 p-4 rounded-xl border border-white/10 bg-white/5">
+<div class="flex flex-col md:flex-row gap-4 justify-between">
+<div class="flex flex-wrap gap-3">
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-white/10 pl-4 pr-3 hover:bg-white/20">
+<p class="text-white text-sm font-medium leading-normal">Fournisseur: Tous</p>
+<span class="material-symbols-outlined text-white" style="font-size: 20px;">arrow_drop_down</span>
+</button>
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-white/10 pl-4 pr-3 hover:bg-white/20">
+<p class="text-white text-sm font-medium leading-normal">Région: Toutes</p>
+<span class="material-symbols-outlined text-white" style="font-size: 20px;">arrow_drop_down</span>
+</button>
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-white/10 pl-4 pr-3 hover:bg-white/20">
+<p class="text-white text-sm font-medium leading-normal">Type de Ressource: Tous</p>
+<span class="material-symbols-outlined text-white" style="font-size: 20px;">arrow_drop_down</span>
+</button>
+</div>
+<div class="flex w-full md:w-auto md:min-w-[300px]">
+<div class="flex h-10 flex-1 items-center justify-center rounded-lg bg-black/20 p-1">
+<label class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-md px-3 has-[:checked]:bg-primary has-[:checked]:shadow-[0_0_4px_rgba(0,0,0,0.1)] has-[:checked]:text-white text-gray-300 text-sm font-medium leading-normal">
+<span class="truncate">Critique</span>
+<input class="invisible w-0" name="risk-level" type="radio" value="Critique"/>
+</label>
+<label class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-md px-3 has-[:checked]:bg-primary has-[:checked]:shadow-[0_0_4px_rgba(0,0,0,0.1)] has-[:checked]:text-white text-gray-300 text-sm font-medium leading-normal">
+<span class="truncate">Élevé</span>
+<input class="invisible w-0" name="risk-level" type="radio" value="Élevé"/>
+</label>
+<label class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-md px-3 has-[:checked]:bg-primary has-[:checked]:shadow-[0_0_4px_rgba(0,0,0,0.1)] has-[:checked]:text-white text-gray-300 text-sm font-medium leading-normal">
+<span class="truncate">Moyen</span>
+<input checked="" class="invisible w-0" name="risk-level" type="radio" value="Moyen"/>
+</label>
+<label class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-md px-3 has-[:checked]:bg-primary has-[:checked]:shadow-[0_0_4px_rgba(0,0,0,0.1)] has-[:checked]:text-white text-gray-300 text-sm font-medium leading-normal">
+<span class="truncate">Faible</span>
+<input class="invisible w-0" name="risk-level" type="radio" value="Faible"/>
+</label>
+</div>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left text-sm text-gray-300">
+<thead class="border-b border-white/10 text-xs uppercase text-gray-400">
+<tr>
+<th class="px-6 py-3" scope="col">Sévérité</th>
+<th class="px-6 py-3" scope="col">Ressource Affectée</th>
+<th class="px-6 py-3" scope="col">Fournisseur</th>
+<th class="px-6 py-3" scope="col">Région</th>
+<th class="px-6 py-3" scope="col">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border-b border-white/10 hover:bg-white/5">
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="size-2.5 rounded-full bg-red-500"></div>
+<span class="text-red-400 font-medium">Critique</span>
+</div>
+</td>
+<td class="px-6 py-4 font-mono text-white">sg-prod-db-01</td>
+<td class="px-6 py-4">AWS</td>
+<td class="px-6 py-4">us-east-1</td>
+<td class="px-6 py-4 text-gray-400">Port 22 (SSH) ouvert au public (0.0.0.0/0)</td>
+</tr>
+<tr class="border-b border-white/10 hover:bg-white/5">
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="size-2.5 rounded-full bg-orange-500"></div>
+<span class="text-orange-400 font-medium">Élevé</span>
+</div>
+</td>
+<td class="px-6 py-4 font-mono text-white">s3-backup-logs</td>
+<td class="px-6 py-4">AWS</td>
+<td class="px-6 py-4">eu-west-1</td>
+<td class="px-6 py-4 text-gray-400">Bucket S3 accessible publiquement</td>
+</tr>
+<tr class="border-b border-white/10 hover:bg-white/5">
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="size-2.5 rounded-full bg-yellow-400"></div>
+<span class="text-yellow-300 font-medium">Moyen</span>
+</div>
+</td>
+<td class="px-6 py-4 font-mono text-white">vm-webserver-03</td>
+<td class="px-6 py-4">Azure</td>
+<td class="px-6 py-4">westeurope</td>
+<td class="px-6 py-4 text-gray-400">Chiffrement du disque non activé</td>
+</tr>
+<tr class="border-b border-white/10 hover:bg-white/5">
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="size-2.5 rounded-full bg-yellow-400"></div>
+<span class="text-yellow-300 font-medium">Moyen</span>
+</div>
+</td>
+<td class="px-6 py-4 font-mono text-white">cloud-run-service-alpha</td>
+<td class="px-6 py-4">GCP</td>
+<td class="px-6 py-4">europe-west1</td>
+<td class="px-6 py-4 text-gray-400">Utilise un compte de service par défaut</td>
+</tr>
+<tr class="border-b border-white/10 hover:bg-white/5">
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="size-2.5 rounded-full bg-blue-500"></div>
+<span class="text-blue-400 font-medium">Faible</span>
+</div>
+</td>
+<td class="px-6 py-4 font-mono text-white">iam-user-temp-dev</td>
+<td class="px-6 py-4">AWS</td>
+<td class="px-6 py-4">global</td>
+<td class="px-6 py-4 text-gray-400">MFA non activé pour l'utilisateur IAM</td>
+</tr>
+</tbody>
+</table>
+</div>
+<nav aria-label="Table navigation" class="flex items-center justify-between pt-4">
+<span class="text-sm font-normal text-gray-400">Showing <span class="font-semibold text-white">1-5</span> of <span class="font-semibold text-white">128</span></span>
+<ul class="inline-flex items-center -space-x-px">
+<li>
+<a class="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-400 bg-white/5 border border-white/10 rounded-s-lg hover:bg-white/10 hover:text-white" href="#">Previous</a>
+</li>
+<li>
+<a class="flex items-center justify-center px-3 h-8 leading-tight text-gray-400 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white" href="#">1</a>
+</li>
+<li>
+<a class="flex items-center justify-center px-3 h-8 leading-tight text-white bg-primary border border-primary" href="#">2</a>
+</li>
+<li>
+<a class="flex items-center justify-center px-3 h-8 leading-tight text-gray-400 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white" href="#">3</a>
+</li>
+<li>
+<a class="flex items-center justify-center px-3 h-8 leading-tight text-gray-400 bg-white/5 border border-white/10 rounded-e-lg hover:bg-white/10 hover:text-white" href="#">Next</a>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+</main>
+</div>
+</div>
+</body></html>
