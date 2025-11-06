@@ -6,7 +6,7 @@ Il exporte les éléments principaux pour faciliter les imports.
 """
 
 from api.database.connection import engine, SessionLocal, get_db, test_connection, create_tables
-from api.database.models import ScanRun, EC2Instance, EC2Performance, S3Bucket, S3Performance
+from api.database.models import User, ScanRun, EC2Instance, EC2Performance, S3Bucket, S3Performance
 
 __all__ = [
     # Connexion
@@ -15,8 +15,9 @@ __all__ = [
     "get_db",
     "test_connection",
     "create_tables",
-    
+
     # Modèles
+    "User",
     "ScanRun",
     "EC2Instance",
     "EC2Performance",

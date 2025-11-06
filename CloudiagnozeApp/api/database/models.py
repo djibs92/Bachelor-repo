@@ -20,6 +20,40 @@ from datetime import datetime
 from api.database.connection import Base
 
 # ========================================
+# MODÈLE : User
+# ========================================
+# Représente la table 'users'
+# Stocke les informations des utilisateurs de l'application
+class User(Base):
+    """
+    Utilisateurs de CloudDiagnoze.
+
+    Chaque utilisateur a un compte avec email/mot de passe.
+    Il peut configurer son Role ARN AWS pour lancer des scans sur son infrastructure.
+    """
+    __tablename__ = "users"  # Nom de la table dans MariaDB
+
+    # Colonnes
+    id = Column(Integer, primary_key=True, autoincrement=True, comment="ID unique de l'utilisateur")
+    email = Column(String(255), unique=True, nullable=False, index=True, comment="Email de l'utilisateur (unique)")
+    password_hash = Column(String(255), nullable=False, comment="Mot de passe hashé (bcrypt)")
+    full_name = Column(String(255), comment="Nom complet de l'utilisateur")
+    company_name = Column(String(255), comment="Nom de l'entreprise")
+    role_arn = Column(String(255), comment="Role ARN AWS pour les scans (optionnel)")
+    created_at = Column(DateTime, nullable=False, default=datetime.now, comment="Date de création du compte")
+    last_login = Column(DateTime, comment="Date de dernière connexion")
+    is_active = Column(Boolean, default=True, comment="Compte actif ou désactivé")
+    reset_token = Column(String(255), comment="Token pour réinitialisation du mot de passe")
+    reset_token_expiry = Column(DateTime, comment="Date d'expiration du token de réinitialisation")
+
+    # Relations
+    # Un User peut avoir plusieurs ScanRun
+    scan_runs = relationship("ScanRun", back_populates="user", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<User(id={self.id}, email='{self.email}', company='{self.company_name}')>"
+
+# ========================================
 # MODÈLE : ScanRun
 # ========================================
 # Représente la table 'scan_runs'
@@ -27,12 +61,12 @@ from api.database.connection import Base
 class ScanRun(Base):
     """
     Historique des exécutions de scan.
-    
+
     Chaque fois qu'un scan EC2/S3/VPC est lancé, une entrée est créée ici.
     Permet de tracker quand les scans ont été exécutés et combien de ressources ont été trouvées.
     """
     __tablename__ = "scan_runs"  # Nom de la table dans MariaDB
-    
+
     # Colonnes
     id = Column(Integer, primary_key=True, autoincrement=True, comment="ID unique du scan")
     client_id = Column(String(100), nullable=False, comment="Identifiant du client (ex: ASM-Enterprise)")
@@ -40,8 +74,11 @@ class ScanRun(Base):
     scan_timestamp = Column(DateTime, nullable=False, default=datetime.now, comment="Date et heure du scan")
     total_resources = Column(Integer, default=0, comment="Nombre total de ressources trouvées")
     status = Column(Enum('success', 'partial', 'failed'), default='success', comment="Statut du scan")
-    
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=True, comment="ID de l'utilisateur qui a lancé le scan")
+
     # Relations (liens avec les autres tables)
+    # Un ScanRun appartient à un User
+    user = relationship("User", back_populates="scan_runs")
     # Un ScanRun peut avoir plusieurs EC2Instance
     ec2_instances = relationship("EC2Instance", back_populates="scan_run", cascade="all, delete-orphan")
     # Un ScanRun peut avoir plusieurs S3Bucket

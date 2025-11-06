@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Dashboard Global</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1e293b;
+            color: white;
+        }
+        .test-section {
+            background: #334155;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        pre {
+            background: #1e293b;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Dashboard Global</h1>
+
+    <div class="test-section">
+        <h2>1. Test API</h2>
+        <button onclick="testAPI()">Tester l'API</button>
+        <pre id="api-result"></pre>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test GlobalStats</h2>
+        <button onclick="testGlobalStats()">Tester GlobalStats</button>
+        <pre id="stats-result"></pre>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test Event Listeners</h2>
+        <div data-modal="test" style="background: #475569; padding: 20px; cursor: pointer; border-radius: 4px; margin: 10px 0;">
+            Cliquez ici pour tester
+        </div>
+        <pre id="listener-result"></pre>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/global-stats.js"></script>
+
+    <script>
+        async function testAPI() {
+            const result = document.getElementById('api-result');
+            result.textContent = 'Chargement...';
+            
+            try {
+                const ec2Data = await api.getEC2Instances({ latest_only: true, limit: 10 });
+                const s3Data = await api.getS3Buckets({ latest_only: true, limit: 10 });
+                const scansData = await api.getScanRuns({ limit: 10 });
+                
+                result.textContent = JSON.stringify({
+                    ec2: {
+                        total: ec2Data.total_instances,
+                        instances: ec2Data.instances.length
+                    },
+                    s3: {
+                        total: s3Data.total_buckets,
+                        buckets: s3Data.buckets.length
+                    },
+                    scans: {
+                        total: scansData.total_scans,
+                        scans: scansData.scans.length
+                    }
+                }, null, 2);
+            } catch (error) {
+                result.textContent = 'ERREUR: ' + error.message;
+                console.error(error);
+            }
+        }
+
+        async function testGlobalStats() {
+            const result = document.getElementById('stats-result');
+            result.textContent = 'Chargement...';
+            
+            try {
+                const stats = new GlobalStats();
+                await stats.loadAllData();
+                
+                const ec2Regions = stats.getEC2RegionDistribution();
+                const s3Regions = stats.getS3RegionDistribution();
+                const resources = stats.getAllResourcesList();
+                
+                result.textContent = JSON.stringify({
+                    ec2Instances: stats.ec2Instances.length,
+                    s3Buckets: stats.s3Buckets.length,
+                    scanRuns: stats.scanRuns.length,
+                    ec2Regions: ec2Regions,
+                    s3Regions: s3Regions,
+                    totalResources: resources.length
+                }, null, 2);
+            } catch (error) {
+                result.textContent = 'ERREUR: ' + error.message;
+                console.error(error);
+            }
+        }
+
+        // Test event listener
+        const testElement = document.querySelector('[data-modal="test"]');
+        const listenerResult = document.getElementById('listener-result');
+        
+        if (testElement) {
+            testElement.addEventListener('click', () => {
+                listenerResult.textContent = '✅ Event listener fonctionne !';
+            });
+            listenerResult.textContent = '✅ Element trouvé, listener attaché';
+        } else {
+            listenerResult.textContent = '❌ Element non trouvé';
+        }
+    </script>
+</body>
+</html>
+

@@ -36,15 +36,191 @@
         .form-input:focus-within {
             box-shadow: 0 0 0 2px theme('colors.primary / 50%');
         }
+
+        /* Animation de radar de diagnostic cloud */
+        @keyframes radar-scan {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.8);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(0.8);
+                opacity: 1;
+            }
+        }
+
+        @keyframes scan-line {
+            0% {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+        }
+
+        @keyframes float-particle {
+            0%, 100% {
+                transform: translate(0, 0);
+                opacity: 0.3;
+            }
+            50% {
+                transform: translate(var(--tx), var(--ty));
+                opacity: 0.8;
+            }
+        }
+
+        @keyframes grid-pulse {
+            0%, 100% {
+                opacity: 0.1;
+            }
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .radar-container {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .radar-grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(19, 127, 236, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(19, 127, 236, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: grid-pulse 4s ease-in-out infinite;
+        }
+
+        .radar-beam {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(19, 127, 236, 0.8), transparent);
+            transform-origin: left center;
+            animation: radar-scan 8s linear infinite;
+        }
+
+        .pulse-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300px;
+            height: 300px;
+            margin: -150px 0 0 -150px;
+            border: 2px solid rgba(19, 127, 236, 0.3);
+            border-radius: 50%;
+            animation: pulse-ring 3s ease-in-out infinite;
+        }
+
+        .pulse-ring:nth-child(2) {
+            animation-delay: 1s;
+            border-color: rgba(139, 92, 246, 0.3);
+        }
+
+        .pulse-ring:nth-child(3) {
+            animation-delay: 2s;
+            border-color: rgba(6, 182, 212, 0.3);
+        }
+
+        .scan-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg,
+                transparent,
+                rgba(19, 127, 236, 0.5) 20%,
+                rgba(19, 127, 236, 0.8) 50%,
+                rgba(19, 127, 236, 0.5) 80%,
+                transparent
+            );
+            animation: scan-line 6s ease-in-out infinite;
+        }
+
+        .scan-line:nth-child(2) {
+            animation-delay: 2s;
+        }
+
+        .scan-line:nth-child(3) {
+            animation-delay: 4s;
+        }
+
+        .cloud-particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(19, 127, 236, 0.6);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(19, 127, 236, 0.8);
+            animation: float-particle 8s ease-in-out infinite;
+        }
+
+        .cloud-particle:nth-child(1) { top: 20%; left: 30%; --tx: 20px; --ty: -30px; animation-delay: 0s; }
+        .cloud-particle:nth-child(2) { top: 40%; left: 60%; --tx: -25px; --ty: 20px; animation-delay: 1s; }
+        .cloud-particle:nth-child(3) { top: 60%; left: 20%; --tx: 30px; --ty: 25px; animation-delay: 2s; }
+        .cloud-particle:nth-child(4) { top: 80%; left: 70%; --tx: -20px; --ty: -20px; animation-delay: 3s; }
+        .cloud-particle:nth-child(5) { top: 30%; left: 80%; --tx: 15px; --ty: 30px; animation-delay: 1.5s; }
+        .cloud-particle:nth-child(6) { top: 70%; left: 40%; --tx: -30px; --ty: -25px; animation-delay: 2.5s; }
     </style>
 </head>
 <body class="font-display bg-background-light dark:bg-background-dark">
 <div class="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden p-4">
-<!-- Background Decoration -->
+<!-- Animated Radar Background -->
+<div class="radar-container">
+    <!-- Grid animée -->
+    <div class="radar-grid"></div>
+
+    <!-- Anneaux de pulse (radar) -->
+    <div class="pulse-ring"></div>
+    <div class="pulse-ring"></div>
+    <div class="pulse-ring"></div>
+
+    <!-- Faisceau radar rotatif -->
+    <div class="radar-beam"></div>
+
+    <!-- Lignes de scan verticales -->
+    <div class="scan-line"></div>
+    <div class="scan-line"></div>
+    <div class="scan-line"></div>
+
+    <!-- Particules cloud flottantes -->
+    <div class="cloud-particle"></div>
+    <div class="cloud-particle"></div>
+    <div class="cloud-particle"></div>
+    <div class="cloud-particle"></div>
+    <div class="cloud-particle"></div>
+    <div class="cloud-particle"></div>
+</div>
+
+<!-- Background Decoration (blobs flous) -->
 <div aria-hidden="true" class="absolute top-0 left-0 -translate-x-1/3 -translate-y-1/3 w-[50vw] h-[50vw] max-w-lg max-h-lg rounded-full bg-primary/20 blur-3xl"></div>
 <div aria-hidden="true" class="absolute bottom-0 right-0 translate-x-1/3 translate-y-1/3 w-[50vw] h-[50vw] max-w-lg max-h-lg rounded-full bg-[#8B5CF6]/10 blur-3xl"></div>
 <!-- Login Card -->
-<div class="relative w-full max-w-md space-y-8 rounded-xl bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-lg border border-white/10 p-8 shadow-2xl shadow-black/20">
+<div class="relative w-full max-w-md space-y-8 rounded-xl bg-zinc-900/40 dark:bg-zinc-900/40 backdrop-blur-xl border border-zinc-700/50 dark:border-zinc-700/50 p-8 shadow-2xl shadow-black/40">
 <div class="text-center">
 <div class="inline-flex items-center justify-center gap-2">
 <span class="material-symbols-outlined text-primary text-4xl">cloud_sync</span>
@@ -52,58 +228,93 @@
 </div>
 <p class="mt-2 text-base text-zinc-600 dark:text-zinc-400">Scannez et sécurisez votre infrastructure cloud.</p>
 </div>
-<form class="space-y-6">
-<!-- Email/Username Field -->
+
+<!-- Error Message -->
+<div id="error-message" class="hidden items-center gap-3 rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3">
+<span class="material-symbols-outlined text-red-500">error</span>
+<p class="flex-1 text-sm text-red-500"></p>
+</div>
+
+<form id="login-form" class="space-y-6">
+<!-- Email Field -->
 <div class="flex flex-col">
-<label class="text-zinc-800 dark:text-zinc-300 text-base font-medium leading-normal pb-2" for="email">Adresse e-mail ou nom d'utilisateur</label>
-<div class="flex w-full items-stretch rounded-lg border border-zinc-300 dark:border-[#324d67] focus-within:border-primary dark:focus-within:border-primary transition-all duration-300 form-input">
-<input autocomplete="username" class="peer h-12 flex-1 resize-none overflow-hidden bg-transparent p-3 text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-[#92adc9] focus:outline-none" id="email" placeholder="Entrez votre e-mail ou nom d'utilisateur" type="email"/>
-<div class="flex items-center justify-center px-3 text-zinc-400 dark:text-[#92adc9] peer-focus:text-primary transition-colors duration-300">
-<span class="material-symbols-outlined">person</span>
+<label class="text-zinc-300 dark:text-zinc-300 text-base font-medium leading-normal pb-2" for="email">Adresse e-mail</label>
+<div class="flex w-full items-stretch rounded-lg border border-zinc-600/50 dark:border-zinc-600/50 bg-zinc-800/30 dark:bg-zinc-800/30 focus-within:border-primary dark:focus-within:border-primary focus-within:bg-zinc-800/50 transition-all duration-300 form-input">
+<input autocomplete="email" class="peer h-12 flex-1 resize-none overflow-hidden bg-transparent p-3 text-white dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-400 focus:outline-none" id="email" placeholder="votre.email@exemple.com" type="email" required/>
+<div class="flex items-center justify-center px-3 text-zinc-400 dark:text-zinc-400 peer-focus:text-primary transition-colors duration-300">
+<span class="material-symbols-outlined">mail</span>
 </div>
 </div>
 </div>
 <!-- Password Field -->
 <div class="flex flex-col">
-<label class="text-zinc-800 dark:text-zinc-300 text-base font-medium leading-normal pb-2" for="password">Mot de passe</label>
-<div class="flex w-full items-stretch rounded-lg border border-zinc-300 dark:border-[#324d67] focus-within:border-primary dark:focus-within:border-primary transition-all duration-300 form-input">
-<input autocomplete="current-password" class="peer h-12 flex-1 resize-none overflow-hidden bg-transparent p-3 text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-[#92adc9] focus:outline-none" id="password" placeholder="Entrez votre mot de passe" type="password"/>
-<button aria-label="Toggle password visibility" class="flex items-center justify-center px-3 text-zinc-400 dark:text-[#92adc9] peer-focus:text-primary transition-colors duration-300" type="button">
+<label class="text-zinc-300 dark:text-zinc-300 text-base font-medium leading-normal pb-2" for="password">Mot de passe</label>
+<div class="flex w-full items-stretch rounded-lg border border-zinc-600/50 dark:border-zinc-600/50 bg-zinc-800/30 dark:bg-zinc-800/30 focus-within:border-primary dark:focus-within:border-primary focus-within:bg-zinc-800/50 transition-all duration-300 form-input">
+<input autocomplete="current-password" class="peer h-12 flex-1 resize-none overflow-hidden bg-transparent p-3 text-white dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-400 focus:outline-none" id="password" placeholder="Entrez votre mot de passe" type="password" required/>
+<button id="toggle-password" aria-label="Toggle password visibility" class="flex items-center justify-center px-3 text-zinc-400 dark:text-zinc-400 peer-focus:text-primary transition-colors duration-300" type="button">
 <span class="material-symbols-outlined">visibility</span>
 </button>
 </div>
 </div>
 <!-- Forgot Password Link -->
 <div class="flex justify-end">
-<a class="text-sm font-medium text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-sm" href="#">Mot de passe oublié ?</a>
+<a class="text-sm font-medium text-primary hover:text-primary/80 hover:underline focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-sm transition-colors" href="#">Mot de passe oublié ?</a>
 </div>
 <!-- Login Button -->
-<button class="flex w-full min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] transition-all duration-300 hover:bg-primary/90 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background-dark" type="submit">
+<button id="login-button" class="flex w-full min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] transition-all duration-300 hover:bg-primary/90 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background-dark" type="submit">
 <span class="truncate">Se Connecter</span>
 </button>
 </form>
-<!-- Separator -->
-<div class="relative flex items-center py-2">
-<div class="flex-grow border-t border-zinc-300 dark:border-zinc-700"></div>
-<span class="flex-shrink mx-4 text-xs text-zinc-500 dark:text-zinc-400">OU CONNECTEZ-VOUS AVEC</span>
-<div class="flex-grow border-t border-zinc-300 dark:border-zinc-700"></div>
-</div>
-<!-- SSO Buttons -->
-<div class="grid grid-cols-2 gap-4">
-<button class="flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 px-4 text-sm font-medium text-zinc-800 dark:text-zinc-200 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background-dark">
-<img alt="Google logo" class="h-5 w-5" data-alt="Google logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgRzygJY0M0F06YRaVS02kgZBxueLtwAKmq-RElopCjZXjjYVjprOkT0dAZIcAAcEca4wxnOOljFMdl7iAVmlTcH7w-vYpgaWybXP003jDT-fZCJwVnLI2xpm6GgCeSP2m7GT5deE6S9ikUhUmAODG9149FBxG8Jsby9W3zVRFltsgy-zb18AAlkf3zqEi-3Qf7XNl8FpZHxx4bE1p6jq6-lExEJxuqPHYqHGYgVSNyJUO2DMxmug8iwfeBo-5WJHsDjY7x2fVVcaP"/>
-<span>Google</span>
-</button>
-<button class="flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 px-4 text-sm font-medium text-zinc-800 dark:text-zinc-200 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background-dark">
-<img alt="Microsoft logo" class="h-5 w-5" data-alt="Microsoft logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNN9cUNhFzuvKOS1WPtMVsW98KeVZLlFGUT1jcQ1qFfoYGKGM9_5tmTzX0OZb2HmdJ8VqiZyICK6ovMdjXW_SUzZUzEgWSvI3Bc71p8A13In7CCXEWFgUeJOEYb9VHcZo8zt6lDvcGB2Oshcr0yVb2l_pfiYvv79eBCHR6Fx5ixi_-2GrM_bWmUppp9qqNeD64aWLhYqAEqEJ3CGlqsXdDPvOuYEd3UOiovNOeix72oeoRKCeX8R5QdxcsqGvxY1iTChlgr0H6M_CS"/>
-<span>Microsoft</span>
-</button>
-</div>
 <!-- Sign Up Link -->
-<p class="text-center text-sm text-zinc-600 dark:text-zinc-400">
+<p class="text-center text-sm text-zinc-400 dark:text-zinc-400">
                 Pas encore de compte ?
-                <a class="font-bold text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-sm" href="#">Inscrivez-vous</a>
+                <a class="font-bold text-primary hover:text-primary/80 hover:underline focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-sm transition-colors" href="signup.html">Inscrivez-vous</a>
 </p>
 </div>
 </div>
+
+<!-- Scripts -->
+<script src="js/auth.js"></script>
+<script>
+    // Rediriger si déjà connecté
+    authManager.redirectIfAuthenticated();
+
+    // Setup password toggle
+    AuthUI.setupPasswordToggle('password', 'toggle-password');
+
+    // Gestion du formulaire de connexion
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // Récupérer les valeurs
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+
+        // Cacher le message d'erreur
+        AuthUI.hideError('error-message');
+
+        // Validation basique
+        if (!email || !password) {
+            AuthUI.showError('error-message', 'Veuillez remplir tous les champs');
+            return;
+        }
+
+        // Activer le loading
+        AuthUI.setButtonLoading('login-button', true, 'Connexion...');
+
+        // Appel API
+        const result = await authManager.login(email, password);
+
+        // Désactiver le loading
+        AuthUI.setButtonLoading('login-button', false);
+
+        if (result.success) {
+            // Rediriger vers le dashboard
+            window.location.href = 'dashbord.html';
+        } else {
+            // Afficher l'erreur
+            AuthUI.showError('error-message', result.error);
+        }
+    });
+</script>
 </body></html>

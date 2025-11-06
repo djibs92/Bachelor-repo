@@ -3,7 +3,8 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from datetime import datetime
 
-from api.database import get_db, ScanRun, EC2Instance, EC2Performance, S3Bucket, S3Performance
+from api.database import get_db, ScanRun, EC2Instance, EC2Performance, S3Bucket, S3Performance, User
+from api.endpoints.auth import get_current_user
 
 router = APIRouter()
 
@@ -16,22 +17,26 @@ async def get_scans_history(
     client_id: Optional[str] = None,
     service_type: Optional[str] = None,
     limit: int = 10,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Récupère l'historique des scans depuis la base de données.
 
+    ⚠️ ISOLATION DES COMPTES : Seuls les scans de l'utilisateur connecté sont retournés.
+
     Args:
         client_id: Filtrer par client (optionnel)
         service_type: Filtrer par type de service (ec2, s3, vpc) (optionnel)
         limit: Nombre maximum de scans à retourner (défaut: 10)
+        current_user: Utilisateur connecté (injecté automatiquement)
 
     Returns:
         Liste des scans avec leurs métadonnées
     """
     try:
-        # Construire la requête
-        query = db.query(ScanRun)
+        # Construire la requête - FILTRER PAR USER_ID
+        query = db.query(ScanRun).filter(ScanRun.user_id == current_user.id)
 
         if client_id:
             query = query.filter(ScanRun.client_id == client_id)
@@ -68,24 +73,48 @@ async def get_ec2_instances(
     client_id: Optional[str] = None,
     region: Optional[str] = None,
     state: Optional[str] = None,
+    latest_only: bool = True,
     limit: int = 50,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Récupère les instances EC2 depuis la base de données.
 
+    ⚠️ ISOLATION DES COMPTES : Seules les instances de l'utilisateur connecté sont retournées.
+
     Args:
         client_id: Filtrer par client (optionnel)
         region: Filtrer par région (optionnel)
         state: Filtrer par état (running, stopped, etc.) (optionnel)
+        latest_only: Si True, récupère uniquement les instances du dernier scan (défaut: True)
         limit: Nombre maximum d'instances à retourner (défaut: 50)
+        current_user: Utilisateur connecté (injecté automatiquement)
 
     Returns:
         Liste des instances EC2 avec leurs performances
     """
     try:
-        # Construire la requête
-        query = db.query(EC2Instance)
+        if latest_only:
+            # Récupérer le dernier scan EC2 DE L'UTILISATEUR CONNECTÉ
+            latest_scan = db.query(ScanRun).filter(
+                ScanRun.service_type == 'ec2',
+                ScanRun.user_id == current_user.id
+            ).order_by(ScanRun.scan_timestamp.desc()).first()
+
+            if not latest_scan:
+                return {
+                    "total_instances": 0,
+                    "instances": [],
+                    "scan_id": None,
+                    "scan_timestamp": None
+                }
+
+            # Construire la requête pour le dernier scan EC2 uniquement
+            query = db.query(EC2Instance).filter(EC2Instance.scan_run_id == latest_scan.id)
+        else:
+            # Mode historique : récupérer toutes les instances
+            query = db.query(EC2Instance)
 
         if client_id:
             query = query.filter(EC2Instance.client_id == client_id)
@@ -199,23 +228,47 @@ async def get_ec2_instance_by_id(
 async def get_s3_buckets(
     client_id: Optional[str] = None,
     region: Optional[str] = None,
+    latest_only: bool = True,
     limit: int = 50,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Récupère les buckets S3 depuis la base de données.
 
+    ⚠️ ISOLATION DES COMPTES : Seuls les buckets de l'utilisateur connecté sont retournés.
+
     Args:
         client_id: Filtrer par client (optionnel)
         region: Filtrer par région (optionnel)
+        latest_only: Si True, récupère uniquement les buckets du dernier scan (défaut: True)
         limit: Nombre maximum de buckets à retourner (défaut: 50)
+        current_user: Utilisateur connecté (injecté automatiquement)
 
     Returns:
         Liste des buckets S3 avec leurs performances
     """
     try:
-        # Construire la requête
-        query = db.query(S3Bucket)
+        if latest_only:
+            # Récupérer le dernier scan S3 DE L'UTILISATEUR CONNECTÉ
+            latest_scan = db.query(ScanRun).filter(
+                ScanRun.service_type == 's3',
+                ScanRun.user_id == current_user.id
+            ).order_by(ScanRun.scan_timestamp.desc()).first()
+
+            if not latest_scan:
+                return {
+                    "total_buckets": 0,
+                    "buckets": [],
+                    "scan_id": None,
+                    "scan_timestamp": None
+                }
+
+            # Construire la requête pour le dernier scan S3 uniquement
+            query = db.query(S3Bucket).filter(S3Bucket.scan_run_id == latest_scan.id)
+        else:
+            # Mode historique : récupérer tous les buckets
+            query = db.query(S3Bucket)
 
         if client_id:
             query = query.filter(S3Bucket.client_id == client_id)

@@ -25,14 +25,15 @@ from api.database.connection import SessionLocal
 # ========================================
 # FONCTION : save_ec2_scan
 # ========================================
-def save_ec2_scan(client_id: str, instances_data: List[dict]) -> bool:
+def save_ec2_scan(client_id: str, instances_data: List[dict], user_id: int = None) -> bool:
     """
     Sauvegarde les résultats d'un scan EC2 dans la base de données.
-    
+
     Args:
         client_id (str): Identifiant du client (ex: "ASM-Enterprise")
         instances_data (List[dict]): Liste des instances EC2 avec leurs métadonnées et performances
-        
+        user_id (int): ID de l'utilisateur qui a lancé le scan (pour isolation des comptes)
+
     Returns:
         bool: True si la sauvegarde a réussi, False sinon
         
@@ -69,7 +70,8 @@ def save_ec2_scan(client_id: str, instances_data: List[dict]) -> bool:
             service_type='ec2',
             scan_timestamp=datetime.now(),
             total_resources=len(instances_data),
-            status='success'
+            status='success',
+            user_id=user_id  # ✅ AJOUT DU USER_ID
         )
         db.add(scan_run)
         db.flush()  # Envoie à la BDD pour obtenir l'ID, mais ne commit pas encore
@@ -143,14 +145,15 @@ def save_ec2_scan(client_id: str, instances_data: List[dict]) -> bool:
 # ========================================
 # FONCTION : save_s3_scan
 # ========================================
-def save_s3_scan(client_id: str, buckets_data: List[dict]) -> bool:
+def save_s3_scan(client_id: str, buckets_data: List[dict], user_id: int = None) -> bool:
     """
     Sauvegarde les résultats d'un scan S3 dans la base de données.
-    
+
     Args:
         client_id (str): Identifiant du client (ex: "ASM-Enterprise")
         buckets_data (List[dict]): Liste des buckets S3 avec leurs métadonnées et performances
-        
+        user_id (int): ID de l'utilisateur qui a lancé le scan (pour isolation des comptes)
+
     Returns:
         bool: True si la sauvegarde a réussi, False sinon
         
@@ -184,6 +187,7 @@ def save_s3_scan(client_id: str, buckets_data: List[dict]) -> bool:
             service_type='s3',
             scan_timestamp=datetime.now(),
             total_resources=len(buckets_data),
+            user_id=user_id,  # ✅ AJOUT DU USER_ID
             status='success'
         )
         db.add(scan_run)

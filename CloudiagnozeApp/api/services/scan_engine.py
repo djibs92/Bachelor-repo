@@ -4,13 +4,22 @@ from api.services.factories.connection_factory import ConnectionFactory
 from api.services.factories.scanner_factory import ScannerFactory
 from api.services.storage_service import save_ec2_scan, save_s3_scan
 
-async def scan_list_service(scan_id: str, provider: str, services: List[str], auth_mode: Dict[str, Any], client_id: str,regions:List[str]= None):
+async def scan_list_service(scan_id: str, provider: str, services: List[str], auth_mode: Dict[str, Any], client_id: str, regions: List[str] = None, user_id: int = None):
     """
     Moteur principal de CloudDiagnoze
     Orchestrateur qui lance les scans pour chaque service demandé
+
+    Args:
+        scan_id: ID unique du scan
+        provider: Provider cloud (aws, azure, gcp)
+        services: Liste des services à scanner (ec2, s3, vpc)
+        auth_mode: Mode d'authentification
+        client_id: ID du client
+        regions: Régions à scanner (optionnel)
+        user_id: ID de l'utilisateur qui lance le scan (pour isolation des comptes)
     """
     logger.info(f"🚀 Démarrage scan_list_service pour scan_id: {scan_id}")
-    logger.info(f"Provider: {provider}, Services: {services}")
+    logger.info(f"Provider: {provider}, Services: {services}, User ID: {user_id}")
 
     try:
         # 1. Connexion au provider (Connexion via le mode de connexion propre au provider Key/AWS STS ect ....)
@@ -29,13 +38,13 @@ async def scan_list_service(scan_id: str, provider: str, services: List[str], au
             # 3. Sauvegarder les résultats en base de données
             logger.info(f"💾 Sauvegarde des résultats {service} en BDD...")
             if service == "ec2" and result:
-                if save_ec2_scan(client_id, result):
+                if save_ec2_scan(client_id, result, user_id):  # ✅ AJOUT DU USER_ID
                     logger.success(f"✅ {len(result)} instances EC2 sauvegardées en BDD")
                 else:
                     logger.warning(f"⚠️ Échec de la sauvegarde EC2 en BDD")
 
             elif service == "s3" and result:
-                if save_s3_scan(client_id, result):
+                if save_s3_scan(client_id, result, user_id):  # ✅ AJOUT DU USER_ID
                     logger.success(f"✅ {len(result)} buckets S3 sauvegardés en BDD")
                 else:
                     logger.warning(f"⚠️ Échec de la sauvegarde S3 en BDD")

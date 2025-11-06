@@ -1,6 +1,8 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from api.endpoints.scan import router as scan_router
 from api.endpoints.events import router as events_router
+from api.endpoints.auth import router as auth_router
 import uvicorn
 
 app = FastAPI(
@@ -9,10 +11,19 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Inclusion du router scan
+# Configuration CORS pour permettre les requêtes depuis le front-end
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # En production, remplacer par les domaines autorisés
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Inclusion des routers
+app.include_router(auth_router, prefix="/api/v1/auth", tags=["authentication"])
 app.include_router(scan_router, prefix="/api/v1", tags=["scans"])
-#Endpoint permettant le visuel des événements 
-app.include_router(events_router,prefix="/api/v1",tags=["events"])
+app.include_router(events_router, prefix="/api/v1", tags=["events"])
 @app.get("/")
 async def root():
     return {"message": "CloudDiagnoze API is running"}

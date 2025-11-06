@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html class="dark" lang="fr">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>CloudDiagnoze - Paramètres</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+    
+    <!-- Scripts JavaScript -->
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/user-menu.js"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3b82f6",
+                        "background-dark": "#0f172a",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+    
+    <style>
+        /* Glassmorphism effect */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+        }
+    </style>
+</head>
+
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen font-display text-gray-200">
+    <div class="flex min-h-screen w-full">
+        <!-- SideNavBar -->
+        <aside class="flex w-64 flex-col gap-4 border-r border-slate-800 bg-background-dark/80 p-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="CloudDiagnoze company logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAgXeOveCrpLoaMwnJT4m7a_O2eT3tUhlhMb_L98GWNsNCAzOj73_GZ_piQzJ6he9RpczeTSs-LGtXvlFfEc2PNoWtro4H904fYCbVPldL92yGttHmj8jcg37QLRsNw-nCOFFBgJ4jZ9MwN3_oq65JX3aZCUrF7Mplk-FJV97yY1w_vR2XuZdwUCNWdQ2qXd6MBAcqu-HCKc7wr6cKI85HtIn7ce8ZEpZ0csnsttBcX57Hi7kjqpzmDAiKk0rQBKDf_KcylPBi8Es2k");'></div>
+                <div class="flex flex-col">
+                    <h1 class="text-white text-base font-bold leading-normal">CloudDiagnoze</h1>
+                    <p class="text-slate-400 text-sm font-normal leading-normal">Multi-Cloud Scanner</p>
+                </div>
+            </div>
+            <nav class="flex flex-col gap-2 mt-4">
+                <a class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-300 hover:bg-white/5" href="dashbord.html">
+                    <span class="material-symbols-outlined text-2xl">dashboard</span>
+                    <p class="text-sm font-medium leading-normal">Dashboard Global</p>
+                </a>
+                <a class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-300 hover:bg-white/5" href="dashboard-ec2.html">
+                    <span class="material-symbols-outlined text-2xl">dns</span>
+                    <p class="text-sm font-medium leading-normal">EC2 Instances</p>
+                </a>
+                <a class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-300 hover:bg-white/5" href="dashboard-s3.html">
+                    <span class="material-symbols-outlined text-2xl">folder</span>
+                    <p class="text-sm font-medium leading-normal">S3 Buckets</p>
+                </a>
+                <a class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-300 hover:bg-white/5" href="config-scan-new.html">
+                    <span class="material-symbols-outlined text-2xl">play_arrow</span>
+                    <p class="text-sm font-medium leading-normal">New Scan</p>
+                </a>
+                <a class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-300 hover:bg-white/5" href="rapport-scan.html">
+                    <span class="material-symbols-outlined text-2xl">description</span>
+                    <p class="text-sm font-medium leading-normal">Rapports</p>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex-col overflow-y-auto">
+            <!-- TopNavBar -->
+            <header class="sticky top-0 z-10 flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-800 bg-background-dark/80 px-10 py-3 backdrop-blur-md">
+                <div class="flex items-center gap-8">
+                    <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">Paramètres</h2>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-white/5 hover:bg-white/10 text-white gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-2.5">
+                        <span class="material-symbols-outlined text-white" style="font-size: 20px;">notifications</span>
+                    </button>
+                    <!-- User Info Header -->
+                    <div id="user-info-header" class="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-800/50 border border-slate-700/50">
+                        <div class="bg-primary/20 rounded-full p-2">
+                            <span class="material-symbols-outlined text-primary">person</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <p id="user-name-header" class="text-white text-sm font-medium">Chargement...</p>
+                            <p id="user-email-header" class="text-slate-400 text-xs">...</p>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="px-10 py-8">
+                <!-- Page Title -->
+                <div class="mb-8">
+                    <h2 class="text-white text-4xl font-bold mb-2">Paramètres du compte</h2>
+                    <p class="text-slate-400 text-lg">Gérez vos informations personnelles et vos préférences</p>
+                </div>
+
+                <!-- Settings Forms -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left Column: Main Settings -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- Informations personnelles -->
+                        <div class="glass-card rounded-xl p-6">
+                            <h3 class="text-white text-xl font-bold mb-6 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-blue-400">person</span>
+                                Informations personnelles
+                            </h3>
+                            
+                            <form id="personal-info-form" class="space-y-4">
+                                <!-- Nom complet -->
+                                <div>
+                                    <label for="full-name" class="block text-sm font-medium text-slate-300 mb-2">
+                                        Nom complet
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="full-name" 
+                                        name="full_name"
+                                        class="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:border-blue-400 transition-colors"
+                                        placeholder="Votre nom complet"
+                                    />
+                                </div>
+
+                                <!-- Email (readonly) -->
+                                <div>
+                                    <label for="email" class="block text-sm font-medium text-slate-300 mb-2">
+                                        Email
+                                    </label>
+                                    <input 
+                                        type="email" 
+                                        id="email" 
+                                        name="email"
+                                        readonly
+                                        class="w-full px-4 py-3 rounded-lg bg-slate-800/30 border border-slate-700 text-slate-400 cursor-not-allowed"
+                                        placeholder="votre@email.com"
+                                    />
+                                    <p class="text-xs text-slate-400 mt-1">L'email ne peut pas être modifié</p>
+                                </div>
+
+                                <!-- Nom d'entreprise -->
+                                <div>
+                                    <label for="company-name" class="block text-sm font-medium text-slate-300 mb-2">
+                                        Nom d'entreprise
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="company-name" 
+                                        name="company_name"
+                                        class="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:border-blue-400 transition-colors"
+                                        placeholder="Nom de votre entreprise"
+                                    />
+                                </div>
+
+                                <!-- Role ARN -->
+                                <div>
+                                    <label for="role-arn" class="block text-sm font-medium text-slate-300 mb-2">
+                                        AWS Role ARN
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="role-arn" 
+                                        name="role_arn"
+                                        class="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:border-blue-400 transition-colors font-mono text-sm"
+                                        placeholder="arn:aws:iam::123456789012:role/YourRole"
+                                    />
+                                    <p class="text-xs text-slate-400 mt-1">ARN du rôle IAM utilisé pour les scans AWS</p>
+                                </div>
+
+                                <!-- Bouton de sauvegarde -->
+                                <div class="flex items-center gap-4 pt-4">
+                                    <button 
+                                        type="submit"
+                                        class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-blue-500/50 flex items-center justify-center gap-2"
+                                    >
+                                        <span class="material-symbols-outlined">save</span>
+                                        Enregistrer les modifications
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Changer le mot de passe -->
+                        <div class="glass-card rounded-xl p-6">
+                            <h3 class="text-white text-xl font-bold mb-6 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-blue-400">lock</span>
+                                Sécurité
+                            </h3>
+                            
+                            <form id="password-form" class="space-y-4">
+                                <!-- Mot de passe actuel -->
+                                <div>
+                                    <label for="current-password" class="block text-sm font-medium text-slate-300 mb-2">
+                                        Mot de passe actuel
+                                    </label>
+                                    <input 
+                                        type="password" 
+                                        id="current-password" 
+                                        name="current_password"
+                                        class="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:border-blue-400 transition-colors"
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+
+                                <!-- Nouveau mot de passe -->
+                                <div>
+                                    <label for="new-password" class="block text-sm font-medium text-slate-300 mb-2">
+                                        Nouveau mot de passe
+                                    </label>
+                                    <input 
+                                        type="password" 
+                                        id="new-password" 
+                                        name="new_password"
+                                        class="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:border-blue-400 transition-colors"
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+
+                                <!-- Confirmer le mot de passe -->
+                                <div>
+                                    <label for="confirm-password" class="block text-sm font-medium text-slate-300 mb-2">
+                                        Confirmer le mot de passe
+                                    </label>
+                                    <input 
+                                        type="password" 
+                                        id="confirm-password" 
+                                        name="confirm_password"
+                                        class="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:border-blue-400 transition-colors"
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+
+                                <!-- Bouton de sauvegarde -->
+                                <div class="flex items-center gap-4 pt-4">
+                                    <button 
+                                        type="submit"
+                                        class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-blue-500/50 flex items-center justify-center gap-2"
+                                    >
+                                        <span class="material-symbols-outlined">lock_reset</span>
+                                        Changer le mot de passe
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Account Info -->
+                    <div class="space-y-6">
+                        <!-- Informations du compte -->
+                        <div class="glass-card rounded-xl p-6">
+                            <h3 class="text-white text-xl font-bold mb-4 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-blue-400">info</span>
+                                Informations du compte
+                            </h3>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-slate-300 text-sm">Créé le:</span>
+                                    <span id="account-created" class="text-white font-semibold text-sm">-</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-slate-300 text-sm">Dernière connexion:</span>
+                                    <span id="last-login" class="text-white font-semibold text-sm">-</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-slate-300 text-sm">Statut:</span>
+                                    <span id="account-status" class="text-green-400 font-semibold text-sm">Actif</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Initialisation -->
+    <script src="js/settings.js"></script>
+</body>
+</html>
+

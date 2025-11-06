@@ -1,10 +1,12 @@
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any
 import uuid
 from api.config.supported_services import SUPPORTED_PROVIDERS, SUPPORTED_SERVICES_AWS, SUPPORTED_AUTH_MODES
 from api.services.scan_engine import scan_list_service
+from api.database import User
+from api.endpoints.auth import get_current_user
 
 router = APIRouter()
 
@@ -25,9 +27,15 @@ class ScanResponse(BaseModel):
     message: str
 
 @router.post("/scans", response_model=ScanResponse, status_code=202)
-async def create_scan(scan_request: ScanRequest, background_tasks: BackgroundTasks):
+async def create_scan(
+    scan_request: ScanRequest,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user)
+):
     """
-    Lance un scan d'infrastructure cloud
+    Lance un scan d'infrastructure cloud.
+
+    ⚠️ ISOLATION DES COMPTES : Le scan est automatiquement lié à l'utilisateur connecté.
     """
     
     # 1. Validation du provider
@@ -76,7 +84,7 @@ async def create_scan(scan_request: ScanRequest, background_tasks: BackgroundTas
     # 4. Génération du scan_id
     scan_id = f"scan-{str(uuid.uuid4())}"
     
-    # 5. Lancement du moteur en arrière-plan
+    # 5. Lancement du moteur en arrière-plan avec user_id
     background_tasks.add_task(
         scan_list_service,
         scan_id=scan_id,
@@ -84,7 +92,8 @@ async def create_scan(scan_request: ScanRequest, background_tasks: BackgroundTas
         services=scan_request.services,
         auth_mode=scan_request.auth_mode.dict(),
         client_id=scan_request.client_id,
-        regions=scan_request.regions
+        regions=scan_request.regions,
+        user_id=current_user.id  # ✅ AJOUT DU USER_ID
     )
     
     # 6. Réponse immédiate

@@ -14,3 +14,9 @@ sqlalchemy==2.0.44
 pymysql==1.1.0
 cryptography==41.0.7
 python-dotenv==1.0.0
+
+# Authentification et sécurité
+bcrypt==4.1.2
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+email-validator==2.3.0
