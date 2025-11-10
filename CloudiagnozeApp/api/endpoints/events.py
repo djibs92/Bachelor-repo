@@ -415,6 +415,7 @@ async def clear_database(
 
     try:
         # Compter les éléments avant suppression
+        users_count = db.query(User).count()
         scan_runs_count = db.query(ScanRun).count()
         ec2_instances_count = db.query(EC2Instance).count()
         ec2_performance_count = db.query(EC2Performance).count()
@@ -433,6 +434,9 @@ async def clear_database(
         # 3. Supprimer les scan runs
         db.query(ScanRun).delete()
 
+        # 4. Supprimer les utilisateurs
+        db.query(User).delete()
+
         # Commit de la transaction
         db.commit()
 
@@ -440,12 +444,14 @@ async def clear_database(
             "status": "success",
             "message": "✅ Base de données vidée avec succès",
             "deleted": {
+                "users": users_count,
                 "scan_runs": scan_runs_count,
                 "ec2_instances": ec2_instances_count,
                 "ec2_performance": ec2_performance_count,
                 "s3_buckets": s3_buckets_count,
                 "s3_performance": s3_performance_count,
                 "total": (
+                    users_count +
                     scan_runs_count +
                     ec2_instances_count +
                     ec2_performance_count +
