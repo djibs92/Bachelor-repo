@@ -15,16 +15,29 @@ class UserMenu {
      * @param {Object} user - Objet utilisateur avec full_name, email, company_name
      */
     init(user) {
+        // Éviter les initialisations multiples
+        if (this.initialized) {
+            this.user = user;
+            this.updateUserInfo();
+            return;
+        }
+
         this.user = user;
         this.createPopup();
         this.attachEventListeners();
         this.updateUserInfo();
+        this.initialized = true;
     }
 
     /**
      * Crée le HTML du popup
      */
     createPopup() {
+        // Vérifier si le popup existe déjà
+        if (this.popupElement && this.backdropElement) {
+            return; // Déjà créé, on ne recrée pas
+        }
+
         // Créer le backdrop
         const backdrop = document.createElement('div');
         backdrop.id = 'user-menu-backdrop';

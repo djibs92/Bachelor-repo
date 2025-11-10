@@ -13,10 +13,16 @@ class DashboardS3 {
     async init() {
         try {
             console.log('🚀 Initialisation du dashboard S3...');
-            
+
             // Charger les données
-            await s3Stats.loadBuckets();
+            const buckets = await s3Stats.loadBuckets();
             this.filteredBuckets = s3Stats.buckets;
+
+            // Vérifier s'il y a des données
+            if (!buckets || buckets.length === 0) {
+                this.showInfo('Aucun bucket S3 trouvé. Lancez un scan pour commencer.');
+                return;
+            }
 
             // Mettre à jour l'interface
             this.updateStatsCards();
@@ -40,7 +46,7 @@ class DashboardS3 {
         // Total Buckets
         const totalStats = s3Stats.getTotalBucketsStats();
         document.getElementById('total-buckets').textContent = totalStats.total;
-        document.getElementById('buckets-regions').textContent = `${totalStats.totalRegions} région(s)`;
+        document.getElementById('buckets-detail').textContent = `${totalStats.totalRegions} région(s)`;
 
         // Encryption
         const encryptionStats = s3Stats.getEncryptionStats();
@@ -538,6 +544,11 @@ class DashboardS3 {
      * Configure les event listeners
      */
     setupEventListeners() {
+        // Ne configurer qu'une seule fois
+        if (this.listenersAttached) {
+            return;
+        }
+
         // Bouton rafraîchir
         document.getElementById('refresh-btn').addEventListener('click', () => this.refresh());
 
@@ -555,6 +566,8 @@ class DashboardS3 {
                 this.closeBucketModal();
             }
         });
+
+        this.listenersAttached = true;
     }
 
     /**
@@ -579,6 +592,25 @@ class DashboardS3 {
         `;
         document.body.appendChild(errorDiv);
         setTimeout(() => errorDiv.remove(), 5000);
+    }
+
+    /**
+     * Affiche un message d'information
+     */
+    showInfo(message) {
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'fixed top-4 right-4 bg-blue-500/10 border border-blue-500 text-blue-400 px-6 py-4 rounded-lg backdrop-blur-sm z-50';
+        infoDiv.innerHTML = `
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined">info</span>
+                <div>
+                    <p class="font-bold">${message}</p>
+                    <p class="text-sm mt-1">Allez dans <a href="config-scan-new.html" class="underline hover:text-blue-300">Configuration de scan</a> pour lancer un scan.</p>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(infoDiv);
+        setTimeout(() => infoDiv.remove(), 8000);
     }
 
     /**
@@ -784,7 +816,6 @@ class DashboardS3 {
     }
 }
 
-// Initialiser au chargement
+// Instance globale (initialisée au chargement par le HTML)
 const dashboardS3 = new DashboardS3();
-document.addEventListener('DOMContentLoaded', () => dashboardS3.init());
 

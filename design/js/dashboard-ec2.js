@@ -12,12 +12,27 @@ class DashboardEC2 {
      * Initialise le dashboard
      */
     async init() {
+        // Éviter les initialisations multiples
+        if (this.isInitializing || this.isInitialized) {
+            console.warn('⚠️ Dashboard déjà en cours d\'initialisation ou initialisé');
+            return;
+        }
+
+        this.isInitializing = true;
         console.log('🚀 Initialisation du dashboard EC2...');
         this.showLoader();
 
         try {
             // Charger les instances
-            await ec2Stats.loadInstances();
+            const instances = await ec2Stats.loadInstances();
+
+            // Vérifier s'il y a des données
+            if (!instances || instances.length === 0) {
+                this.hideLoader();
+                this.isInitializing = false;
+                this.showInfo('Aucune instance EC2 trouvée. Lancez un scan pour commencer.');
+                return;
+            }
 
             // Mettre à jour l'interface
             this.updateStatsCards();
@@ -29,11 +44,14 @@ class DashboardEC2 {
             this.setupEventListeners();
 
             this.hideLoader();
+            this.isInitializing = false;
+            this.isInitialized = true;
             console.log('✅ Dashboard EC2 chargé avec succès');
         } catch (error) {
             console.error('❌ Erreur chargement dashboard:', error);
             this.hideLoader();
-            this.showError('Impossible de charger les données EC2');
+            this.isInitializing = false;
+            this.showError('Erreur lors du chargement des données EC2');
         }
     }
 
@@ -44,25 +62,25 @@ class DashboardEC2 {
         // Card 1: Total Instances
         const totalStats = ec2Stats.getTotalInstancesStats();
         document.getElementById('total-instances').textContent = totalStats.total;
-        document.getElementById('instances-breakdown').textContent = 
+        document.getElementById('instances-detail').textContent =
             `${totalStats.running} running, ${totalStats.stopped} stopped`;
 
         // Card 2: Régions
         const regionsStats = ec2Stats.getRegionsStats();
-        document.getElementById('total-regions').textContent = regionsStats.totalRegions;
-        document.getElementById('top-region').textContent = 
-            regionsStats.topRegion ? `${regionsStats.topRegion} (${regionsStats.topRegionCount})` : '-';
+        document.getElementById('active-regions').textContent = regionsStats.totalRegions;
+        document.getElementById('regions-detail').textContent =
+            regionsStats.topRegion ? `${regionsStats.topRegion} (${regionsStats.topRegionCount})` : 'Régions AWS';
 
         // Card 3: CPU Moyen
         const cpuStats = ec2Stats.getAverageCPU();
         document.getElementById('avg-cpu').textContent = `${cpuStats.average}%`;
-        document.getElementById('cpu-range').textContent = 
+        document.getElementById('cpu-detail').textContent =
             `Min: ${cpuStats.min}% | Max: ${cpuStats.max}%`;
 
         // Card 4: Trafic Réseau
         const trafficStats = ec2Stats.getNetworkTrafficStats();
-        document.getElementById('total-traffic').textContent = trafficStats.totalFormatted;
-        document.getElementById('traffic-breakdown').textContent = 
+        document.getElementById('total-network').textContent = trafficStats.totalFormatted;
+        document.getElementById('network-detail').textContent =
             `${trafficStats.inFormatted} IN | ${trafficStats.outFormatted} OUT`;
 
         console.log('✅ Stats cards mises à jour');
@@ -95,19 +113,43 @@ class DashboardEC2 {
                 datasets: [{
                     data: data.data,
                     backgroundColor: [
-                        '#137fec', '#4285F4', '#0078D4', '#FF9900', 
+                        '#137fec', '#4285F4', '#0078D4', '#FF9900',
                         '#34A853', '#EA4335', '#FBBC04', '#9333EA'
                     ],
-                    borderWidth: 0
+                    borderWidth: 3,
+                    borderColor: '#0a0e1a',
+                    hoverBorderWidth: 5,
+                    hoverBorderColor: '#ffffff',
+                    offset: 5,
+                    spacing: 2
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: {
+                    padding: 10
+                },
                 plugins: {
                     legend: {
                         position: 'bottom',
-                        labels: { color: '#cbd5e1', padding: 15 }
+                        labels: { color: '#cbd5e1', padding: 15, font: { size: 12 } }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                        titleColor: '#137fec',
+                        bodyColor: '#cbd5e1',
+                        borderColor: '#137fec',
+                        borderWidth: 2,
+                        padding: 12,
+                        displayColors: true,
+                        boxWidth: 15,
+                        boxHeight: 15
+                    }
+                },
+                elements: {
+                    arc: {
+                        borderRadius: 6
                     }
                 }
             }
@@ -388,6 +430,11 @@ class DashboardEC2 {
      * Configure les event listeners
      */
     setupEventListeners() {
+        // Ne configurer qu'une seule fois
+        if (this.listenersAttached) {
+            return;
+        }
+
         // Bouton rafraîchir
         document.getElementById('refresh-btn').addEventListener('click', () => this.refresh());
 
@@ -404,6 +451,8 @@ class DashboardEC2 {
                 this.closeInstanceModal();
             }
         });
+
+        this.listenersAttached = true;
     }
 
     /**
@@ -436,6 +485,9 @@ class DashboardEC2 {
      */
     async refresh() {
         console.log('🔄 Rafraîchissement du dashboard...');
+        // Réinitialiser les flags pour permettre un nouveau chargement
+        this.isInitialized = false;
+        this.isInitializing = false;
         await this.init();
     }
 
@@ -467,6 +519,25 @@ class DashboardEC2 {
         `;
         document.body.appendChild(errorDiv);
         setTimeout(() => errorDiv.remove(), 5000);
+    }
+
+    /**
+     * Affiche un message d'information
+     */
+    showInfo(message) {
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'fixed top-4 right-4 bg-blue-500/10 border border-blue-500 text-blue-400 px-6 py-4 rounded-lg backdrop-blur-sm z-50';
+        infoDiv.innerHTML = `
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined">info</span>
+                <div>
+                    <p class="font-bold">${message}</p>
+                    <p class="text-sm mt-1">Allez dans <a href="config-scan-new.html" class="underline hover:text-blue-300">Configuration de scan</a> pour lancer un scan.</p>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(infoDiv);
+        setTimeout(() => infoDiv.remove(), 8000);
     }
 
     /**
@@ -665,7 +736,6 @@ class DashboardEC2 {
     }
 }
 
-// Initialiser au chargement
+// Instance globale (initialisée au chargement par le HTML)
 const dashboardEC2 = new DashboardEC2();
-document.addEventListener('DOMContentLoaded', () => dashboardEC2.init());
 

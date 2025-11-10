@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html class="dark" lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CloudDiagnoze - Dashboard EC2</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- Scripts JavaScript -->
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/user-menu.js"></script>
+<script src="js/ec2-stats.js"></script>
+<script>
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "primary": "#137fec",
+                    "background-light": "#f6f7f8",
+                    "background-dark": "#101922",
+                },
+                fontFamily: {
+                    "display": ["Space Grotesk", "sans-serif"]
+                },
+            },
+        },
+    }
+</script>
+<style>
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24
+    }
+    .glass-card {
+        background-color: rgba(25, 41, 58, 0.5);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(49, 75, 102, 0.6);
+    }
+</style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen text-gray-200 font-display">
+<div class="flex min-h-screen w-full">
+<!-- SideNavBar -->
+<aside class="flex w-64 flex-col gap-4 border-r border-slate-800 bg-background-dark/80 p-4">
+<div class="flex items-center gap-3">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAgXeOveCrpLoaMwnJT4m7a_O2eT3tUhlhMb_L98GWNsNCAzOj73_GZ_piQzJ6he9RpczeTSs-LGtXvlFfEc2PNoWtro4H904fYCbVPldL92yGttHmj8jcg37QLRsNw-nCOFFBgJ4jZ9MwN3_oq65JX3aZCUrF7Mplk-FJV97yY1w_vR2XuZdwUCNWdQ2qXd6MBAcqu-HCKc7wr6cKI85HtIn7ce8ZEpZ0csnsttBcX57Hi7kjqpzmDAiKk0rQBKDf_KcylPBi8Es2k");'></div>
+<div class="flex flex-col">
+<h1 class="text-white text-base font-bold leading-normal">CloudDiagnoze</h1>
+<p class="text-slate-400 text-sm font-normal leading-normal">Multi-Cloud Scanner</p>
+</div>
+</div>
+<nav class="flex flex-col gap-2 mt-4">
+<a class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-300 hover:bg-white/5" href="dashbord.html">
+<span class="material-symbols-outlined text-2xl">dashboard</span>
+<p class="text-sm font-medium leading-normal">Dashboard Global</p>
+</a>
+<a class="flex items-center gap-3 rounded-lg bg-primary/20 px-3 py-2 text-primary" href="dashboard-ec2.html">
+<span class="material-symbols-outlined text-2xl">dns</span>
+<p class="text-sm font-medium leading-normal">EC2 Instances</p>
+</a>
+<a class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-300 hover:bg-white/5" href="dashboard-s3.html">
+<span class="material-symbols-outlined text-2xl">folder</span>
+<p class="text-sm font-medium leading-normal">S3 Buckets</p>
+</a>
+<a class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-300 hover:bg-white/5" href="config-scan-new.html">
+<span class="material-symbols-outlined text-2xl">play_arrow</span>
+<p class="text-sm font-medium leading-normal">New Scan</p>
+</a>
+<a class="flex items-center gap-3 rounded-lg px-3 py-2 text-slate-300 hover:bg-white/5" href="rapport-scan.html">
+<span class="material-symbols-outlined text-2xl">description</span>
+<p class="text-sm font-medium leading-normal">Rapports</p>
+</a>
+</nav>
+</aside>
+
+<!-- Main Content -->
+<main class="flex-1 flex-col overflow-y-auto">
+<!-- TopNavBar -->
+<header class="sticky top-0 z-10 flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-800 bg-background-dark/80 px-10 py-3 backdrop-blur-md">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-white">
+<span class="material-symbols-outlined text-primary text-xl">cloud_queue</span>
+<h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">Dashboard EC2 - AWS</h2>
+</div>
+</div>
+<div class="flex flex-1 items-center justify-end gap-4">
+<button id="refresh-btn" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-colors">
+<span class="material-symbols-outlined">refresh</span>
+<span class="text-sm font-medium">Rafraîchir</span>
+</button>
+<!-- User Info Header -->
+<div id="user-info-header" class="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-800/50 border border-slate-700/50">
+<div class="bg-primary/20 rounded-full p-2">
+<span class="material-symbols-outlined text-primary">person</span>
+</div>
+<div class="flex flex-col">
+<p id="user-name-header" class="text-white text-sm font-medium">Chargement...</p>
+<p id="user-email-header" class="text-slate-400 text-xs">...</p>
+</div>
+</div>
+</div>
+</header>
+
+<!-- Dashboard Content -->
+<div class="p-6">
+<!-- Loader -->
+<div id="dashboard-loader" class="hidden fixed inset-0 bg-background-dark/80 backdrop-blur-sm z-50 flex items-center justify-center">
+<div class="flex flex-col items-center gap-4">
+<div class="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent"></div>
+<p class="text-white text-lg font-medium">Chargement des données EC2...</p>
+</div>
+</div>
+
+<!-- Stats Row -->
+<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+<!-- Card 1: Total Instances -->
+<div class="flex flex-col gap-2 rounded-xl glass-card p-6">
+<p class="text-slate-300 text-base font-medium leading-normal">Total Instances EC2</p>
+<p id="total-instances" class="text-white tracking-light text-3xl font-bold leading-tight">0</p>
+<p id="instances-breakdown" class="text-green-400 text-sm font-medium leading-normal">0 running, 0 stopped</p>
+</div>
+
+<!-- Card 2: Régions Actives -->
+<div class="flex flex-col gap-2 rounded-xl glass-card p-6">
+<p class="text-slate-300 text-base font-medium leading-normal">Régions Actives</p>
+<p id="total-regions" class="text-white tracking-light text-3xl font-bold leading-tight">0</p>
+<p id="top-region" class="text-blue-400 text-sm font-medium leading-normal">-</p>
+</div>
+
+<!-- Card 3: CPU Moyen Global -->
+<div class="flex flex-col gap-2 rounded-xl glass-card p-6">
+<p class="text-slate-300 text-base font-medium leading-normal">CPU Moyen Global</p>
+<p id="avg-cpu" class="text-white tracking-light text-3xl font-bold leading-tight">0%</p>
+<p id="cpu-range" class="text-slate-400 text-sm font-medium leading-normal">Min: 0% | Max: 0%</p>
+</div>
+
+<!-- Card 4: Trafic Réseau Total -->
+<div class="flex flex-col gap-2 rounded-xl glass-card p-6">
+<p class="text-slate-300 text-base font-medium leading-normal">Trafic Réseau Total</p>
+<p id="total-traffic" class="text-white tracking-light text-3xl font-bold leading-tight">0 B</p>
+<p id="traffic-breakdown" class="text-purple-400 text-sm font-medium leading-normal">0 B IN | 0 B OUT</p>
+</div>
+</div>
+
+<!-- Charts Row 1 -->
+<div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+<!-- Chart 1: Répartition par Type -->
+<div class="flex flex-col gap-4 rounded-xl glass-card p-6">
+<p class="text-white text-lg font-medium leading-normal">Répartition par Type d'Instance</p>
+<div class="flex items-center justify-center" style="height: 300px;">
+<canvas id="chart-instance-types"></canvas>
+</div>
+</div>
+
+<!-- Chart 2: Répartition par État -->
+<div class="flex flex-col gap-4 rounded-xl glass-card p-6">
+<p class="text-white text-lg font-medium leading-normal">Répartition par État</p>
+<div class="flex items-center justify-center" style="height: 300px;">
+<canvas id="chart-instance-states"></canvas>
+</div>
+</div>
+</div>
+
+<!-- Charts Row 2 -->
+<div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+<!-- Chart 3: CPU par Instance -->
+<div class="flex flex-col gap-4 rounded-xl glass-card p-6">
+<p class="text-white text-lg font-medium leading-normal">CPU par Instance (Top 10)</p>
+<div class="flex items-center justify-center" style="height: 300px;">
+<canvas id="chart-cpu-instances"></canvas>
+</div>
+</div>
+
+<!-- Chart 4: Trafic par Instance -->
+<div class="flex flex-col gap-4 rounded-xl glass-card p-6">
+<p class="text-white text-lg font-medium leading-normal">Trafic Réseau par Instance (Top 10)</p>
+<div class="flex items-center justify-center" style="height: 300px;">
+<canvas id="chart-network-instances"></canvas>
+</div>
+</div>
+</div>
+
+<!-- Alertes Section -->
+<div id="alerts-section" class="mt-6 hidden">
+<div class="flex flex-col gap-4 rounded-xl glass-card p-6">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-yellow-400 text-2xl">warning</span>
+<p class="text-white text-lg font-medium leading-normal">Alertes & Insights</p>
+</div>
+<div id="alerts-container" class="flex flex-col gap-3">
+<!-- Alertes dynamiques -->
+</div>
+</div>
+</div>
+
+<!-- Tableau des Instances -->
+<div class="mt-6">
+<div class="flex flex-col gap-4 rounded-xl glass-card p-6">
+<div class="flex items-center justify-between">
+<p class="text-white text-lg font-medium leading-normal">Liste des Instances EC2</p>
+<div class="flex gap-2">
+<select id="filter-state" class="px-3 py-2 rounded-lg bg-slate-800 text-white text-sm border border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary">
+<option value="all">Tous les états</option>
+<option value="running">Running</option>
+<option value="stopped">Stopped</option>
+<option value="terminated">Terminated</option>
+</select>
+<input id="search-instances" type="text" placeholder="Rechercher..." class="px-3 py-2 rounded-lg bg-slate-800 text-white text-sm border border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary"/>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-sm">
+<thead class="border-b border-slate-700">
+<tr class="text-left text-slate-400">
+<th class="pb-3 font-medium">Name</th>
+<th class="pb-3 font-medium">Instance ID</th>
+<th class="pb-3 font-medium">Type</th>
+<th class="pb-3 font-medium">État</th>
+<th class="pb-3 font-medium">Région</th>
+<th class="pb-3 font-medium">IP Publique</th>
+<th class="pb-3 font-medium">IP Privée</th>
+<th class="pb-3 font-medium">CPU</th>
+<th class="pb-3 font-medium">Trafic</th>
+<th class="pb-3 font-medium">Lancée le</th>
+</tr>
+</thead>
+<tbody id="instances-table-body" class="text-white">
+<!-- Lignes dynamiques -->
+</tbody>
+</table>
+</div>
+<div id="no-instances" class="hidden text-center py-8 text-slate-400">
+Aucune instance trouvée
+</div>
+</div>
+</div>
+
+</div>
+</main>
+</div>
+
+<!-- Modal Détails Instance -->
+<div id="instance-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+<div class="glass-card rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+<!-- Header -->
+<div class="sticky top-0 bg-slate-900/90 backdrop-blur-md border-b border-slate-700 p-6 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-2xl">cloud_queue</span>
+<h3 id="modal-title" class="text-white text-xl font-bold">Détails de l'instance</h3>
+</div>
+<button id="close-modal" class="text-slate-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl">close</span>
+</button>
+</div>
+
+<!-- Content -->
+<div id="modal-content" class="p-6 space-y-6">
+<!-- Contenu dynamique -->
+</div>
+</div>
+</div>
+
+<script src="js/dashboard-ec2.js"></script>
+
+<!-- Initialisation de l'authentification -->
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        // 1. Vérifier l'authentification
+        if (!authManager.isAuthenticated()) {
+            console.log('❌ Utilisateur non authentifié, redirection vers login...');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        // 2. Afficher les infos utilisateur
+        try {
+            const result = await authManager.getCurrentUser();
+
+            if (!result.success) {
+                throw new Error(result.error || 'Erreur lors de la récupération des infos utilisateur');
+            }
+
+            const user = result.user;
+            console.log('✅ Utilisateur authentifié:', user);
+
+            // Header
+            document.getElementById('user-name-header').textContent = user.full_name || 'Utilisateur';
+            document.getElementById('user-email-header').textContent = user.email;
+
+            // Initialiser le menu utilisateur popup
+            userMenu.init(user);
+        } catch (error) {
+            console.error('❌ Erreur lors de la récupération des infos utilisateur:', error);
+            authManager.logout();
+            window.location.href = 'login.html';
+            return;
+        }
+    });
+</script>
+
+</body>
+</html>
+

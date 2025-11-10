@@ -141,9 +141,31 @@ class ConfigScan {
             return;
         }
 
+        // ✅ VÉRIFIER QUE LE ROLE ARN EST CONFIGURÉ
+        try {
+            const result = await authManager.getCurrentUser();
+            if (!result.success || !result.user.role_arn) {
+                this.showNotification(
+                    '⚠️ Veuillez configurer votre AWS Role ARN dans les paramètres avant de lancer un scan.',
+                    'error'
+                );
+                // Rediriger vers la page de paramètres après 2 secondes
+                setTimeout(() => {
+                    window.location.href = 'settings.html';
+                }, 2000);
+                return;
+            }
+            this.userRoleArn = result.user.role_arn;
+        } catch (error) {
+            console.error('❌ Erreur lors de la récupération du role ARN:', error);
+            this.showNotification('Erreur lors de la récupération de votre configuration AWS', 'error');
+            return;
+        }
+
         console.log('🚀 Lancement du scan...');
         console.log('Services:', this.selectedServices);
         console.log('Régions:', this.selectedRegions);
+        console.log('Role ARN:', this.userRoleArn);
 
         try {
             // Afficher le statut
@@ -156,7 +178,7 @@ class ConfigScan {
 
             this.showNotification('Scan terminé avec succès !', 'success');
             this.hideScanStatus();
-            
+
             // Recharger l'historique
             await this.loadScanHistory();
 
@@ -172,18 +194,18 @@ class ConfigScan {
      */
     async scanService(service) {
         console.log(`📡 Scan ${service.toUpperCase()}...`);
-        
+
         // Mettre à jour le statut
         document.getElementById('current-service').textContent = service.toUpperCase();
         document.getElementById('current-region').textContent = this.selectedRegions.join(', ');
 
-        // Préparer la requête
+        // ✅ UTILISER LE ROLE ARN DE L'UTILISATEUR
         const scanRequest = {
             provider: 'aws',
             services: [service],
             auth_mode: {
                 type: 'sts',
-                role_arn: 'arn:aws:iam::730335226954:role/CloudDiagnoze-ScanRole' // Role ARN réel
+                role_arn: this.userRoleArn  // ✅ Role ARN de l'utilisateur connecté
             },
             client_id: 'ASM-Enterprise', // TODO: À récupérer de l'authentification
             regions: this.selectedRegions
@@ -201,7 +223,8 @@ class ConfigScan {
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
