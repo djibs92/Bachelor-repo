@@ -422,27 +422,23 @@ async def clear_database(
         s3_buckets_count = db.query(S3Bucket).count()
         s3_performance_count = db.query(S3Performance).count()
 
-        # Supprimer dans l'ordre (à cause des foreign keys)
-        # 1. Supprimer les performances (tables enfants)
-        db.query(EC2Performance).delete()
-        db.query(S3Performance).delete()
-
-        # 2. Supprimer les ressources
-        db.query(EC2Instance).delete()
-        db.query(S3Bucket).delete()
-
-        # 3. Supprimer les scan runs
-        db.query(ScanRun).delete()
-
-        # 4. Supprimer les utilisateurs
-        db.query(User).delete()
+        # Utiliser TRUNCATE pour réinitialiser les AUTO_INCREMENT
+        # TRUNCATE supprime toutes les lignes ET remet les compteurs à 0
+        db.execute("SET FOREIGN_KEY_CHECKS = 0")
+        db.execute("TRUNCATE TABLE ec2_performance")
+        db.execute("TRUNCATE TABLE s3_performance")
+        db.execute("TRUNCATE TABLE ec2_instances")
+        db.execute("TRUNCATE TABLE s3_buckets")
+        db.execute("TRUNCATE TABLE scan_runs")
+        db.execute("TRUNCATE TABLE users")
+        db.execute("SET FOREIGN_KEY_CHECKS = 1")
 
         # Commit de la transaction
         db.commit()
 
         return {
             "status": "success",
-            "message": "✅ Base de données vidée avec succès",
+            "message": "✅ Base de données vidée avec succès (IDs réinitialisés)",
             "deleted": {
                 "users": users_count,
                 "scan_runs": scan_runs_count,
