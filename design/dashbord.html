@@ -106,6 +106,24 @@
             50% { opacity: 0; }
         }
 
+        /* Resource Distribution Chart Hover Effect */
+        @keyframes chart-glow-resource {
+            0%, 100% {
+                filter: brightness(1) drop-shadow(0 0 10px rgba(19, 127, 236, 0.3));
+            }
+            50% {
+                filter: brightness(1.1) drop-shadow(0 0 20px rgba(19, 127, 236, 0.5));
+            }
+        }
+
+        #chart-resource-distribution {
+            transition: all 0.3s ease;
+        }
+
+        #chart-resource-distribution:hover {
+            animation: chart-glow-resource 2s ease-in-out infinite;
+        }
+
         /* Background */
         .diagnostic-grid {
             position: fixed;
@@ -461,7 +479,15 @@
                         <p class="text-white text-base font-medium leading-normal">Resource Distribution</p>
                         <p class="text-white tracking-light text-[32px] font-bold leading-tight truncate">EC2 vs S3</p>
                         <div class="flex min-h-[220px] flex-1 items-center justify-center py-4">
-                            <canvas id="chart-resource-distribution"></canvas>
+                            <div style="height: 180px; width: 180px; position: relative;">
+                                <canvas id="chart-resource-distribution"></canvas>
+                                <!-- Centre du donut avec total -->
+                                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                    <p class="text-slate-400 text-xs font-medium">Total</p>
+                                    <p id="total-resources-donut" class="text-white text-2xl font-bold">0</p>
+                                    <p class="text-slate-400 text-xs">resources</p>
+                                </div>
+                            </div>
                         </div>
                         <div class="flex justify-around text-xs font-medium text-slate-300">
                             <div class="flex items-center gap-2"><div class="h-2 w-2 rounded-full bg-blue-500"></div>EC2 <span id="ec2-percent">0%</span></div>

@@ -118,7 +118,7 @@ class DashboardGlobal {
     }
 
     /**
-     * Graphique: Répartition des ressources (Donut)
+     * Graphique: Répartition des ressources (Donut moderne avec effets)
      */
     createResourceDistributionChart() {
         const ctx = document.getElementById('chart-resource-distribution');
@@ -136,19 +136,52 @@ class DashboardGlobal {
                         'rgba(59, 130, 246, 0.8)',
                         'rgba(16, 185, 129, 0.8)'
                     ],
-                    borderColor: 'rgba(15, 23, 42, 0.8)',
-                    borderWidth: 2
+                    borderColor: '#0a0e1a',
+                    borderWidth: 3,
+                    hoverOffset: 15,
+                    hoverBackgroundColor: [
+                        'rgba(59, 130, 246, 0.95)',
+                        'rgba(16, 185, 129, 0.95)'
+                    ],
+                    hoverBorderWidth: 3
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
+                cutout: '65%',
                 plugins: {
                     legend: {
-                        display: true,
-                        position: 'bottom',
-                        labels: { color: '#cbd5e1', font: { size: 12 } }
+                        display: false
+                    },
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                        titleColor: '#137FEC',
+                        bodyColor: '#cbd5e1',
+                        borderColor: '#137FEC',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: true,
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
                     }
+                },
+                onHover: (event, activeElements) => {
+                    event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
+                },
+                animation: {
+                    animateRotate: true,
+                    animateScale: true,
+                    duration: 800,
+                    easing: 'easeInOutQuart'
                 }
             }
         });
@@ -159,6 +192,13 @@ class DashboardGlobal {
 
         if (ec2PercentEl) ec2PercentEl.textContent = `${data.ec2.percentage}%`;
         if (s3PercentEl) s3PercentEl.textContent = `${data.s3.percentage}%`;
+
+        // Mettre à jour le total au centre du donut
+        const totalElement = document.getElementById('total-resources-donut');
+        if (totalElement) {
+            const total = data.ec2.count + data.s3.count;
+            totalElement.textContent = total;
+        }
     }
 
     /**
