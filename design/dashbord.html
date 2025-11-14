@@ -124,6 +124,8 @@
             animation: chart-glow-resource 2s ease-in-out infinite;
         }
 
+
+
         /* Background */
         .diagnostic-grid {
             position: fixed;
@@ -495,20 +497,24 @@
                         </div>
                     </div>
 
-                    <!-- EC2 Regions (Bar) -->
+                    <!-- EC2 Regions -->
                     <div class="glass-card p-6">
-                        <p class="text-white text-base font-medium leading-normal">EC2 Instances</p>
-                        <p class="text-white tracking-light text-[32px] font-bold leading-tight truncate">Par Région</p>
-                        <div class="flex min-h-[220px] flex-1 items-center justify-center py-4">
+                        <div class="mb-4">
+                            <p class="text-white text-base font-medium leading-normal">EC2 Instances</p>
+                            <p class="text-white tracking-light text-[32px] font-bold leading-tight truncate">Active Regions</p>
+                        </div>
+                        <div style="height: 240px;">
                             <canvas id="chart-ec2-regions"></canvas>
                         </div>
                     </div>
 
-                    <!-- S3 Regions (Bar Horizontal) -->
+                    <!-- S3 Buckets -->
                     <div class="glass-card p-6">
-                        <p class="text-white text-base font-medium leading-normal">S3 Bucket Regions</p>
-                        <p class="text-white tracking-light text-[32px] font-bold leading-tight truncate">Par Région</p>
-                        <div class="flex min-h-[220px] flex-1 items-center justify-center py-4">
+                        <div class="mb-4">
+                            <p class="text-white text-base font-medium leading-normal">S3 Buckets</p>
+                            <p class="text-white tracking-light text-[32px] font-bold leading-tight truncate">Active Regions</p>
+                        </div>
+                        <div style="height: 240px;">
                             <canvas id="chart-s3-regions"></canvas>
                         </div>
                     </div>

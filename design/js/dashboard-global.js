@@ -202,15 +202,9 @@ class DashboardGlobal {
     }
 
     /**
-     * Graphique: Instances EC2 par région (Bar)
+     * Graphique: Instances EC2 par région
      */
     createEC2RegionChart() {
-        const ctx = document.getElementById('chart-ec2-regions');
-        if (!ctx) {
-            console.error('❌ Canvas chart-ec2-regions non trouvé');
-            return;
-        }
-
         const data = window.globalStats.getEC2RegionDistribution();
         console.log('📊 Données EC2 par région:', data);
 
@@ -218,6 +212,9 @@ class DashboardGlobal {
             console.warn('⚠️ Aucune donnée EC2 pour le graphique régions');
             return;
         }
+
+        const ctx = document.getElementById('chart-ec2-regions');
+        if (!ctx) return;
 
         this.charts.ec2Regions = new Chart(ctx, {
             type: 'bar',
@@ -228,43 +225,61 @@ class DashboardGlobal {
                     data: data.data,
                     backgroundColor: 'rgba(59, 130, 246, 0.8)',
                     borderColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 1
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    barThickness: 30
                 }]
             },
             options: {
+                indexAxis: 'y',
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                        titleColor: '#fff',
+                        bodyColor: '#cbd5e1',
+                        borderColor: '#3b82f6',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.parsed.x} instance${context.parsed.x > 1 ? 's' : ''}`;
+                            }
+                        }
+                    }
+                },
                 scales: {
-                    y: {
+                    x: {
                         beginAtZero: true,
                         ticks: {
                             color: '#cbd5e1',
-                            stepSize: 1
+                            stepSize: 1,
+                            font: { size: 12 }
                         },
-                        grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.1)',
+                            drawBorder: false
+                        }
                     },
-                    x: {
-                        ticks: { color: '#cbd5e1' },
+                    y: {
+                        ticks: {
+                            color: '#fff',
+                            font: { size: 13, weight: '500' }
+                        },
                         grid: { display: false }
                     }
-                },
-                plugins: {
-                    legend: { display: false }
                 }
             }
         });
     }
 
     /**
-     * Graphique: Régions S3 (Bar Horizontal)
+     * Graphique: Buckets S3 par région
      */
     createS3RegionChart() {
-        const ctx = document.getElementById('chart-s3-regions');
-        if (!ctx) {
-            console.error('❌ Canvas chart-s3-regions non trouvé');
-            return;
-        }
-
         const data = window.globalStats.getS3RegionDistribution();
         console.log('📊 Données S3 par région:', data);
 
@@ -273,6 +288,9 @@ class DashboardGlobal {
             return;
         }
 
+        const ctx = document.getElementById('chart-s3-regions');
+        if (!ctx) return;
+
         this.charts.s3Regions = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -280,35 +298,60 @@ class DashboardGlobal {
                 datasets: [{
                     label: 'Buckets',
                     data: data.data,
-                    backgroundColor: 'rgba(168, 85, 247, 0.8)',
-                    borderColor: 'rgba(168, 85, 247, 1)',
-                    borderWidth: 1
+                    backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                    borderColor: 'rgba(16, 185, 129, 1)',
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    barThickness: 30
                 }]
             },
             options: {
                 indexAxis: 'y',
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                        titleColor: '#fff',
+                        bodyColor: '#cbd5e1',
+                        borderColor: '#10b981',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.parsed.x} bucket${context.parsed.x > 1 ? 's' : ''}`;
+                            }
+                        }
+                    }
+                },
                 scales: {
                     x: {
                         beginAtZero: true,
                         ticks: {
                             color: '#cbd5e1',
-                            stepSize: 1
+                            stepSize: 1,
+                            font: { size: 12 }
                         },
-                        grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.1)',
+                            drawBorder: false
+                        }
                     },
                     y: {
-                        ticks: { color: '#cbd5e1' },
+                        ticks: {
+                            color: '#fff',
+                            font: { size: 13, weight: '500' }
+                        },
                         grid: { display: false }
                     }
-                },
-                plugins: {
-                    legend: { display: false }
                 }
             }
         });
     }
+
+
 
     /**
      * Met à jour la section des alertes
