@@ -385,6 +385,10 @@
                     <span class="material-symbols-outlined text-2xl">folder</span>
                     <p class="text-sm font-medium leading-normal">S3 Buckets</p>
                 </a>
+                <a class="nav-link" href="dashboard-vpc.html">
+                    <span class="material-symbols-outlined text-2xl">cloud</span>
+                    <p class="text-sm font-medium leading-normal">VPC Networks</p>
+                </a>
                 <a class="nav-link active" href="config-scan-new.html">
                     <span class="material-symbols-outlined text-2xl">play_arrow</span>
                     <p class="text-sm font-medium leading-normal">New Scan</p>
@@ -496,6 +500,24 @@
                                     <p class="text-slate-400 text-sm">Buckets, objets, configurations</p>
                                 </div>
 
+                                <!-- VPC Card -->
+                                <div class="service-card glass-card rounded-xl p-6 cursor-pointer border-2 border-slate-700 active"
+                                     data-service="vpc" onclick="configScan.toggleService('vpc')">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="flex items-center gap-4">
+                                            <div class="w-16 h-16 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-purple-400 text-4xl">cloud</span>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-white font-bold text-lg">VPC</h4>
+                                                <p class="text-slate-400 text-sm">Network</p>
+                                            </div>
+                                        </div>
+                                        <input type="checkbox" checked class="toggle-checkbox w-6 h-6 rounded" data-service-toggle="vpc"/>
+                                    </div>
+                                    <p class="text-slate-400 text-sm">Réseaux virtuels, subnets, sécurité</p>
+                                </div>
+
                                 <!-- RDS Card (Disabled for now) -->
                                 <div class="service-card glass-card rounded-xl p-6 cursor-not-allowed border-2 border-slate-700 opacity-50"
                                      data-service="rds">
@@ -514,23 +536,7 @@
                                     <p class="text-slate-400 text-sm">Bientôt disponible</p>
                                 </div>
 
-                                <!-- VPC Card (Disabled for now) -->
-                                <div class="service-card glass-card rounded-xl p-6 cursor-not-allowed border-2 border-slate-700 opacity-50"
-                                     data-service="vpc">
-                                    <div class="flex items-center justify-between mb-4">
-                                        <div class="flex items-center gap-4">
-                                            <div class="w-16 h-16 bg-orange-500/20 rounded-xl flex items-center justify-center">
-                                                <span class="material-symbols-outlined text-orange-400 text-4xl">lan</span>
-                                            </div>
-                                            <div>
-                                                <h4 class="text-white font-bold text-lg">VPC</h4>
-                                                <p class="text-slate-400 text-sm">Networking</p>
-                                            </div>
-                                        </div>
-                                        <input type="checkbox" disabled class="toggle-checkbox w-6 h-6 rounded" data-service-toggle="vpc"/>
-                                    </div>
-                                    <p class="text-slate-400 text-sm">Bientôt disponible</p>
-                                </div>
+
                             </div>
                         </div>
 

@@ -3,7 +3,7 @@
  */
 class ConfigScan {
     constructor() {
-        this.selectedServices = ['ec2', 's3']; // Services sélectionnés par défaut
+        this.selectedServices = ['ec2', 's3', 'vpc']; // Services sélectionnés par défaut
         this.selectedRegions = []; // Régions sélectionnées
         this.allRegions = [
             'us-east-1',
@@ -283,7 +283,8 @@ class ConfigScan {
      */
     async loadScanHistory() {
         try {
-            const data = await api.getScansHistory({ limit: 10 });
+            const data = await api.getScansHistory({ limit: 20 });
+            console.log('📊 Historique des scans:', data);
             this.renderScanHistory(data.scans || []);
         } catch (error) {
             console.error('❌ Erreur chargement historique:', error);
@@ -291,7 +292,7 @@ class ConfigScan {
     }
 
     /**
-     * Affiche l'historique des scans
+     * Affiche l'historique des scans - Groupés par scan
      */
     renderScanHistory(scans) {
         const container = document.getElementById('scan-history');
@@ -304,8 +305,12 @@ class ConfigScan {
 
         container.innerHTML = '';
 
-        scans.slice(0, 5).forEach(scan => {
-            const date = new Date(scan.scan_timestamp);
+        // Grouper les scans par timestamp (scans lancés en même temps)
+        const groupedScans = this.groupScansByTimestamp(scans);
+
+        // Afficher les 5 derniers groupes
+        groupedScans.slice(0, 5).forEach(scanGroup => {
+            const date = new Date(scanGroup.timestamp);
             const formattedDate = date.toLocaleDateString('fr-FR', {
                 day: '2-digit',
                 month: '2-digit',
@@ -313,25 +318,119 @@ class ConfigScan {
                 minute: '2-digit'
             });
 
-            const statusColor = scan.status === 'success' ? 'text-green-400' : 
-                              scan.status === 'partial' ? 'text-orange-400' : 'text-red-400';
-            
-            const serviceColor = scan.service_type === 'ec2' ? 'text-blue-400' : 'text-green-400';
+            // Déterminer le statut global
+            const hasSuccess = scanGroup.scans.some(s => s.status === 'success');
+            const hasFailed = scanGroup.scans.some(s => s.status === 'failed');
+            const statusColor = hasFailed ? 'text-red-400' : hasSuccess ? 'text-green-400' : 'text-orange-400';
+            const statusText = hasFailed ? 'Partiel' : hasSuccess ? 'Complété' : 'En cours';
+
+            // Calculer le total de ressources
+            const totalResources = scanGroup.scans.reduce((sum, s) => sum + (s.total_resources || 0), 0);
 
             const div = document.createElement('div');
-            div.className = 'glass-card rounded-lg p-3 border border-slate-700';
+            div.className = 'glass-card rounded-lg p-3 border border-slate-700 hover:border-primary/50 cursor-pointer transition-all';
             div.innerHTML = `
                 <div class="flex items-center justify-between mb-2">
-                    <span class="font-semibold ${serviceColor}">${scan.service_type.toUpperCase()}</span>
-                    <span class="text-xs ${statusColor}">${scan.status}</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-slate-400 text-xs font-mono">#${scanGroup.id}</span>
+                        <div class="flex gap-1">
+                            ${scanGroup.scans.map(s => {
+                                const color = s.service_type === 'ec2' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                                             s.service_type === 's3' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                                             'bg-purple-500/20 text-purple-400 border-purple-500/30';
+                                return `<span class="px-1.5 py-0.5 rounded text-xs font-medium border ${color}">${s.service_type.toUpperCase()}</span>`;
+                            }).join('')}
+                        </div>
+                    </div>
+                    <span class="text-xs ${statusColor} font-medium">${statusText}</span>
                 </div>
                 <div class="flex items-center justify-between text-xs text-slate-400">
                     <span>${formattedDate}</span>
-                    <span>${scan.total_resources || 0} ressources</span>
+                    <span class="font-semibold text-primary">${totalResources} ressources</span>
                 </div>
             `;
+
+            // Ajouter l'événement de clic pour afficher les détails
+            div.addEventListener('click', () => this.showScanDetails(scanGroup));
+
             container.appendChild(div);
         });
+    }
+
+    /**
+     * Groupe les scans par timestamp (scans lancés en même temps)
+     */
+    groupScansByTimestamp(scans) {
+        // Trier par timestamp décroissant
+        const sorted = [...scans].sort((a, b) =>
+            new Date(b.scan_timestamp) - new Date(a.scan_timestamp)
+        );
+
+        const groups = [];
+        const timeThreshold = 60000; // 1 minute en millisecondes
+
+        sorted.forEach(scan => {
+            const scanTime = new Date(scan.scan_timestamp).getTime();
+
+            // Chercher un groupe existant avec un timestamp proche
+            let group = groups.find(g =>
+                Math.abs(new Date(g.timestamp).getTime() - scanTime) < timeThreshold
+            );
+
+            if (!group) {
+                // Créer un nouveau groupe
+                group = {
+                    id: scan.scan_id,
+                    timestamp: scan.scan_timestamp,
+                    scans: []
+                };
+                groups.push(group);
+            }
+
+            group.scans.push(scan);
+        });
+
+        return groups;
+    }
+
+    /**
+     * Affiche les détails d'un scan dans une notification
+     */
+    showScanDetails(scanGroup) {
+        const date = new Date(scanGroup.timestamp);
+        const formattedDate = date.toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        let details = `<div class="space-y-2">`;
+        details += `<p class="font-semibold text-white mb-3">Scan #${scanGroup.id} - ${formattedDate}</p>`;
+
+        scanGroup.scans.forEach(scan => {
+            const serviceColor = scan.service_type === 'ec2' ? 'text-blue-400' :
+                                scan.service_type === 's3' ? 'text-green-400' : 'text-purple-400';
+            const statusColor = scan.status === 'success' ? 'text-green-400' :
+                               scan.status === 'failed' ? 'text-red-400' : 'text-orange-400';
+
+            details += `
+                <div class="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="font-semibold ${serviceColor}">${scan.service_type.toUpperCase()}</span>
+                        <span class="text-xs ${statusColor}">${scan.status}</span>
+                    </div>
+                    <div class="text-sm text-slate-400">
+                        <span>${scan.total_resources || 0} ressources trouvées</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        details += `</div>`;
+
+        this.showNotification(details, 'info');
     }
 
     /**
@@ -339,12 +438,12 @@ class ConfigScan {
      */
     resetConfig() {
         // Réinitialiser les services
-        this.selectedServices = ['ec2', 's3'];
+        this.selectedServices = ['ec2', 's3', 'vpc'];
         document.querySelectorAll('.service-card').forEach(card => {
             const service = card.getAttribute('data-service');
             const checkbox = card.querySelector('input[type="checkbox"]');
-            
-            if (service === 'ec2' || service === 's3') {
+
+            if (service === 'ec2' || service === 's3' || service === 'vpc') {
                 card.classList.add('active');
                 if (checkbox) checkbox.checked = true;
             } else {

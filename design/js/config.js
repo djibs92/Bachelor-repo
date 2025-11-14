@@ -12,7 +12,10 @@ const API_CONFIG = {
         EC2_INSTANCES: '/ec2/instances',
         EC2_INSTANCE_BY_ID: '/ec2/instances',
         S3_BUCKETS: '/s3/buckets',
-        S3_BUCKET_BY_NAME: '/s3/buckets'
+        S3_BUCKET_BY_NAME: '/s3/buckets',
+        VPC_INSTANCES: '/vpc/instances',
+        ADMIN_CLEAR_USER_DATA: '/admin/clear-user-data',
+        ADMIN_CLEAR_DATABASE: '/admin/clear-database'
     },
     
     // Timeout pour les requêtes (en ms)

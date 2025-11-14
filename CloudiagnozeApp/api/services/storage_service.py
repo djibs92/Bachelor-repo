@@ -308,7 +308,6 @@ def get_latest_ec2_instances(client_id: str, limit: int = 10) -> List[dict]:
     except Exception as e:
         logger.error(f"❌ Erreur lors de la récupération des instances : {e}")
         return []
-        
+
     finally:
         db.close()
-

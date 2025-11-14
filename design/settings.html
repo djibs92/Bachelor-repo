@@ -104,6 +104,10 @@
                         <span class="material-symbols-outlined text-2xl">folder</span>
                         <p class="text-sm font-medium leading-normal">S3 Buckets</p>
                     </a>
+                    <a class="nav-link" href="dashboard-vpc.html">
+                        <span class="material-symbols-outlined text-2xl">cloud</span>
+                        <p class="text-sm font-medium leading-normal">VPC Networks</p>
+                    </a>
                     <a class="nav-link" href="config-scan-new.html">
                         <span class="material-symbols-outlined text-2xl">settings</span>
                         <p class="text-sm font-medium leading-normal">New Scan</p>
@@ -317,7 +321,7 @@
                 </div>
 
                 <!-- Informations du compte -->
-                <div class="glass-card p-6">
+                <div class="glass-card p-6 mb-6">
                     <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
                         <span class="material-symbols-outlined text-primary">info</span>
                         Informations du compte
@@ -342,6 +346,31 @@
                             <p id="account-status" class="text-success font-bold text-lg">Actif</p>
                         </div>
                     </div>
+                </div>
+
+                <!-- Zone de danger (Testing) -->
+                <div class="glass-card p-6 border-2 border-red-500/30">
+                    <h3 class="text-xl font-bold text-red-400 mb-4 flex items-center gap-2">
+                        <span class="material-symbols-outlined">warning</span>
+                        Zone de danger (Testing)
+                    </h3>
+
+                    <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-4">
+                        <p class="text-slate-300 text-sm mb-2">
+                            <strong class="text-red-400">⚠️ Attention :</strong> Cette action supprimera <strong>toutes vos données de scan</strong> (instances EC2, buckets S3, métriques, historique).
+                        </p>
+                        <p class="text-slate-400 text-xs">
+                            Votre compte utilisateur sera conservé, mais tous les dashboards seront vides. Utile pour les tests.
+                        </p>
+                    </div>
+
+                    <button
+                        id="btn-clear-user-data"
+                        class="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition-all shadow-lg hover:shadow-red-500/50 flex items-center gap-2"
+                    >
+                        <span class="material-symbols-outlined">delete_forever</span>
+                        Supprimer toutes mes données de scan
+                    </button>
                 </div>
             </div>
         </main>

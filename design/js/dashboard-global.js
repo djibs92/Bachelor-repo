@@ -513,7 +513,7 @@ class DashboardGlobal {
     }
 
     /**
-     * Affiche le modal des scans
+     * Affiche le modal des scans - Groupés par scan_run_id
      */
     showScansModal() {
         const scansData = window.globalStats.getScansThisMonth();
@@ -522,11 +522,15 @@ class DashboardGlobal {
 
         tbody.innerHTML = '';
 
-        scansData.scans.forEach(scan => {
-            const row = document.createElement('tr');
-            row.className = 'border-b border-slate-700 hover:bg-slate-800/50';
+        // Grouper les scans par timestamp (même scan = même timestamp proche)
+        const groupedScans = this.groupScansByTimestamp(scansData.scans);
 
-            const date = new Date(scan.scan_timestamp);
+        groupedScans.forEach(scanGroup => {
+            const row = document.createElement('tr');
+            row.className = 'border-b border-slate-700 hover:bg-slate-800/50 cursor-pointer transition-colors';
+            row.dataset.scanGroup = JSON.stringify(scanGroup.scans);
+
+            const date = new Date(scanGroup.timestamp);
             const formattedDate = date.toLocaleDateString('fr-FR', {
                 day: '2-digit',
                 month: '2-digit',
@@ -535,19 +539,138 @@ class DashboardGlobal {
                 minute: '2-digit'
             });
 
-            const serviceColor = scan.service_type === 'ec2' ? 'text-blue-400' : 'text-green-400';
-            const statusColor = scan.status === 'completed' ? 'text-green-400' : 'text-orange-400';
+            // Créer la liste des services scannés
+            const services = scanGroup.scans.map(s => s.service_type.toUpperCase()).join(', ');
+            const totalResources = scanGroup.scans.reduce((sum, s) => sum + (s.total_resources || 0), 0);
+
+            // Déterminer le statut global
+            const hasSuccess = scanGroup.scans.some(s => s.status === 'success');
+            const hasFailed = scanGroup.scans.some(s => s.status === 'failed');
+            const statusColor = hasFailed ? 'text-red-400' : hasSuccess ? 'text-green-400' : 'text-orange-400';
+            const statusText = hasFailed ? 'Partiel' : hasSuccess ? 'Complété' : 'En cours';
 
             row.innerHTML = `
+                <td class="px-4 py-3 text-slate-300 font-mono text-sm">#${scanGroup.id}</td>
                 <td class="px-4 py-3 text-slate-300">${formattedDate}</td>
-                <td class="px-4 py-3"><span class="font-medium ${serviceColor}">${scan.service_type.toUpperCase()}</span></td>
-                <td class="px-4 py-3"><span class="${statusColor}">${scan.status}</span></td>
-                <td class="px-4 py-3 text-slate-300">${scan.resources_found || 0}</td>
+                <td class="px-4 py-3">
+                    <div class="flex gap-2 flex-wrap">
+                        ${scanGroup.scans.map(s => {
+                            const color = s.service_type === 'ec2' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                                         s.service_type === 's3' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                                         'bg-purple-500/20 text-purple-400 border-purple-500/30';
+                            return `<span class="px-2 py-1 rounded-md text-xs font-medium border ${color}">${s.service_type.toUpperCase()}</span>`;
+                        }).join('')}
+                    </div>
+                </td>
+                <td class="px-4 py-3"><span class="${statusColor} font-medium">${statusText}</span></td>
+                <td class="px-4 py-3 text-slate-300 font-semibold">${totalResources}</td>
             `;
+
+            // Ajouter l'événement de clic pour afficher les détails
+            row.addEventListener('click', () => this.showScanDetailsModal(scanGroup));
+
             tbody.appendChild(row);
         });
 
         this.openModal('modal-scans');
+    }
+
+    /**
+     * Groupe les scans par timestamp (scans lancés en même temps)
+     */
+    groupScansByTimestamp(scans) {
+        // Trier par timestamp décroissant
+        const sorted = [...scans].sort((a, b) =>
+            new Date(b.scan_timestamp) - new Date(a.scan_timestamp)
+        );
+
+        const groups = [];
+        const timeThreshold = 60000; // 1 minute en millisecondes
+
+        sorted.forEach(scan => {
+            const scanTime = new Date(scan.scan_timestamp).getTime();
+
+            // Chercher un groupe existant avec un timestamp proche
+            let group = groups.find(g =>
+                Math.abs(new Date(g.timestamp).getTime() - scanTime) < timeThreshold
+            );
+
+            if (!group) {
+                // Créer un nouveau groupe
+                group = {
+                    id: scan.scan_id || scan.id,  // ✅ L'API retourne "scan_id"
+                    timestamp: scan.scan_timestamp,
+                    scans: []
+                };
+                groups.push(group);
+            }
+
+            group.scans.push(scan);
+        });
+
+        return groups;
+    }
+
+    /**
+     * Affiche le modal de détails d'un scan
+     */
+    showScanDetailsModal(scanGroup) {
+        const modal = document.getElementById('modal-scan-details');
+        if (!modal) {
+            console.error('❌ Modal scan-details non trouvé');
+            return;
+        }
+
+        // Mettre à jour le titre
+        const date = new Date(scanGroup.timestamp);
+        const formattedDate = date.toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        document.getElementById('scan-details-title').textContent = `Scan #${scanGroup.id} - ${formattedDate}`;
+
+        // Remplir le contenu
+        const container = document.getElementById('scan-details-content');
+        container.innerHTML = '';
+
+        scanGroup.scans.forEach(scan => {
+            const serviceColor = scan.service_type === 'ec2' ? 'blue' :
+                                scan.service_type === 's3' ? 'green' : 'purple';
+
+            const statusColor = scan.status === 'success' ? 'green' :
+                               scan.status === 'failed' ? 'red' : 'orange';
+
+            const serviceCard = document.createElement('div');
+            serviceCard.className = 'glass-card p-4 border border-slate-700';
+            serviceCard.innerHTML = `
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="text-lg font-semibold text-${serviceColor}-400 flex items-center gap-2">
+                        <span class="material-symbols-outlined">cloud</span>
+                        ${scan.service_type.toUpperCase()}
+                    </h4>
+                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-${statusColor}-500/20 text-${statusColor}-400 border border-${statusColor}-500/30">
+                        ${scan.status}
+                    </span>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <p class="text-slate-400">Ressources trouvées</p>
+                        <p class="text-white font-semibold text-xl">${scan.total_resources || 0}</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400">Client ID</p>
+                        <p class="text-white font-mono text-xs">${scan.client_id || 'N/A'}</p>
+                    </div>
+                </div>
+            `;
+            container.appendChild(serviceCard);
+        });
+
+        this.openModal('modal-scan-details');
     }
 
     /**

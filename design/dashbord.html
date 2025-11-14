@@ -365,6 +365,10 @@
                     <span class="material-symbols-outlined text-2xl">folder</span>
                     <p class="text-sm font-medium leading-normal">S3 Buckets</p>
                 </a>
+                <a class="nav-link" href="dashboard-vpc.html">
+                    <span class="material-symbols-outlined text-2xl">cloud</span>
+                    <p class="text-sm font-medium leading-normal">VPC Networks</p>
+                </a>
                 <a class="nav-link" href="config-scan-new.html">
                     <span class="material-symbols-outlined text-2xl">settings</span>
                     <p class="text-sm font-medium leading-normal">New Scan</p>
@@ -548,19 +552,26 @@
 
     <!-- Modal: Scans This Month -->
     <div id="modal-scans" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 items-center justify-center p-4">
-        <div class="glass-card rounded-xl max-w-3xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+        <div class="glass-card rounded-xl max-w-5xl w-full max-h-[80vh] overflow-hidden flex flex-col">
             <div class="flex items-center justify-between p-6 border-b border-slate-700">
-                <h2 class="text-2xl font-bold text-white">Scans This Month</h2>
-                <button onclick="dashboardGlobal.closeModal('modal-scans')" class="text-slate-400 hover:text-white">
+                <div>
+                    <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">history</span>
+                        Historique des Scans
+                    </h2>
+                    <p class="text-slate-400 text-sm mt-1">Cliquez sur un scan pour voir les détails</p>
+                </div>
+                <button onclick="dashboardGlobal.closeModal('modal-scans')" class="text-slate-400 hover:text-white transition-colors">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
             <div class="p-6 overflow-y-auto">
                 <table class="w-full">
                     <thead class="border-b border-slate-700">
-                        <tr class="text-left text-slate-300">
+                        <tr class="text-left text-slate-300 font-semibold">
+                            <th class="px-4 py-3">ID</th>
                             <th class="px-4 py-3">Date</th>
-                            <th class="px-4 py-3">Service</th>
+                            <th class="px-4 py-3">Services Scannés</th>
                             <th class="px-4 py-3">Statut</th>
                             <th class="px-4 py-3">Ressources</th>
                         </tr>
@@ -569,6 +580,26 @@
                         <!-- Rempli par JavaScript -->
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Scan Details -->
+    <div id="modal-scan-details" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 items-center justify-center p-4">
+        <div class="glass-card rounded-xl max-w-3xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between p-6 border-b border-slate-700">
+                <h2 id="scan-details-title" class="text-2xl font-bold text-white flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">info</span>
+                    Détails du Scan
+                </h2>
+                <button onclick="dashboardGlobal.closeModal('modal-scan-details')" class="text-slate-400 hover:text-white transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                <div id="scan-details-content" class="space-y-4">
+                    <!-- Rempli par JavaScript -->
+                </div>
             </div>
         </div>
     </div>

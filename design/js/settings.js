@@ -53,6 +53,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
         await handlePasswordChange();
     });
+
+    // 5. Gérer le bouton de suppression des données utilisateur
+    const btnClearUserData = document.getElementById('btn-clear-user-data');
+    if (btnClearUserData) {
+        btnClearUserData.addEventListener('click', async () => {
+            await handleClearUserData();
+        });
+    }
 });
 
 /**
@@ -256,5 +264,66 @@ function showNotification(message, type = 'info') {
         notification.style.opacity = '0';
         setTimeout(() => notification.remove(), 300);
     }, 4000);
+}
+
+/**
+ * 🧹 Gère la suppression de toutes les données de l'utilisateur (pour testing)
+ */
+async function handleClearUserData() {
+    // Demander une confirmation
+    const confirmed = confirm(
+        '⚠️ ATTENTION ⚠️\n\n' +
+        'Cette action va supprimer TOUTES vos données de scan :\n' +
+        '- Tous les scans EC2 et S3\n' +
+        '- Toutes les instances EC2\n' +
+        '- Tous les buckets S3\n' +
+        '- Toutes les métriques de performance\n' +
+        '- Tout l\'historique des scans\n\n' +
+        'Votre compte utilisateur sera conservé.\n\n' +
+        'Cette action est IRRÉVERSIBLE !\n\n' +
+        'Voulez-vous vraiment continuer ?'
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    // Demander une double confirmation
+    const doubleConfirmed = confirm(
+        '🚨 DERNIÈRE CONFIRMATION 🚨\n\n' +
+        'Êtes-vous ABSOLUMENT SÛR de vouloir supprimer toutes vos données ?\n\n' +
+        'Cliquez sur OK pour confirmer la suppression définitive.'
+    );
+
+    if (!doubleConfirmed) {
+        return;
+    }
+
+    try {
+        showNotification('Suppression en cours...', 'info');
+
+        // Appeler l'API pour supprimer les données
+        const result = await api.clearUserData();
+
+        console.log('✅ Données supprimées:', result);
+
+        // Afficher le résultat
+        showNotification(
+            `✅ ${result.deleted.total} éléments supprimés avec succès !\n` +
+            `Scans: ${result.deleted.scan_runs}, ` +
+            `EC2: ${result.deleted.ec2_instances}, ` +
+            `S3: ${result.deleted.s3_buckets}`,
+            'success'
+        );
+
+        // Recharger la page après 2 secondes
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
+
+    } catch (error) {
+        console.error('❌ Erreur lors de la suppression:', error);
+        showNotification('❌ Erreur lors de la suppression des données', 'error');
+    }
 }
 

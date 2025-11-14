@@ -23,7 +23,7 @@ class GlobalStats {
 
             // Charger l'historique des scans
             const scansData = await api.getScanRuns({ limit: 100 });
-            this.scanRuns = scansData.scan_runs || [];
+            this.scanRuns = scansData.scans || [];  // ✅ Correction: l'API retourne "scans" pas "scan_runs"
 
             console.log(`✅ Données chargées: ${this.ec2Instances.length} EC2, ${this.s3Buckets.length} S3, ${this.scanRuns.length} scans`);
             

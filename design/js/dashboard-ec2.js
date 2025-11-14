@@ -65,11 +65,14 @@ class DashboardEC2 {
         document.getElementById('instances-detail').textContent =
             `${totalStats.running} running, ${totalStats.stopped} stopped`;
 
-        // Card 2: Régions
+        // Card 2: Régions - Afficher toutes les régions actives
         const regionsStats = ec2Stats.getRegionsStats();
         document.getElementById('active-regions').textContent = regionsStats.totalRegions;
-        document.getElementById('regions-detail').textContent =
-            regionsStats.topRegion ? `${regionsStats.topRegion} (${regionsStats.topRegionCount})` : 'Régions AWS';
+
+        // Récupérer toutes les régions uniques
+        const allRegions = [...new Set(ec2Stats.instances.map(i => i.region))].sort();
+        const regionsText = allRegions.length > 0 ? allRegions.join(', ') : 'Aucune région';
+        document.getElementById('regions-detail').textContent = regionsText;
 
         // Card 3: CPU Moyen
         const cpuStats = ec2Stats.getAverageCPU();
@@ -98,7 +101,7 @@ class DashboardEC2 {
     }
 
     /**
-     * Graphique: Répartition par type (Donut)
+     * Graphique: Répartition par type (Donut) - Design moderne
      */
     createInstanceTypesChart() {
         const ctx = document.getElementById('chart-instance-types');
@@ -113,44 +116,82 @@ class DashboardEC2 {
                 datasets: [{
                     data: data.data,
                     backgroundColor: [
-                        '#137fec', '#4285F4', '#0078D4', '#FF9900',
-                        '#34A853', '#EA4335', '#FBBC04', '#9333EA'
+                        '#137FEC',  // Bleu primary
+                        '#8B5CF6',  // Violet secondary
+                        '#06B6D4',  // Cyan accent
+                        '#10B981',  // Vert success
+                        '#F59E0B',  // Orange warning
+                        '#EF4444',  // Rouge danger
+                        '#EC4899',  // Rose
+                        '#6366F1'   // Indigo
                     ],
-                    borderWidth: 3,
-                    borderColor: '#0a0e1a',
-                    hoverBorderWidth: 5,
-                    hoverBorderColor: '#ffffff',
-                    offset: 5,
-                    spacing: 2
+                    borderWidth: 0,  // Pas de bordure
+                    hoverBorderWidth: 0,
+                    hoverOffset: 15,  // Effet hover moderne
+                    spacing: 3
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                cutout: '65%',  // Donut plus fin et moderne
                 layout: {
-                    padding: 10
+                    padding: 20
                 },
                 plugins: {
                     legend: {
-                        position: 'bottom',
-                        labels: { color: '#cbd5e1', padding: 15, font: { size: 12 } }
+                        position: 'right',
+                        labels: {
+                            color: '#e2e8f0',
+                            padding: 15,
+                            font: {
+                                size: 13,
+                                family: 'Rajdhani',
+                                weight: '500'
+                            },
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            boxWidth: 10,
+                            boxHeight: 10
+                        }
                     },
                     tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                        titleColor: '#137fec',
-                        bodyColor: '#cbd5e1',
-                        borderColor: '#137fec',
-                        borderWidth: 2,
-                        padding: 12,
+                        backgroundColor: 'rgba(15, 23, 42, 0.98)',
+                        titleColor: '#137FEC',
+                        bodyColor: '#e2e8f0',
+                        borderColor: '#137FEC',
+                        borderWidth: 1,
+                        padding: 16,
                         displayColors: true,
-                        boxWidth: 15,
-                        boxHeight: 15
+                        boxWidth: 12,
+                        boxHeight: 12,
+                        boxPadding: 6,
+                        titleFont: {
+                            size: 14,
+                            family: 'Rajdhani',
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            size: 13,
+                            family: 'Rajdhani',
+                            weight: '500'
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return ` ${label}: ${value} instances (${percentage}%)`;
+                            }
+                        }
                     }
                 },
-                elements: {
-                    arc: {
-                        borderRadius: 6
-                    }
+                animation: {
+                    animateRotate: true,
+                    animateScale: true,
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
                 }
             }
         });
@@ -349,7 +390,32 @@ class DashboardEC2 {
      */
     updateInstancesTable() {
         this.filteredInstances = ec2Stats.instances;
+        this.populateRegionFilter();
         this.renderInstancesTable();
+    }
+
+    /**
+     * Remplit le filtre de régions avec les régions disponibles
+     */
+    populateRegionFilter() {
+        const filterRegion = document.getElementById('filter-region');
+        if (!filterRegion) return;
+
+        // Récupérer toutes les régions uniques
+        const regions = [...new Set(ec2Stats.instances.map(i => i.region))].sort();
+
+        // Vider le select (garder seulement "Toutes les régions")
+        filterRegion.innerHTML = '<option value="all">Toutes les régions</option>';
+
+        // Ajouter chaque région
+        regions.forEach(region => {
+            const option = document.createElement('option');
+            option.value = region;
+            option.textContent = region;
+            filterRegion.appendChild(option);
+        });
+
+        console.log(`✅ Filtre régions rempli avec ${regions.length} régions:`, regions);
     }
 
     /**
@@ -441,6 +507,9 @@ class DashboardEC2 {
         // Filtre par état
         document.getElementById('filter-state').addEventListener('change', (e) => this.filterByState(e.target.value));
 
+        // Filtre par région
+        document.getElementById('filter-region').addEventListener('change', (e) => this.filterByRegion(e.target.value));
+
         // Recherche
         document.getElementById('search-instances').addEventListener('input', (e) => this.searchInstances(e.target.value));
 
@@ -453,6 +522,19 @@ class DashboardEC2 {
         });
 
         this.listenersAttached = true;
+    }
+
+    /**
+     * Filtre par région
+     */
+    filterByRegion(region) {
+        if (region === 'all') {
+            this.filteredInstances = ec2Stats.instances;
+        } else {
+            this.filteredInstances = ec2Stats.instances.filter(i => i.region === region);
+        }
+        this.renderInstancesTable();
+        console.log(`🔍 Filtré par région: ${region} (${this.filteredInstances.length} instances)`);
     }
 
     /**

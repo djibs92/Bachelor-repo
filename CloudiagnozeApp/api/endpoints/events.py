@@ -3,7 +3,7 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from datetime import datetime
 
-from api.database import get_db, ScanRun, EC2Instance, EC2Performance, S3Bucket, S3Performance, User
+from api.database import get_db, ScanRun, EC2Instance, EC2Performance, S3Bucket, S3Performance, VPCInstance, VPCPerformance, User
 from api.endpoints.auth import get_current_user
 
 router = APIRouter()
@@ -382,6 +382,115 @@ async def get_s3_bucket_by_name(
         raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération du bucket: {str(e)}")
 
 
+@router.get("/vpc/instances")
+async def get_vpc_instances(
+    client_id: Optional[str] = None,
+    region: Optional[str] = None,
+    latest_only: bool = True,
+    limit: int = 50,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Récupère les VPCs depuis la base de données.
+
+    ⚠️ ISOLATION DES COMPTES : Seuls les VPCs de l'utilisateur connecté sont retournés.
+
+    Args:
+        client_id: Filtrer par client (optionnel)
+        region: Filtrer par région (optionnel)
+        latest_only: Si True, récupère uniquement les VPCs du dernier scan (défaut: True)
+        limit: Nombre maximum de VPCs à retourner (défaut: 50)
+        current_user: Utilisateur connecté (injecté automatiquement)
+
+    Returns:
+        Liste des VPCs avec leurs métadonnées
+    """
+    try:
+        if latest_only:
+            # Récupérer le dernier scan VPC DE L'UTILISATEUR CONNECTÉ
+            latest_scan = db.query(ScanRun).filter(
+                ScanRun.service_type == 'vpc',
+                ScanRun.user_id == current_user.id
+            ).order_by(ScanRun.scan_timestamp.desc()).first()
+
+            if not latest_scan:
+                return {
+                    "total_vpcs": 0,
+                    "vpcs": [],
+                    "scan_id": None,
+                    "scan_timestamp": None
+                }
+
+            # Récupérer les VPCs de ce scan
+            query = db.query(VPCInstance).filter(VPCInstance.scan_run_id == latest_scan.id)
+        else:
+            # Récupérer tous les VPCs DE L'UTILISATEUR CONNECTÉ
+            query = db.query(VPCInstance).join(ScanRun).filter(ScanRun.user_id == current_user.id)
+
+        # Appliquer les filtres optionnels
+        if client_id:
+            query = query.filter(VPCInstance.client_id == client_id)
+
+        if region:
+            query = query.filter(VPCInstance.region == region)
+
+        # Limiter le nombre de résultats
+        vpcs = query.limit(limit).all()
+
+        # Formater la réponse
+        result = []
+        for vpc in vpcs:
+            vpc_data = {
+                "id": vpc.id,
+                "vpc_id": vpc.vpc_id,
+                "client_id": vpc.client_id,
+                "cidr_block": vpc.cidr_block,
+                "state": vpc.state,
+                "is_default": vpc.is_default,
+                "tenancy": vpc.tenancy,
+                "subnet_count": vpc.subnet_count,
+                "public_subnets_count": vpc.public_subnets_count,
+                "private_subnets_count": vpc.private_subnets_count,
+                "availability_zones": vpc.availability_zones,
+                "internet_gateway_attached": vpc.internet_gateway_attached,
+                "nat_gateways_count": vpc.nat_gateways_count,
+                "route_tables_count": vpc.route_tables_count,
+                "security_groups_count": vpc.security_groups_count,
+                "network_acls_count": vpc.network_acls_count,
+                "flow_logs_enabled": vpc.flow_logs_enabled,
+                "vpc_endpoints_count": vpc.vpc_endpoints_count,
+                "vpc_peering_connections_count": vpc.vpc_peering_connections_count,
+                "transit_gateway_attachments_count": vpc.transit_gateway_attachments_count,
+                "region": vpc.region,
+                "tags": vpc.tags,
+                "scan_timestamp": vpc.scan_timestamp.isoformat() if vpc.scan_timestamp else None
+            }
+
+            # Ajouter les performances si disponibles
+            if vpc.performance:
+                vpc_data["performance"] = {
+                    "network_in_bytes": vpc.performance.network_in_bytes,
+                    "network_out_bytes": vpc.performance.network_out_bytes,
+                    "network_packets_in": vpc.performance.network_packets_in,
+                    "network_packets_out": vpc.performance.network_packets_out,
+                    "nat_gateway_bytes_in": vpc.performance.nat_gateway_bytes_in,
+                    "nat_gateway_bytes_out": vpc.performance.nat_gateway_bytes_out
+                }
+
+            result.append(vpc_data)
+
+        return {
+            "total_vpcs": len(result),
+            "vpcs": result,
+            "scan_id": latest_scan.id if latest_only and latest_scan else None,
+            "scan_timestamp": latest_scan.scan_timestamp.isoformat() if latest_only and latest_scan else None
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération des VPCs: {str(e)}")
+
+
 # ========================================
 # ENDPOINTS D'ADMINISTRATION
 # ========================================
@@ -421,14 +530,18 @@ async def clear_database(
         ec2_performance_count = db.query(EC2Performance).count()
         s3_buckets_count = db.query(S3Bucket).count()
         s3_performance_count = db.query(S3Performance).count()
+        vpc_instances_count = db.query(VPCInstance).count()
+        vpc_performance_count = db.query(VPCPerformance).count()
 
         # Utiliser TRUNCATE pour réinitialiser les AUTO_INCREMENT
         # TRUNCATE supprime toutes les lignes ET remet les compteurs à 0
         db.execute("SET FOREIGN_KEY_CHECKS = 0")
         db.execute("TRUNCATE TABLE ec2_performance")
         db.execute("TRUNCATE TABLE s3_performance")
+        db.execute("TRUNCATE TABLE vpc_performance")
         db.execute("TRUNCATE TABLE ec2_instances")
         db.execute("TRUNCATE TABLE s3_buckets")
+        db.execute("TRUNCATE TABLE vpc_instances")
         db.execute("TRUNCATE TABLE scan_runs")
         db.execute("TRUNCATE TABLE users")
         db.execute("SET FOREIGN_KEY_CHECKS = 1")
@@ -446,13 +559,17 @@ async def clear_database(
                 "ec2_performance": ec2_performance_count,
                 "s3_buckets": s3_buckets_count,
                 "s3_performance": s3_performance_count,
+                "vpc_instances": vpc_instances_count,
+                "vpc_performance": vpc_performance_count,
                 "total": (
                     users_count +
                     scan_runs_count +
                     ec2_instances_count +
                     ec2_performance_count +
                     s3_buckets_count +
-                    s3_performance_count
+                    s3_performance_count +
+                    vpc_instances_count +
+                    vpc_performance_count
                 )
             }
         }
@@ -463,4 +580,141 @@ async def clear_database(
         raise HTTPException(
             status_code=500,
             detail=f"❌ Erreur lors de la suppression: {str(e)}"
+        )
+
+
+@router.delete("/admin/clear-user-data")
+async def clear_user_data(
+    confirm: bool = False,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    🧹 Supprime UNIQUEMENT les données de l'utilisateur connecté.
+
+    Cet endpoint est utile en phase de testing pour nettoyer ses propres données
+    sans affecter les autres utilisateurs. Il supprime :
+    - Tous les scans de l'utilisateur
+    - Toutes les instances EC2 associées
+    - Toutes les métriques EC2 associées
+    - Tous les buckets S3 associés
+    - Toutes les métriques S3 associées
+
+    ⚠️ Le compte utilisateur est CONSERVÉ (seules les données de scan sont supprimées).
+
+    Args:
+        confirm: Doit être True pour confirmer la suppression (obligatoire)
+        current_user: Utilisateur connecté (injecté automatiquement)
+
+    Returns:
+        Statistiques de suppression
+
+    Exemple:
+        DELETE /api/v1/admin/clear-user-data?confirm=true
+        Headers: Authorization: Bearer <token>
+    """
+    # Vérifier la confirmation
+    if not confirm:
+        raise HTTPException(
+            status_code=400,
+            detail="⚠️ Vous devez confirmer la suppression avec ?confirm=true"
+        )
+
+    try:
+        # Récupérer tous les scan_runs de l'utilisateur
+        user_scans = db.query(ScanRun).filter(ScanRun.user_id == current_user.id).all()
+        scan_ids = [scan.id for scan in user_scans]
+
+        if not scan_ids:
+            return {
+                "status": "success",
+                "message": "✅ Aucune donnée à supprimer pour cet utilisateur",
+                "user_email": current_user.email,
+                "deleted": {
+                    "scan_runs": 0,
+                    "ec2_instances": 0,
+                    "ec2_performance": 0,
+                    "s3_buckets": 0,
+                    "s3_performance": 0,
+                    "vpc_instances": 0,
+                    "vpc_performance": 0,
+                    "total": 0
+                }
+            }
+
+        # Compter les éléments avant suppression
+        scan_runs_count = len(scan_ids)
+        ec2_instances_count = db.query(EC2Instance).filter(EC2Instance.scan_run_id.in_(scan_ids)).count()
+        s3_buckets_count = db.query(S3Bucket).filter(S3Bucket.scan_run_id.in_(scan_ids)).count()
+        vpc_instances_count = db.query(VPCInstance).filter(VPCInstance.scan_run_id.in_(scan_ids)).count()
+
+        # Compter les métriques (via les instances/buckets/vpcs)
+        ec2_instance_ids = [inst.id for inst in db.query(EC2Instance.id).filter(EC2Instance.scan_run_id.in_(scan_ids)).all()]
+        s3_bucket_ids = [bucket.id for bucket in db.query(S3Bucket.id).filter(S3Bucket.scan_run_id.in_(scan_ids)).all()]
+        vpc_instance_ids = [vpc.id for vpc in db.query(VPCInstance.id).filter(VPCInstance.scan_run_id.in_(scan_ids)).all()]
+
+        ec2_performance_count = db.query(EC2Performance).filter(EC2Performance.ec2_instance_id.in_(ec2_instance_ids)).count() if ec2_instance_ids else 0
+        s3_performance_count = db.query(S3Performance).filter(S3Performance.s3_bucket_id.in_(s3_bucket_ids)).count() if s3_bucket_ids else 0
+        vpc_performance_count = db.query(VPCPerformance).filter(VPCPerformance.vpc_instance_id.in_(vpc_instance_ids)).count() if vpc_instance_ids else 0
+
+        # Supprimer dans l'ordre (des enfants vers les parents pour respecter les foreign keys)
+
+        # 1. Supprimer les métriques EC2
+        if ec2_instance_ids:
+            db.query(EC2Performance).filter(EC2Performance.ec2_instance_id.in_(ec2_instance_ids)).delete(synchronize_session=False)
+
+        # 2. Supprimer les métriques S3
+        if s3_bucket_ids:
+            db.query(S3Performance).filter(S3Performance.s3_bucket_id.in_(s3_bucket_ids)).delete(synchronize_session=False)
+
+        # 3. Supprimer les métriques VPC
+        if vpc_instance_ids:
+            db.query(VPCPerformance).filter(VPCPerformance.vpc_instance_id.in_(vpc_instance_ids)).delete(synchronize_session=False)
+
+        # 4. Supprimer les instances EC2
+        db.query(EC2Instance).filter(EC2Instance.scan_run_id.in_(scan_ids)).delete(synchronize_session=False)
+
+        # 5. Supprimer les buckets S3
+        db.query(S3Bucket).filter(S3Bucket.scan_run_id.in_(scan_ids)).delete(synchronize_session=False)
+
+        # 6. Supprimer les VPCs
+        db.query(VPCInstance).filter(VPCInstance.scan_run_id.in_(scan_ids)).delete(synchronize_session=False)
+
+        # 7. Supprimer les scan_runs
+        db.query(ScanRun).filter(ScanRun.user_id == current_user.id).delete(synchronize_session=False)
+
+        # Commit de la transaction
+        db.commit()
+
+        return {
+            "status": "success",
+            "message": f"✅ Données de l'utilisateur {current_user.email} supprimées avec succès",
+            "user_email": current_user.email,
+            "user_id": current_user.id,
+            "deleted": {
+                "scan_runs": scan_runs_count,
+                "ec2_instances": ec2_instances_count,
+                "ec2_performance": ec2_performance_count,
+                "s3_buckets": s3_buckets_count,
+                "s3_performance": s3_performance_count,
+                "vpc_instances": vpc_instances_count,
+                "vpc_performance": vpc_performance_count,
+                "total": (
+                    scan_runs_count +
+                    ec2_instances_count +
+                    ec2_performance_count +
+                    s3_buckets_count +
+                    s3_performance_count +
+                    vpc_instances_count +
+                    vpc_performance_count
+                )
+            }
+        }
+
+    except Exception as e:
+        # Rollback en cas d'erreur
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"❌ Erreur lors de la suppression des données utilisateur: {str(e)}"
         )

@@ -83,6 +83,8 @@ class ScanRun(Base):
     ec2_instances = relationship("EC2Instance", back_populates="scan_run", cascade="all, delete-orphan")
     # Un ScanRun peut avoir plusieurs S3Bucket
     s3_buckets = relationship("S3Bucket", back_populates="scan_run", cascade="all, delete-orphan")
+    # Un ScanRun peut avoir plusieurs VPCInstance
+    vpc_instances = relationship("VPCInstance", back_populates="scan_run", cascade="all, delete-orphan")
     
     def __repr__(self):
         """Représentation textuelle de l'objet (pour le debug)"""
@@ -278,7 +280,123 @@ class S3Performance(Base):
     
     # Relation
     s3_bucket = relationship("S3Bucket", back_populates="performance")
-    
+
     def __repr__(self):
         return f"<S3Performance(id={self.id}, requests={self.all_requests}, downloads={self.bytes_downloaded})>"
+
+
+# ========================================
+# MODÈLE : VPCInstance
+# ========================================
+# Représente la table 'vpc_instances'
+# Stocke toutes les métadonnées d'un VPC
+class VPCInstance(Base):
+    """
+    Métadonnées des VPCs (Virtual Private Clouds).
+
+    Un VPC est un réseau virtuel isolé dans AWS.
+    Cette table stocke toutes les informations sur chaque VPC scanné.
+    """
+    __tablename__ = "vpc_instances"  # Nom de la table dans MariaDB
+
+    # Clés primaires et étrangères
+    id = Column(Integer, primary_key=True, autoincrement=True, comment="ID unique auto-incrémenté")
+    scan_run_id = Column(Integer, ForeignKey('scan_runs.id', ondelete='CASCADE'), nullable=False, comment="ID du scan qui a trouvé ce VPC")
+
+    # Identifiants
+    client_id = Column(String(100), nullable=False, comment="Identifiant du client")
+    vpc_id = Column(String(50), nullable=False, index=True, comment="ID du VPC (ex: vpc-0123456789abcdef0)")
+
+    # Configuration réseau
+    cidr_block = Column(String(50), comment="Bloc CIDR principal (ex: 10.0.0.0/16)")
+    state = Column(String(20), index=True, comment="État du VPC (available, pending)")
+    is_default = Column(Boolean, default=False, comment="VPC par défaut de la région")
+    tenancy = Column(String(20), comment="Type de tenancy (default, dedicated)")
+
+    # Subnets
+    subnet_count = Column(Integer, default=0, comment="Nombre total de subnets")
+    public_subnets_count = Column(Integer, default=0, comment="Nombre de subnets publics")
+    private_subnets_count = Column(Integer, default=0, comment="Nombre de subnets privés")
+    availability_zones = Column(JSON, comment="Liste des zones de disponibilité utilisées")
+
+    # Gateways et routing
+    internet_gateway_attached = Column(Boolean, default=False, comment="Internet Gateway attaché")
+    nat_gateways_count = Column(Integer, default=0, comment="Nombre de NAT Gateways")
+    route_tables_count = Column(Integer, default=0, comment="Nombre de tables de routage")
+
+    # Sécurité
+    security_groups_count = Column(Integer, default=0, comment="Nombre de Security Groups")
+    network_acls_count = Column(Integer, default=0, comment="Nombre de Network ACLs")
+    flow_logs_enabled = Column(Boolean, default=False, comment="VPC Flow Logs activés")
+
+    # VPC Endpoints
+    vpc_endpoints_count = Column(Integer, default=0, comment="Nombre de VPC Endpoints")
+
+    # Peering et Transit Gateway
+    vpc_peering_connections_count = Column(Integer, default=0, comment="Nombre de connexions VPC Peering")
+    transit_gateway_attachments_count = Column(Integer, default=0, comment="Nombre d'attachements Transit Gateway")
+
+    # Région et localisation
+    region = Column(String(50), index=True, comment="Région AWS (ex: eu-west-1)")
+
+    # Données JSON (pour flexibilité)
+    tags = Column(JSON, comment="Tags du VPC")
+
+    # Tracking
+    scan_timestamp = Column(DateTime, nullable=False, default=datetime.now, comment="Date du scan")
+
+    # Relations
+    scan_run = relationship("ScanRun", back_populates="vpc_instances")
+    performance = relationship("VPCPerformance", back_populates="vpc_instance", uselist=False, cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<VPCInstance(id={self.id}, vpc_id={self.vpc_id}, cidr={self.cidr_block}, region={self.region})>"
+
+
+# ========================================
+# MODÈLE : VPCPerformance
+# ========================================
+# Représente la table 'vpc_performance'
+# Stocke les métriques de performance d'un VPC
+class VPCPerformance(Base):
+    """
+    Métriques de performance des VPCs.
+
+    Stocke les métriques CloudWatch et autres indicateurs de performance.
+    """
+    __tablename__ = "vpc_performance"  # Nom de la table dans MariaDB
+
+    # Clés primaires et étrangères
+    id = Column(Integer, primary_key=True, autoincrement=True, comment="ID unique auto-incrémenté")
+    vpc_instance_id = Column(Integer, ForeignKey('vpc_instances.id', ondelete='CASCADE'), nullable=False, unique=True, comment="ID du VPC associé")
+
+    # Métriques de trafic réseau (agrégées de tous les ENIs du VPC)
+    network_in_bytes = Column(BigInteger, comment="Octets reçus (total)")
+    network_out_bytes = Column(BigInteger, comment="Octets envoyés (total)")
+    network_packets_in = Column(BigInteger, comment="Paquets reçus (total)")
+    network_packets_out = Column(BigInteger, comment="Paquets envoyés (total)")
+
+    # Métriques NAT Gateway (si présent)
+    nat_gateway_bytes_in = Column(BigInteger, comment="Octets reçus via NAT Gateway")
+    nat_gateway_bytes_out = Column(BigInteger, comment="Octets envoyés via NAT Gateway")
+    nat_gateway_packets_in = Column(BigInteger, comment="Paquets reçus via NAT Gateway")
+    nat_gateway_packets_out = Column(BigInteger, comment="Paquets envoyés via NAT Gateway")
+    nat_gateway_active_connections = Column(Integer, comment="Connexions actives NAT Gateway")
+
+    # Métriques VPN (si présent)
+    vpn_tunnel_state = Column(String(20), comment="État du tunnel VPN (UP, DOWN)")
+    vpn_tunnel_data_in = Column(BigInteger, comment="Données reçues via VPN")
+    vpn_tunnel_data_out = Column(BigInteger, comment="Données envoyées via VPN")
+
+    # Métriques Transit Gateway (si présent)
+    transit_gateway_bytes_in = Column(BigInteger, comment="Octets reçus via Transit Gateway")
+    transit_gateway_bytes_out = Column(BigInteger, comment="Octets envoyés via Transit Gateway")
+    transit_gateway_packets_in = Column(BigInteger, comment="Paquets reçus via Transit Gateway")
+    transit_gateway_packets_out = Column(BigInteger, comment="Paquets envoyés via Transit Gateway")
+
+    # Relation
+    vpc_instance = relationship("VPCInstance", back_populates="performance")
+
+    def __repr__(self):
+        return f"<VPCPerformance(id={self.id}, network_in={self.network_in_bytes}, network_out={self.network_out_bytes})>"
 
