@@ -106,6 +106,76 @@
             50% { opacity: 0; }
         }
 
+        /* Network Chart Hover Effect */
+        @keyframes chart-glow {
+            0%, 100% {
+                filter: brightness(1) drop-shadow(0 0 8px rgba(6, 182, 212, 0.3));
+            }
+            50% {
+                filter: brightness(1.15) drop-shadow(0 0 16px rgba(6, 182, 212, 0.6));
+            }
+        }
+
+        #chart-network-instances {
+            transition: all 0.3s ease;
+        }
+
+        #chart-network-instances:hover {
+            animation: chart-glow 2s ease-in-out infinite;
+        }
+
+        /* Instance Selector Styling */
+        #network-instance-selector,
+        #cpu-instance-selector {
+            transition: all 0.3s ease;
+        }
+
+        #network-instance-selector:hover {
+            border-color: #06b6d4;
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.3);
+        }
+
+        #network-instance-selector:focus {
+            box-shadow: 0 0 16px rgba(6, 182, 212, 0.5);
+        }
+
+        #cpu-instance-selector:hover {
+            border-color: #137FEC;
+            box-shadow: 0 0 12px rgba(19, 127, 236, 0.3);
+        }
+
+        #cpu-instance-selector:focus {
+            box-shadow: 0 0 16px rgba(19, 127, 236, 0.5);
+        }
+
+        /* CPU Chart Hover Effect */
+        #chart-cpu-instances {
+            transition: all 0.3s ease;
+        }
+
+        #chart-cpu-instances:hover {
+            filter: brightness(1.05);
+        }
+
+        /* Custom Scrollbar for State Details */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(19, 127, 236, 0.5);
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(19, 127, 236, 0.8);
+        }
+
         /* Background */
         .diagnostic-grid {
             position: fixed;
@@ -480,25 +550,73 @@
                         </div>
                     </div>
 
-                    <!-- Graphique 2: États des Instances -->
+                    <!-- Graphique 2: États des Instances avec détails -->
                     <div class="glass-card p-6">
-                        <h3 class="text-lg font-semibold text-white mb-4">États des Instances</h3>
-                        <div style="height: 300px;">
-                            <canvas id="chart-instance-states"></canvas>
+                        <div class="mb-4">
+                            <h3 class="text-lg font-semibold text-white">Instance States Overview</h3>
+                            <p class="text-xs text-slate-400 mt-1">Distribution by state with regional breakdown</p>
+                        </div>
+                        <div class="grid grid-cols-5 gap-4">
+                            <!-- Donut Chart -->
+                            <div class="col-span-2 flex items-center justify-center">
+                                <div style="height: 240px; width: 240px; position: relative;">
+                                    <canvas id="chart-instance-states"></canvas>
+                                    <!-- Centre du donut avec total -->
+                                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                        <p class="text-slate-400 text-xs font-medium">Total</p>
+                                        <p id="total-instances-donut" class="text-white text-3xl font-bold">0</p>
+                                        <p class="text-slate-400 text-xs">instances</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Légende détaillée avec régions -->
+                            <div class="col-span-3 flex items-center">
+                                <div id="state-details-legend" class="w-full max-h-[260px] overflow-y-auto pr-2 custom-scrollbar">
+                                    <!-- Généré dynamiquement par JS -->
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Graphique 3: CPU par Instance -->
                     <div class="glass-card p-6">
-                        <h3 class="text-lg font-semibold text-white mb-4">CPU par Instance (Top 10)</h3>
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="text-lg font-semibold text-white">CPU Utilization per Instance</h3>
+                                <p class="text-xs text-slate-400 mt-1">Average CPU usage captured during scan (Top 10)</p>
+                            </div>
+                            <div class="relative">
+                                <select id="cpu-instance-selector"
+                                        class="bg-[#1a2332] text-white text-sm rounded-lg px-4 py-2 pr-10 border border-gray-700 focus:border-primary focus:outline-none transition-colors cursor-pointer appearance-none">
+                                    <option value="all">All Instances</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xl">
+                                    expand_more
+                                </span>
+                            </div>
+                        </div>
                         <div style="height: 300px;">
                             <canvas id="chart-cpu-instances"></canvas>
                         </div>
                     </div>
 
-                    <!-- Graphique 4: Trafic Réseau -->
+                    <!-- Graphique 4: Trafic Réseau - Network I/O -->
                     <div class="glass-card p-6">
-                        <h3 class="text-lg font-semibold text-white mb-4">Trafic Réseau par Instance (Top 10)</h3>
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="text-lg font-semibold text-white">Network I/O per Instance</h3>
+                                <p class="text-xs text-slate-400 mt-1">Network traffic captured during scan (IN/OUT bytes)</p>
+                            </div>
+                            <div class="relative">
+                                <select id="network-instance-selector"
+                                        class="bg-[#1a2332] text-white text-sm rounded-lg px-4 py-2 pr-10 border border-gray-700 focus:border-cyan-500 focus:outline-none transition-colors cursor-pointer appearance-none">
+                                    <option value="all">All Instances</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xl">
+                                    expand_more
+                                </span>
+                            </div>
+                        </div>
                         <div style="height: 300px;">
                             <canvas id="chart-network-instances"></canvas>
                         </div>
@@ -532,14 +650,15 @@
                             <table class="w-full text-sm">
                                 <thead class="border-b border-slate-700">
                                     <tr class="text-left text-slate-400">
-                                        <th class="pb-3 font-medium">Instance ID</th>
                                         <th class="pb-3 font-medium">Name</th>
+                                        <th class="pb-3 font-medium">Instance ID</th>
                                         <th class="pb-3 font-medium">Type</th>
                                         <th class="pb-3 font-medium">État</th>
                                         <th class="pb-3 font-medium">Région</th>
+                                        <th class="pb-3 font-medium">Public IP</th>
+                                        <th class="pb-3 font-medium">Private IP</th>
                                         <th class="pb-3 font-medium">CPU (%)</th>
-                                        <th class="pb-3 font-medium">Network In</th>
-                                        <th class="pb-3 font-medium">Network Out</th>
+                                        <th class="pb-3 font-medium">Network In+Out</th>
                                         <th class="pb-3 font-medium">Lancée le</th>
                                     </tr>
                                 </thead>

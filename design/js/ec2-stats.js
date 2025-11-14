@@ -151,14 +151,24 @@ class EC2Stats {
     }
 
     /**
-     * Répartition par état
+     * Répartition par état avec détails par région
      */
     getStateDistribution() {
         const stateCounts = {};
+        const stateByRegion = {};
 
         this.instances.forEach(instance => {
             const state = instance.state || 'unknown';
+            const region = instance.region || 'unknown';
+
+            // Compter par état
             stateCounts[state] = (stateCounts[state] || 0) + 1;
+
+            // Compter par état et région
+            if (!stateByRegion[state]) {
+                stateByRegion[state] = {};
+            }
+            stateByRegion[state][region] = (stateByRegion[state][region] || 0) + 1;
         });
 
         const labels = Object.keys(stateCounts);
@@ -167,7 +177,8 @@ class EC2Stats {
         return {
             labels,
             data,
-            byState: stateCounts
+            byState: stateCounts,
+            byStateAndRegion: stateByRegion
         };
     }
 
