@@ -524,8 +524,14 @@ class DashboardGlobal {
     updateAlertsSection() {
         const alerts = window.globalStats.getRecentCriticalAlerts();
         const container = document.getElementById('alerts-container');
-        
+        const countElement = document.getElementById('alerts-count');
+
         if (!container) return;
+
+        // Mettre à jour le compteur
+        if (countElement) {
+            countElement.textContent = `${alerts.length} alerte${alerts.length > 1 ? 's' : ''}`;
+        }
 
         if (alerts.length === 0) {
             container.innerHTML = `
@@ -1000,6 +1006,32 @@ class DashboardGlobal {
             }
         });
 
+        // Analyser les checks VPC
+        window.globalStats.vpcInstances.forEach(vpc => {
+            const vpcName = vpc.tags?.Name || vpc.vpc_id;
+            if (vpc.flow_logs_enabled) {
+                container.innerHTML += this.createCheckItem(
+                    `VPC: ${vpcName}`,
+                    'Flow Logs activé',
+                    true
+                );
+            }
+            if (vpc.internet_gateway_attached) {
+                container.innerHTML += this.createCheckItem(
+                    `VPC: ${vpcName}`,
+                    'Internet Gateway attaché',
+                    true
+                );
+            }
+            if (vpc.tags && (typeof vpc.tags === 'object' ? Object.keys(vpc.tags).length > 0 : vpc.tags.length > 0)) {
+                container.innerHTML += this.createCheckItem(
+                    `VPC: ${vpcName}`,
+                    'Tags configurés',
+                    true
+                );
+            }
+        });
+
         // Checks échoués
         if (securityData.failedChecks > 0) {
             container.innerHTML += `
@@ -1053,6 +1085,32 @@ class DashboardGlobal {
                     container.innerHTML += this.createCheckItem(
                         `S3: ${bucket.bucket_name}`,
                         'Logging désactivé',
+                        false
+                    );
+                }
+            });
+
+            // Analyser les checks VPC échoués
+            window.globalStats.vpcInstances.forEach(vpc => {
+                const vpcName = vpc.tags?.Name || vpc.vpc_id;
+                if (!vpc.flow_logs_enabled) {
+                    container.innerHTML += this.createCheckItem(
+                        `VPC: ${vpcName}`,
+                        'Flow Logs désactivé',
+                        false
+                    );
+                }
+                if (!vpc.internet_gateway_attached) {
+                    container.innerHTML += this.createCheckItem(
+                        `VPC: ${vpcName}`,
+                        'Pas d\'Internet Gateway',
+                        false
+                    );
+                }
+                if (!vpc.tags || (typeof vpc.tags === 'object' ? Object.keys(vpc.tags).length === 0 : vpc.tags.length === 0)) {
+                    container.innerHTML += this.createCheckItem(
+                        `VPC: ${vpcName}`,
+                        'Pas de tags',
                         false
                     );
                 }

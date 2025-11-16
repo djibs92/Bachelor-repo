@@ -70,19 +70,19 @@ class ConfigScan {
     toggleService(service) {
         const card = document.querySelector(`[data-service="${service}"]`);
         const checkbox = document.querySelector(`[data-service-toggle="${service}"]`);
-        
+
         if (!card || !checkbox || checkbox.disabled) return;
 
-        const isActive = card.classList.contains('active');
-        
-        if (isActive) {
+        const isSelected = card.classList.contains('selected');
+
+        if (isSelected) {
             // Désactiver
-            card.classList.remove('active');
+            card.classList.remove('selected');
             checkbox.checked = false;
             this.selectedServices = this.selectedServices.filter(s => s !== service);
         } else {
             // Activer
-            card.classList.add('active');
+            card.classList.add('selected');
             checkbox.checked = true;
             this.selectedServices.push(service);
         }
@@ -443,13 +443,9 @@ class ConfigScan {
             const service = card.getAttribute('data-service');
             const checkbox = card.querySelector('input[type="checkbox"]');
 
-            if (service === 'ec2' || service === 's3' || service === 'vpc') {
-                card.classList.add('active');
-                if (checkbox) checkbox.checked = true;
-            } else {
-                card.classList.remove('active');
-                if (checkbox) checkbox.checked = false;
-            }
+            // Décocher tous les services par défaut
+            card.classList.remove('selected');
+            if (checkbox) checkbox.checked = false;
         });
 
         // Réinitialiser les régions

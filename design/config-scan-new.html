@@ -107,19 +107,89 @@
             background-color: #137FEC;
         }
 
-        /* Service card hover effect */
+        /* Service card modern design */
         .service-card {
-            transition: all 0.3s ease;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(19, 127, 236, 0.15) 0%, rgba(19, 127, 236, 0.05) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: 0;
         }
 
         .service-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 20px rgba(19, 127, 236, 0.3);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 8px 30px rgba(19, 127, 236, 0.4);
         }
 
-        .service-card.active {
+        .service-card.selected {
             border-color: #137FEC;
-            box-shadow: 0 0 20px rgba(19, 127, 236, 0.5);
+            box-shadow: 0 0 30px rgba(19, 127, 236, 0.5), inset 0 0 20px rgba(19, 127, 236, 0.1);
+        }
+
+        .service-card.selected::before {
+            opacity: 1;
+        }
+
+        .service-card > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Badge de sélection */
+        .selection-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: scale(0) rotate(-180deg);
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .service-card.selected .selection-badge {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+        }
+
+        /* Icon glow effect */
+        .service-icon-container {
+            transition: all 0.3s ease;
+        }
+
+        .service-card.selected .service-icon-container {
+            box-shadow: 0 0 25px currentColor;
+        }
+
+        /* Pulse animation pour le badge */
+        @keyframes pulse-ring {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            }
+            100% {
+                box-shadow: 0 0 0 15px rgba(16, 185, 129, 0);
+            }
+        }
+
+        .service-card.selected .selection-badge {
+            animation: pulse-ring 1.5s infinite;
         }
 
         /* Background */
@@ -465,75 +535,82 @@
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <!-- EC2 Card -->
-                                <div class="service-card glass-card rounded-xl p-6 cursor-pointer border-2 border-slate-700 active"
+                                <div class="service-card glass-card rounded-xl p-6 cursor-pointer border-2 border-slate-700"
                                      data-service="ec2" onclick="configScan.toggleService('ec2')">
-                                    <div class="flex items-center justify-between mb-4">
-                                        <div class="flex items-center gap-4">
-                                            <div class="w-16 h-16 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                                                <span class="material-symbols-outlined text-blue-400 text-4xl">computer</span>
-                                            </div>
-                                            <div>
-                                                <h4 class="text-white font-bold text-lg">EC2</h4>
-                                                <p class="text-slate-400 text-sm">Compute</p>
-                                            </div>
+                                    <!-- Badge de sélection -->
+                                    <div class="selection-badge">
+                                        <span class="material-symbols-outlined text-white text-lg">check</span>
+                                    </div>
+
+                                    <div class="flex items-center gap-4 mb-4">
+                                        <div class="service-icon-container w-16 h-16 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                                            <span class="material-symbols-outlined text-blue-400 text-4xl">computer</span>
                                         </div>
-                                        <input type="checkbox" class="toggle-checkbox w-6 h-6 rounded" data-service-toggle="ec2"/>
+                                        <div>
+                                            <h4 class="text-white font-bold text-lg">EC2</h4>
+                                            <p class="text-slate-400 text-sm">Compute</p>
+                                        </div>
                                     </div>
                                     <p class="text-slate-400 text-sm">Instances, volumes, snapshots</p>
+                                    <input type="checkbox" class="hidden" data-service-toggle="ec2"/>
                                 </div>
 
                                 <!-- S3 Card -->
-                                <div class="service-card glass-card rounded-xl p-6 cursor-pointer border-2 border-slate-700 active"
+                                <div class="service-card glass-card rounded-xl p-6 cursor-pointer border-2 border-slate-700"
                                      data-service="s3" onclick="configScan.toggleService('s3')">
-                                    <div class="flex items-center justify-between mb-4">
-                                        <div class="flex items-center gap-4">
-                                            <div class="w-16 h-16 bg-green-500/20 rounded-xl flex items-center justify-center">
-                                                <span class="material-symbols-outlined text-green-400 text-4xl">storage</span>
-                                            </div>
-                                            <div>
-                                                <h4 class="text-white font-bold text-lg">S3</h4>
-                                                <p class="text-slate-400 text-sm">Storage</p>
-                                            </div>
+                                    <!-- Badge de sélection -->
+                                    <div class="selection-badge">
+                                        <span class="material-symbols-outlined text-white text-lg">check</span>
+                                    </div>
+
+                                    <div class="flex items-center gap-4 mb-4">
+                                        <div class="service-icon-container w-16 h-16 bg-green-500/20 rounded-xl flex items-center justify-center">
+                                            <span class="material-symbols-outlined text-green-400 text-4xl">storage</span>
                                         </div>
-                                        <input type="checkbox" class="toggle-checkbox w-6 h-6 rounded" data-service-toggle="s3"/>
+                                        <div>
+                                            <h4 class="text-white font-bold text-lg">S3</h4>
+                                            <p class="text-slate-400 text-sm">Storage</p>
+                                        </div>
                                     </div>
                                     <p class="text-slate-400 text-sm">Buckets, objets, configurations</p>
+                                    <input type="checkbox" class="hidden" data-service-toggle="s3"/>
                                 </div>
 
                                 <!-- VPC Card -->
-                                <div class="service-card glass-card rounded-xl p-6 cursor-pointer border-2 border-slate-700 active"
+                                <div class="service-card glass-card rounded-xl p-6 cursor-pointer border-2 border-slate-700"
                                      data-service="vpc" onclick="configScan.toggleService('vpc')">
-                                    <div class="flex items-center justify-between mb-4">
-                                        <div class="flex items-center gap-4">
-                                            <div class="w-16 h-16 bg-purple-500/20 rounded-xl flex items-center justify-center">
-                                                <span class="material-symbols-outlined text-purple-400 text-4xl">cloud</span>
-                                            </div>
-                                            <div>
-                                                <h4 class="text-white font-bold text-lg">VPC</h4>
-                                                <p class="text-slate-400 text-sm">Network</p>
-                                            </div>
+                                    <!-- Badge de sélection -->
+                                    <div class="selection-badge">
+                                        <span class="material-symbols-outlined text-white text-lg">check</span>
+                                    </div>
+
+                                    <div class="flex items-center gap-4 mb-4">
+                                        <div class="service-icon-container w-16 h-16 bg-orange-500/20 rounded-xl flex items-center justify-center">
+                                            <span class="material-symbols-outlined text-orange-400 text-4xl">cloud</span>
                                         </div>
-                                        <input type="checkbox" class="toggle-checkbox w-6 h-6 rounded" data-service-toggle="vpc"/>
+                                        <div>
+                                            <h4 class="text-white font-bold text-lg">VPC</h4>
+                                            <p class="text-slate-400 text-sm">Network</p>
+                                        </div>
                                     </div>
                                     <p class="text-slate-400 text-sm">Réseaux virtuels, subnets, sécurité</p>
+                                    <input type="checkbox" class="hidden" data-service-toggle="vpc"/>
                                 </div>
 
                                 <!-- RDS Card (Disabled for now) -->
                                 <div class="service-card glass-card rounded-xl p-6 cursor-not-allowed border-2 border-slate-700 opacity-50"
                                      data-service="rds">
-                                    <div class="flex items-center justify-between mb-4">
-                                        <div class="flex items-center gap-4">
-                                            <div class="w-16 h-16 bg-purple-500/20 rounded-xl flex items-center justify-center">
-                                                <span class="material-symbols-outlined text-purple-400 text-4xl">database</span>
-                                            </div>
-                                            <div>
-                                                <h4 class="text-white font-bold text-lg">RDS</h4>
-                                                <p class="text-slate-400 text-sm">Database</p>
-                                            </div>
+                                    <div class="flex items-center gap-4 mb-4">
+                                        <div class="service-icon-container w-16 h-16 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                                            <span class="material-symbols-outlined text-purple-400 text-4xl">database</span>
                                         </div>
-                                        <input type="checkbox" disabled class="toggle-checkbox w-6 h-6 rounded" data-service-toggle="rds"/>
+                                        <div>
+                                            <h4 class="text-white font-bold text-lg">RDS</h4>
+                                            <p class="text-slate-400 text-sm">Database</p>
+                                        </div>
                                     </div>
                                     <p class="text-slate-400 text-sm">Bientôt disponible</p>
+                                    <input type="checkbox" disabled class="hidden" data-service-toggle="rds"/>
                                 </div>
 
 

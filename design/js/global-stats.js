@@ -172,6 +172,53 @@ class GlobalStats {
             }
         });
 
+        // Alertes VPC
+        this.vpcInstances.forEach(vpc => {
+            const vpcName = vpc.tags?.Name || vpc.vpc_id;
+
+            // Flow Logs désactivé
+            if (!vpc.flow_logs_enabled) {
+                alerts.push({
+                    type: 'danger',
+                    service: 'VPC',
+                    resource: vpcName,
+                    message: 'Flow Logs désactivé'
+                });
+            }
+
+            // Pas d'Internet Gateway
+            if (!vpc.internet_gateway_attached) {
+                alerts.push({
+                    type: 'warning',
+                    service: 'VPC',
+                    resource: vpcName,
+                    message: 'Pas d\'Internet Gateway attaché'
+                });
+            }
+
+            // VPC sans tags
+            if (!vpc.tags || (typeof vpc.tags === 'object' ? Object.keys(vpc.tags).length === 0 : vpc.tags.length === 0)) {
+                alerts.push({
+                    type: 'info',
+                    service: 'VPC',
+                    resource: vpcName,
+                    message: 'VPC sans tags'
+                });
+            }
+
+            // Trop de subnets publics (> 50% des subnets)
+            const totalSubnets = vpc.subnet_count || 0;
+            const publicSubnets = vpc.public_subnets_count || 0;
+            if (totalSubnets > 0 && (publicSubnets / totalSubnets) > 0.5) {
+                alerts.push({
+                    type: 'warning',
+                    service: 'VPC',
+                    resource: vpcName,
+                    message: `Trop de subnets publics: ${publicSubnets}/${totalSubnets}`
+                });
+            }
+        });
+
         return {
             total: alerts.length,
             danger: alerts.filter(a => a.type === 'danger').length,
@@ -358,6 +405,14 @@ class GlobalStats {
             if (bucket.logging_enabled) passedChecks++;
         });
 
+        // Checks VPC
+        this.vpcInstances.forEach(vpc => {
+            totalChecks += 3; // Flow Logs + Internet Gateway + Tags
+            if (vpc.flow_logs_enabled) passedChecks++;
+            if (vpc.internet_gateway_attached) passedChecks++;
+            if (vpc.tags && (typeof vpc.tags === 'object' ? Object.keys(vpc.tags).length > 0 : vpc.tags.length > 0)) passedChecks++;
+        });
+
         const score = totalChecks > 0 ? Math.round((passedChecks / totalChecks) * 100) : 0;
 
         return {
@@ -369,16 +424,16 @@ class GlobalStats {
     }
 
     /**
-     * Alertes critiques récentes (top 5)
+     * Alertes critiques récentes - TOUTES les alertes danger + warning
      */
     getRecentCriticalAlerts() {
         const allAlerts = this.getActiveAlerts().alerts;
-        
-        // Filtrer les alertes critiques et warnings
+
+        // Filtrer les alertes critiques et warnings (pas de limite)
         const criticalAlerts = allAlerts.filter(a => a.type === 'danger' || a.type === 'warning');
-        
-        // Retourner les 5 premières
-        return criticalAlerts.slice(0, 5);
+
+        // Retourner TOUTES les alertes critiques
+        return criticalAlerts;
     }
 
     /**
