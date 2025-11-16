@@ -317,3 +317,68 @@ body {
     left: 100%;
 }
 
+/* Icon Buttons */
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    color: #94a3b8;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-icon:hover {
+    background: rgba(19, 127, 236, 0.1);
+    border-color: #137FEC;
+    color: #137FEC;
+    transform: translateY(-2px);
+}
+
+.btn-icon.btn-primary {
+    background: rgba(19, 127, 236, 0.2);
+    border-color: #137FEC;
+    color: #137FEC;
+}
+
+.btn-icon.btn-primary:hover {
+    background: #137FEC;
+    color: white;
+}
+
+/* Input Fields */
+.input-field {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 8px;
+    color: white;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.875rem;
+    transition: all 0.3s;
+}
+
+.input-field:focus {
+    outline: none;
+    border-color: #137FEC;
+    background: rgba(15, 23, 42, 0.9);
+    box-shadow: 0 0 0 3px rgba(19, 127, 236, 0.1);
+}
+
+.input-field::placeholder {
+    color: #64748b;
+}
+
+/* Glass Card */
+.glass-card {
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    border-radius: 16px;
+}
+

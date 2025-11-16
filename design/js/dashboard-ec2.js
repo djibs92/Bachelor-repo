@@ -232,35 +232,51 @@ class DashboardEC2 {
                 datasets: [{
                     data: data.data,
                     backgroundColor: backgroundColors,
-                    borderColor: '#0a0e1a',
-                    borderWidth: 3,
-                    hoverOffset: 15
+                    borderWidth: 0,  // Pas de bordure - qualité parfaite !
+                    hoverBorderWidth: 0,
+                    hoverOffset: 15,  // Effet hover moderne
+                    spacing: 3  // Espacement entre les segments
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 cutout: '65%',
+                layout: {
+                    padding: 20  // Padding pour l'effet hover
+                },
                 plugins: {
                     legend: {
                         display: false
                     },
                     tooltip: {
-                        enabled: true,
-                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                        backgroundColor: 'rgba(15, 23, 42, 0.98)',
                         titleColor: '#137FEC',
-                        bodyColor: '#cbd5e1',
+                        bodyColor: '#e2e8f0',
                         borderColor: '#137FEC',
                         borderWidth: 1,
-                        padding: 12,
+                        padding: 16,
                         displayColors: true,
+                        boxWidth: 12,
+                        boxHeight: 12,
+                        boxPadding: 6,
+                        titleFont: {
+                            size: 14,
+                            family: 'Rajdhani',
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            size: 13,
+                            family: 'Rajdhani',
+                            weight: '500'
+                        },
                         callbacks: {
                             label: function(context) {
                                 const label = context.label || '';
                                 const value = context.parsed || 0;
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                 const percentage = ((value / total) * 100).toFixed(1);
-                                return `${label}: ${value} instances (${percentage}%)`;
+                                return ` ${label}: ${value} instances (${percentage}%)`;
                             },
                             afterLabel: function(context) {
                                 // Afficher les régions pour cet état
@@ -279,6 +295,12 @@ class DashboardEC2 {
                             }
                         }
                     }
+                },
+                animation: {
+                    animateRotate: true,
+                    animateScale: true,
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
                 },
                 onHover: (event, activeElements) => {
                     event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';

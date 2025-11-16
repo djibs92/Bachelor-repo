@@ -132,14 +132,23 @@ class UserMenu {
     updateUserInfo() {
         if (!this.user) return;
 
-        document.getElementById('popup-user-name').textContent = this.user.full_name || 'Utilisateur';
-        document.getElementById('popup-user-email').textContent = this.user.email || '';
-        document.getElementById('popup-user-company').textContent = this.user.company_name || 'Aucune entreprise';
+        const popupName = document.getElementById('popup-user-name');
+        const popupEmail = document.getElementById('popup-user-email');
+        const popupCompany = document.getElementById('popup-user-company');
+
+        if (popupName) popupName.textContent = this.user.full_name || 'Utilisateur';
+        if (popupEmail) popupEmail.textContent = this.user.email || '';
+        if (popupCompany) popupCompany.textContent = this.user.company_name || 'Aucune entreprise';
 
         // Mettre à jour aussi le header
         const headerName = document.getElementById('user-name-header');
+        const headerEmail = document.getElementById('user-email-header');
+
         if (headerName) {
             headerName.textContent = this.user.full_name || 'Utilisateur';
+        }
+        if (headerEmail) {
+            headerEmail.textContent = this.user.email || '';
         }
     }
 

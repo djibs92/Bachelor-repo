@@ -109,7 +109,7 @@ class DashboardS3 {
     }
 
     /**
-     * Graphique: Répartition par Région (Donut)
+     * Graphique: Répartition par Région (Donut moderne - style EC2)
      */
     createRegionsChart() {
         const ctx = document.getElementById('chart-regions');
@@ -122,38 +122,92 @@ class DashboardS3 {
                 datasets: [{
                     data: data.data,
                     backgroundColor: [
-                        'rgba(59, 130, 246, 0.8)',
-                        'rgba(16, 185, 129, 0.8)',
-                        'rgba(245, 158, 11, 0.8)',
-                        'rgba(239, 68, 68, 0.8)',
-                        'rgba(168, 85, 247, 0.8)'
+                        '#137FEC',  // Bleu primary
+                        '#8B5CF6',  // Violet secondary
+                        '#06B6D4',  // Cyan accent
+                        '#10B981',  // Vert success
+                        '#F59E0B',  // Orange warning
+                        '#EF4444',  // Rouge danger
+                        '#EC4899',  // Rose
+                        '#6366F1'   // Indigo
                     ],
-                    borderColor: 'rgba(15, 23, 42, 0.8)',
-                    borderWidth: 2
+                    borderWidth: 0,  // Pas de bordure - clé pour la qualité !
+                    hoverBorderWidth: 0,
+                    hoverOffset: 15,  // Effet hover moderne
+                    spacing: 3  // Espacement entre les segments
                 }]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
-                aspectRatio: 2,
+                maintainAspectRatio: false,
+                cutout: '65%',  // Donut fin et moderne
+                layout: {
+                    padding: 20  // Padding pour l'effet hover
+                },
                 plugins: {
                     legend: {
-                        display: true,
                         position: 'right',
                         labels: {
-                            color: '#cbd5e1',
-                            font: { size: 11 },
-                            padding: 10,
-                            boxWidth: 12
+                            color: '#e2e8f0',
+                            padding: 15,
+                            font: {
+                                size: 13,
+                                family: 'Rajdhani',
+                                weight: '500'
+                            },
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            boxWidth: 10,
+                            boxHeight: 10
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.98)',
+                        titleColor: '#137FEC',
+                        bodyColor: '#e2e8f0',
+                        borderColor: '#137FEC',
+                        borderWidth: 1,
+                        padding: 16,
+                        displayColors: true,
+                        boxWidth: 12,
+                        boxHeight: 12,
+                        boxPadding: 6,
+                        titleFont: {
+                            size: 14,
+                            family: 'Rajdhani',
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            size: 13,
+                            family: 'Rajdhani',
+                            weight: '500'
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return ` ${label}: ${value} bucket${value > 1 ? 's' : ''} (${percentage}%)`;
+                            }
                         }
                     }
+                },
+                animation: {
+                    animateRotate: true,
+                    animateScale: true,
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                },
+                onHover: (event, activeElements) => {
+                    event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
                 }
             }
         });
     }
 
     /**
-     * Graphique: État de Sécurité (Stacked Bar)
+     * Graphique: État de Sécurité (Stacked Bar moderne)
      */
     createSecurityChart() {
         const ctx = document.getElementById('chart-security');
@@ -167,16 +221,32 @@ class DashboardS3 {
                     {
                         label: 'Activé',
                         data: data.enabled,
-                        backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                        backgroundColor: 'rgba(16, 185, 129, 0.85)',
                         borderColor: 'rgba(16, 185, 129, 1)',
-                        borderWidth: 1
+                        borderWidth: 2,
+                        borderRadius: {
+                            topLeft: 8,
+                            bottomLeft: 8,
+                            topRight: 0,
+                            bottomRight: 0
+                        },
+                        borderSkipped: false,
+                        barThickness: 25
                     },
                     {
                         label: 'Désactivé',
                         data: data.disabled,
-                        backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.85)',
                         borderColor: 'rgba(239, 68, 68, 1)',
-                        borderWidth: 1
+                        borderWidth: 2,
+                        borderRadius: {
+                            topLeft: 0,
+                            bottomLeft: 0,
+                            topRight: 8,
+                            bottomRight: 8
+                        },
+                        borderSkipped: false,
+                        barThickness: 25
                     }
                 ]
             },
@@ -187,12 +257,23 @@ class DashboardS3 {
                 scales: {
                     x: {
                         stacked: true,
-                        ticks: { color: '#cbd5e1' },
-                        grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                        beginAtZero: true,
+                        ticks: {
+                            color: '#cbd5e1',
+                            font: { size: 12 },
+                            stepSize: 1
+                        },
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.1)',
+                            drawBorder: false
+                        }
                     },
                     y: {
                         stacked: true,
-                        ticks: { color: '#cbd5e1' },
+                        ticks: {
+                            color: '#fff',
+                            font: { size: 13, weight: '500' }
+                        },
                         grid: { display: false }
                     }
                 },
@@ -200,15 +281,47 @@ class DashboardS3 {
                     legend: {
                         display: true,
                         position: 'bottom',
-                        labels: { color: '#cbd5e1', font: { size: 12 } }
+                        labels: {
+                            color: '#cbd5e1',
+                            font: { size: 12, weight: '500' },
+                            padding: 15,
+                            boxWidth: 15,
+                            boxHeight: 15,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                        titleColor: '#137FEC',
+                        bodyColor: '#cbd5e1',
+                        borderColor: '#137FEC',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: true,
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.dataset.label || '';
+                                const value = context.parsed.x || 0;
+                                return `${label}: ${value} bucket${value > 1 ? 's' : ''}`;
+                            }
+                        }
                     }
+                },
+                onHover: (event, activeElements) => {
+                    event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
+                },
+                animation: {
+                    duration: 800,
+                    easing: 'easeInOutQuart'
                 }
             }
         });
     }
 
     /**
-     * Graphique: Fonctionnalités Avancées (Bar)
+     * Graphique: Fonctionnalités Avancées (Bar moderne)
      */
     createFeaturesChart() {
         const ctx = document.getElementById('chart-features');
@@ -221,9 +334,11 @@ class DashboardS3 {
                 datasets: [{
                     label: 'Buckets',
                     data: data.data,
-                    backgroundColor: 'rgba(168, 85, 247, 0.8)',
+                    backgroundColor: 'rgba(168, 85, 247, 0.85)',
                     borderColor: 'rgba(168, 85, 247, 1)',
-                    borderWidth: 1
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    barThickness: 30
                 }]
             },
             options: {
@@ -232,26 +347,56 @@ class DashboardS3 {
                 scales: {
                     y: {
                         beginAtZero: true,
-                        ticks: { 
+                        ticks: {
                             color: '#cbd5e1',
+                            font: { size: 12 },
                             stepSize: 1
                         },
-                        grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.1)',
+                            drawBorder: false
+                        }
                     },
                     x: {
-                        ticks: { color: '#cbd5e1' },
+                        ticks: {
+                            color: '#fff',
+                            font: { size: 12, weight: '500' }
+                        },
                         grid: { display: false }
                     }
                 },
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                        titleColor: '#137FEC',
+                        bodyColor: '#cbd5e1',
+                        borderColor: '#137FEC',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.parsed.y || 0;
+                                return `${value} bucket${value > 1 ? 's' : ''}`;
+                            }
+                        }
+                    }
+                },
+                onHover: (event, activeElements) => {
+                    event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
+                },
+                animation: {
+                    duration: 800,
+                    easing: 'easeInOutQuart'
                 }
             }
         });
     }
 
     /**
-     * Graphique: Activité par Bucket (Stacked Bar)
+     * Graphique: Activité par Bucket (Stacked Bar moderne)
      */
     createActivityChart() {
         const ctx = document.getElementById('chart-activity');
@@ -271,23 +416,29 @@ class DashboardS3 {
                     {
                         label: 'GET',
                         data: data.get,
-                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.85)',
                         borderColor: 'rgba(59, 130, 246, 1)',
-                        borderWidth: 1
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        borderSkipped: false
                     },
                     {
                         label: 'PUT',
                         data: data.put,
-                        backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                        backgroundColor: 'rgba(16, 185, 129, 0.85)',
                         borderColor: 'rgba(16, 185, 129, 1)',
-                        borderWidth: 1
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        borderSkipped: false
                     },
                     {
                         label: 'DELETE',
                         data: data.delete,
-                        backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.85)',
                         borderColor: 'rgba(239, 68, 68, 1)',
-                        borderWidth: 1
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        borderSkipped: false
                     }
                 ]
             },
@@ -297,22 +448,63 @@ class DashboardS3 {
                 scales: {
                     x: {
                         stacked: true,
-                        ticks: { color: '#cbd5e1' },
+                        ticks: {
+                            color: '#fff',
+                            font: { size: 12, weight: '500' }
+                        },
                         grid: { display: false }
                     },
                     y: {
                         stacked: true,
                         beginAtZero: true,
-                        ticks: { color: '#cbd5e1' },
-                        grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                        ticks: {
+                            color: '#cbd5e1',
+                            font: { size: 12 }
+                        },
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.1)',
+                            drawBorder: false
+                        }
                     }
                 },
                 plugins: {
                     legend: {
                         display: true,
                         position: 'bottom',
-                        labels: { color: '#cbd5e1', font: { size: 12 } }
+                        labels: {
+                            color: '#cbd5e1',
+                            font: { size: 12, weight: '500' },
+                            padding: 15,
+                            boxWidth: 15,
+                            boxHeight: 15,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                        titleColor: '#137FEC',
+                        bodyColor: '#cbd5e1',
+                        borderColor: '#137FEC',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: true,
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.dataset.label || '';
+                                const value = context.parsed.y || 0;
+                                return `${label}: ${value.toLocaleString()} requête${value > 1 ? 's' : ''}`;
+                            }
+                        }
                     }
+                },
+                onHover: (event, activeElements) => {
+                    event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
+                },
+                animation: {
+                    duration: 800,
+                    easing: 'easeInOutQuart'
                 }
             }
         });

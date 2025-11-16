@@ -21,8 +21,20 @@ class DashboardGlobal {
                 throw new Error('globalStats n\'est pas défini');
             }
 
-            // Charger les données
-            await window.window.globalStats.loadAllData();
+            // Détruire les graphiques existants
+            this.destroyCharts();
+
+            // Vérifier si un scan_id est passé en paramètre
+            const urlParams = new URLSearchParams(window.location.search);
+            const scanId = urlParams.get('scan_id');
+
+            if (scanId) {
+                console.log(`📊 Chargement du scan #${scanId}...`);
+                await this.loadSpecificScan(scanId);
+            } else {
+                // Charger les données du dernier scan (comportement par défaut)
+                await window.window.globalStats.loadAllData();
+            }
 
             // Mettre à jour l'interface
             this.updateStatsCards();
@@ -38,6 +50,77 @@ class DashboardGlobal {
             console.error('❌ Erreur initialisation dashboard global:', error);
             this.hideLoader();
             this.showError('Erreur lors du chargement du dashboard');
+        }
+    }
+
+    /**
+     * Détruit tous les graphiques existants
+     */
+    destroyCharts() {
+        Object.keys(this.charts).forEach(key => {
+            if (this.charts[key] && typeof this.charts[key].destroy === 'function') {
+                this.charts[key].destroy();
+            }
+        });
+        this.charts = {};
+    }
+
+    /**
+     * Charge un scan spécifique
+     */
+    async loadSpecificScan(scanId) {
+        try {
+            // Afficher un bandeau indiquant qu'on consulte un scan historique
+            this.showHistoricalScanBanner(scanId);
+
+            // Charger les données avec le scan_id spécifique
+            await window.globalStats.loadAllData({ scan_id: scanId });
+
+            console.log(`✅ Scan #${scanId} chargé`);
+        } catch (error) {
+            console.error(`❌ Erreur chargement scan #${scanId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Affiche un bandeau indiquant qu'on consulte un scan historique
+     */
+    showHistoricalScanBanner(scanId) {
+        // Vérifier si le bandeau existe déjà
+        let banner = document.getElementById('historical-scan-banner');
+
+        if (!banner) {
+            // Créer le bandeau
+            banner = document.createElement('div');
+            banner.id = 'historical-scan-banner';
+            banner.className = 'fixed top-0 left-0 right-0 z-50 bg-primary/90 backdrop-blur-sm text-white px-6 py-3 flex items-center justify-between shadow-lg';
+            banner.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined">history</span>
+                    <div>
+                        <p class="font-semibold">Consultation d'un scan historique</p>
+                        <p class="text-sm opacity-90">Scan #${scanId}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a href="dashbord.html" class="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors">
+                        Retour au scan actuel
+                    </a>
+                    <button onclick="document.getElementById('historical-scan-banner').remove()" class="p-2 hover:bg-white/20 rounded-lg transition-colors">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+            `;
+
+            // Insérer au début du body
+            document.body.insertBefore(banner, document.body.firstChild);
+
+            // Ajouter un padding-top au contenu pour compenser le bandeau
+            const mainContent = document.querySelector('main');
+            if (mainContent) {
+                mainContent.style.paddingTop = '80px';
+            }
         }
     }
 
@@ -68,7 +151,7 @@ class DashboardGlobal {
         // Total Resources
         const totalResources = window.globalStats.getTotalResources();
         document.getElementById('total-resources').textContent = totalResources.total;
-        document.getElementById('total-resources-detail').textContent = `${totalResources.ec2} EC2 | ${totalResources.s3} S3`;
+        document.getElementById('total-resources-detail').textContent = `${totalResources.ec2} EC2 | ${totalResources.s3} S3 | ${totalResources.vpc} VPC`;
 
         // Active Alerts
         const alerts = window.globalStats.getActiveAlerts();
@@ -80,7 +163,7 @@ class DashboardGlobal {
         // Scans This Month
         const scans = window.globalStats.getScansThisMonth();
         document.getElementById('scans-month').textContent = scans.total;
-        document.getElementById('scans-month-detail').textContent = `${scans.ec2} EC2 | ${scans.s3} S3`;
+        document.getElementById('scans-month-detail').textContent = `${scans.ec2} EC2 | ${scans.s3} S3 | ${scans.vpc} VPC`;
 
         // Security Score
         const securityScore = window.globalStats.getSecurityScore();
@@ -115,10 +198,11 @@ class DashboardGlobal {
         this.createResourceDistributionChart();
         this.createEC2RegionChart();
         this.createS3RegionChart();
+        this.createVPCRegionChart();
     }
 
     /**
-     * Graphique: Répartition des ressources (Donut moderne avec effets)
+     * Graphique: Répartition des ressources (Donut moderne - style EC2)
      */
     createResourceDistributionChart() {
         const ctx = document.getElementById('chart-resource-distribution');
@@ -129,59 +213,71 @@ class DashboardGlobal {
         this.charts.resourceDistribution = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: ['EC2 Instances', 'S3 Buckets'],
+                labels: ['EC2 Instances', 'S3 Buckets', 'VPC Networks'],
                 datasets: [{
-                    data: [data.ec2.count, data.s3.count],
+                    data: [data.ec2.count, data.s3.count, data.vpc.count],
                     backgroundColor: [
-                        'rgba(59, 130, 246, 0.8)',
-                        'rgba(16, 185, 129, 0.8)'
+                        '#3b82f6',  // Bleu EC2
+                        '#10b981',  // Vert S3
+                        '#fb923c'   // Orange VPC
                     ],
-                    borderColor: '#0a0e1a',
-                    borderWidth: 3,
-                    hoverOffset: 15,
-                    hoverBackgroundColor: [
-                        'rgba(59, 130, 246, 0.95)',
-                        'rgba(16, 185, 129, 0.95)'
-                    ],
-                    hoverBorderWidth: 3
+                    borderWidth: 0,  // Pas de bordure - clé pour la qualité !
+                    hoverBorderWidth: 0,
+                    hoverOffset: 15,  // Effet hover moderne
+                    spacing: 3  // Espacement entre les segments
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
                 cutout: '65%',
+                layout: {
+                    padding: 20  // Padding pour l'effet hover
+                },
                 plugins: {
                     legend: {
                         display: false
                     },
                     tooltip: {
-                        enabled: true,
-                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                        backgroundColor: 'rgba(15, 23, 42, 0.98)',
                         titleColor: '#137FEC',
-                        bodyColor: '#cbd5e1',
+                        bodyColor: '#e2e8f0',
                         borderColor: '#137FEC',
                         borderWidth: 1,
-                        padding: 12,
+                        padding: 16,
                         displayColors: true,
+                        boxWidth: 12,
+                        boxHeight: 12,
+                        boxPadding: 6,
+                        titleFont: {
+                            size: 14,
+                            family: 'Rajdhani',
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            size: 13,
+                            family: 'Rajdhani',
+                            weight: '500'
+                        },
                         callbacks: {
                             label: function(context) {
                                 const label = context.label || '';
                                 const value = context.parsed || 0;
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                 const percentage = ((value / total) * 100).toFixed(1);
-                                return `${label}: ${value} (${percentage}%)`;
+                                return ` ${label}: ${value} (${percentage}%)`;
                             }
                         }
                     }
                 },
-                onHover: (event, activeElements) => {
-                    event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
-                },
                 animation: {
                     animateRotate: true,
                     animateScale: true,
-                    duration: 800,
+                    duration: 1000,
                     easing: 'easeInOutQuart'
+                },
+                onHover: (event, activeElements) => {
+                    event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
                 }
             }
         });
@@ -189,14 +285,16 @@ class DashboardGlobal {
         // Mettre à jour les pourcentages
         const ec2PercentEl = document.getElementById('ec2-percent');
         const s3PercentEl = document.getElementById('s3-percent');
+        const vpcPercentEl = document.getElementById('vpc-percent');
 
         if (ec2PercentEl) ec2PercentEl.textContent = `${data.ec2.percentage}%`;
         if (s3PercentEl) s3PercentEl.textContent = `${data.s3.percentage}%`;
+        if (vpcPercentEl) vpcPercentEl.textContent = `${data.vpc.percentage}%`;
 
         // Mettre à jour le total au centre du donut
         const totalElement = document.getElementById('total-resources-donut');
         if (totalElement) {
-            const total = data.ec2.count + data.s3.count;
+            const total = data.ec2.count + data.s3.count + data.vpc.count;
             totalElement.textContent = total;
         }
     }
@@ -227,7 +325,7 @@ class DashboardGlobal {
                     borderColor: 'rgba(59, 130, 246, 1)',
                     borderWidth: 2,
                     borderRadius: 8,
-                    barThickness: 30
+                    barThickness: 25  // Largeur uniforme pour toutes les barres
                 }]
             },
             options: {
@@ -302,7 +400,7 @@ class DashboardGlobal {
                     borderColor: 'rgba(16, 185, 129, 1)',
                     borderWidth: 2,
                     borderRadius: 8,
-                    barThickness: 30
+                    barThickness: 25  // Largeur uniforme pour toutes les barres
                 }]
             },
             options: {
@@ -351,7 +449,74 @@ class DashboardGlobal {
         });
     }
 
+    /**
+     * Graphique: VPC par région (Bar chart horizontal)
+     */
+    createVPCRegionChart() {
+        const ctx = document.getElementById('chart-vpc-regions');
+        if (!ctx) return;
 
+        const regionData = window.globalStats.getVPCRegionDistribution();
+
+        this.charts.vpcRegions = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: regionData.labels,
+                datasets: [{
+                    label: 'VPCs',
+                    data: regionData.data,
+                    backgroundColor: 'rgba(251, 146, 60, 0.8)',  // Orange VPC
+                    borderColor: 'rgba(251, 146, 60, 1)',
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    barThickness: 25  // Largeur uniforme pour toutes les barres
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                        titleColor: '#fff',
+                        bodyColor: '#cbd5e1',
+                        borderColor: '#fb923c',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.parsed.x} VPC${context.parsed.x > 1 ? 's' : ''}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: '#cbd5e1',
+                            stepSize: 1,
+                            font: { size: 12 }
+                        },
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.1)',
+                            drawBorder: false
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            color: '#fff',
+                            font: { size: 13, weight: '500' }
+                        },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
 
     /**
      * Met à jour la section des alertes

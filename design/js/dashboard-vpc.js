@@ -224,9 +224,11 @@ class DashboardVPC {
                 datasets: [{
                     label: 'Nombre de VPCs',
                     data: counts,
-                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                    borderColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 2
+                    backgroundColor: 'rgba(251, 146, 60, 0.85)',  // Orange VPC pour cohérence
+                    borderColor: 'rgba(251, 146, 60, 1)',
+                    borderWidth: 2,
+                    borderRadius: 8,  // Coins arrondis modernes
+                    barThickness: 30  // Largeur fixe pour cohérence
                 }]
             },
             options: {
@@ -237,30 +239,53 @@ class DashboardVPC {
                         display: false
                     },
                     tooltip: {
-                        backgroundColor: 'rgba(17, 24, 39, 0.95)',
-                        titleColor: '#e5e7eb',
-                        bodyColor: '#e5e7eb',
-                        borderColor: 'rgba(59, 130, 246, 0.5)',
-                        borderWidth: 1
+                        backgroundColor: 'rgba(15, 23, 42, 0.98)',
+                        titleColor: '#137FEC',
+                        bodyColor: '#e2e8f0',
+                        borderColor: '#fb923c',
+                        borderWidth: 1,
+                        padding: 16,
+                        displayColors: false,
+                        titleFont: {
+                            size: 14,
+                            family: 'Rajdhani',
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            size: 13,
+                            family: 'Rajdhani',
+                            weight: '500'
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.parsed.y || 0;
+                                return ` ${value} VPC${value > 1 ? 's' : ''}`;
+                            }
+                        }
                     }
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            color: '#9ca3af',
+                            color: '#cbd5e1',
                             font: {
+                                size: 12,
                                 family: 'Rajdhani'
-                            }
+                            },
+                            stepSize: 1
                         },
                         grid: {
-                            color: 'rgba(75, 85, 99, 0.3)'
+                            color: 'rgba(148, 163, 184, 0.1)',
+                            drawBorder: false
                         }
                     },
                     x: {
                         ticks: {
-                            color: '#9ca3af',
+                            color: '#fff',
                             font: {
+                                size: 13,
+                                weight: '500',
                                 family: 'Rajdhani'
                             }
                         },
@@ -268,6 +293,13 @@ class DashboardVPC {
                             display: false
                         }
                     }
+                },
+                onHover: (event, activeElements) => {
+                    event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
+                },
+                animation: {
+                    duration: 800,
+                    easing: 'easeInOutQuart'
                 }
             }
         });
@@ -297,8 +329,11 @@ class DashboardVPC {
             return;
         }
 
-        tbody.innerHTML = vpcs.map(vpc => `
-            <tr class="border-b border-gray-700 hover:bg-gray-800/50 transition-colors">
+        tbody.innerHTML = '';
+        vpcs.forEach(vpc => {
+            const row = document.createElement('tr');
+            row.className = 'border-b border-gray-700 hover:bg-gray-800/50 transition-colors cursor-pointer';
+            row.innerHTML = `
                 <td class="px-6 py-4">
                     <span class="font-mono text-blue-400">${vpc.vpc_id}</span>
                 </td>
@@ -326,8 +361,13 @@ class DashboardVPC {
                         '<span class="material-symbols-outlined text-red-400">warning</span>'}
                 </td>
                 <td class="px-6 py-4 text-center text-gray-300">${vpc.security_groups_count || 0}</td>
-            </tr>
-        `).join('');
+            `;
+
+            // Event listener pour ouvrir le modal
+            row.addEventListener('click', () => this.openVPCModal(vpc));
+
+            tbody.appendChild(row);
+        });
     }
 
     /**
@@ -335,18 +375,258 @@ class DashboardVPC {
      */
     initializeFilters() {
         const regionFilter = document.getElementById('region-filter');
-        if (!regionFilter) return;
+        if (regionFilter) {
+            // Peupler le filtre de région
+            const regions = this.vpcStats.getActiveRegions();
+            regionFilter.innerHTML = '<option value="all">Toutes les régions</option>' +
+                regions.map(region => `<option value="${region}">${region}</option>`).join('');
 
-        // Peupler le filtre de région
-        const regions = this.vpcStats.getActiveRegions();
-        regionFilter.innerHTML = '<option value="all">Toutes les régions</option>' +
-            regions.map(region => `<option value="${region}">${region}</option>`).join('');
+            // Écouter les changements
+            regionFilter.addEventListener('change', (e) => {
+                this.currentRegionFilter = e.target.value;
+                this.displayVPCsTable();
+            });
+        }
 
-        // Écouter les changements
-        regionFilter.addEventListener('change', (e) => {
-            this.currentRegionFilter = e.target.value;
-            this.displayVPCsTable();
-        });
+        // Bouton refresh
+        const refreshBtn = document.getElementById('refresh-btn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => this.init());
+        }
+
+        // Fermer le modal
+        const closeModalBtn = document.getElementById('close-modal');
+        const modal = document.getElementById('instance-modal');
+
+        if (closeModalBtn) {
+            closeModalBtn.addEventListener('click', () => this.closeVPCModal());
+        }
+
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target.id === 'instance-modal') {
+                    this.closeVPCModal();
+                }
+            });
+        }
+    }
+
+    /**
+     * Ouvre le modal avec les détails d'un VPC
+     */
+    openVPCModal(vpc) {
+        const modal = document.getElementById('instance-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalContent = document.getElementById('modal-content');
+
+        // Titre
+        const vpcName = vpc.tags?.Name || vpc.vpc_id;
+        modalTitle.textContent = `Détails : ${vpcName}`;
+
+        // Contenu
+        modalContent.innerHTML = this.generateVPCModalContent(vpc);
+
+        // Afficher le modal
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    /**
+     * Ferme le modal
+     */
+    closeVPCModal() {
+        const modal = document.getElementById('instance-modal');
+        modal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+
+    /**
+     * Génère le contenu HTML du modal pour un VPC
+     */
+    generateVPCModalContent(vpc) {
+        const scanTime = vpc.scan_timestamp
+            ? new Date(vpc.scan_timestamp).toLocaleString('fr-FR')
+            : '-';
+
+        // Parser les tags (peuvent être string ou objet)
+        let tagsObj = {};
+        if (vpc.tags) {
+            if (typeof vpc.tags === 'string') {
+                // Format: "Key1=Value1,Key2=Value2"
+                vpc.tags.split(',').forEach(tag => {
+                    const [key, value] = tag.split('=');
+                    if (key && value) {
+                        tagsObj[key.trim()] = value.trim();
+                    }
+                });
+            } else if (typeof vpc.tags === 'object') {
+                tagsObj = vpc.tags;
+            }
+        }
+
+        const tagsHtml = Object.keys(tagsObj).length > 0
+            ? Object.entries(tagsObj).map(([key, value]) => `
+                <div class="flex items-center gap-2 bg-slate-800/40 px-3 py-2 rounded-lg">
+                    <span class="text-slate-400 text-sm">${key}:</span>
+                    <span class="text-white text-sm font-medium">${value}</span>
+                </div>
+            `).join('')
+            : '<p class="text-slate-400 text-sm">Aucun tag</p>';
+
+        // Subnets - Afficher les statistiques (pas de détails disponibles dans l'API)
+        const totalSubnets = vpc.subnet_count || 0;
+        const publicSubnets = vpc.public_subnets_count || 0;
+        const privateSubnets = vpc.private_subnets_count || 0;
+        const azs = vpc.availability_zones || [];
+
+        const subnetsHtml = totalSubnets > 0
+            ? `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-slate-800/40 px-4 py-3 rounded-lg text-center">
+                        <p class="text-slate-400 text-xs mb-1">Total</p>
+                        <p class="text-white text-2xl font-bold">${totalSubnets}</p>
+                    </div>
+                    <div class="bg-blue-500/10 border border-blue-500/30 px-4 py-3 rounded-lg text-center">
+                        <p class="text-blue-400 text-xs mb-1">🌐 Public</p>
+                        <p class="text-blue-400 text-2xl font-bold">${publicSubnets}</p>
+                    </div>
+                    <div class="bg-purple-500/10 border border-purple-500/30 px-4 py-3 rounded-lg text-center">
+                        <p class="text-purple-400 text-xs mb-1">🔒 Privé</p>
+                        <p class="text-purple-400 text-2xl font-bold">${privateSubnets}</p>
+                    </div>
+                </div>
+                ${azs.length > 0 ? `
+                    <div class="mt-3 bg-slate-800/40 px-4 py-3 rounded-lg">
+                        <p class="text-slate-400 text-xs mb-2">Availability Zones</p>
+                        <div class="flex flex-wrap gap-2">
+                            ${azs.map(az => `<span class="px-2 py-1 bg-cyan-500/20 text-cyan-400 text-xs rounded">${az}</span>`).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+            `
+            : '<p class="text-slate-400 text-sm">Aucun subnet</p>';
+
+        // Security Groups - Afficher le compteur
+        const sgCount = vpc.security_groups_count || 0;
+        const securityGroupsHtml = `
+            <div class="bg-slate-800/40 px-4 py-3 rounded-lg text-center">
+                <p class="text-slate-400 text-xs mb-1">Security Groups</p>
+                <p class="text-white text-2xl font-bold">${sgCount}</p>
+            </div>
+        `;
+
+        // État du VPC
+        const stateColor = vpc.state === 'available' ? 'text-green-400' : 'text-yellow-400';
+        const stateIcon = vpc.state === 'available' ? '🟢' : '🟡';
+
+        return `
+            <!-- Informations Générales -->
+            <div class="bg-slate-800/30 rounded-xl p-6 border border-slate-700/50">
+                <h4 class="text-white text-lg font-semibold mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-orange-400">cloud</span>
+                    Informations Générales
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-slate-400 text-sm">VPC ID</p>
+                        <p class="text-white font-medium">${vpc.vpc_id}</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 text-sm">Région</p>
+                        <p class="text-white font-medium">${vpc.region}</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 text-sm">CIDR Block</p>
+                        <p class="text-white font-medium">${vpc.cidr_block}</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 text-sm">État</p>
+                        <p class="${stateColor} font-medium">${stateIcon} ${vpc.state}</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 text-sm">VPC par défaut</p>
+                        <p class="text-white font-medium">${vpc.is_default ? '✅ Oui' : '❌ Non'}</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 text-sm">Tenancy</p>
+                        <p class="text-white font-medium">${vpc.tenancy || 'default'}</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 text-sm">Internet Gateway</p>
+                        <p class="text-white font-medium">${vpc.internet_gateway_attached ? '✅ Attaché' : '❌ Non attaché'}</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 text-sm">Scanné le</p>
+                        <p class="text-white font-medium">${scanTime}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tags -->
+            <div class="bg-slate-800/30 rounded-xl p-6 border border-slate-700/50">
+                <h4 class="text-white text-lg font-semibold mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-cyan-400">label</span>
+                    Tags
+                </h4>
+                <div class="flex flex-wrap gap-2">
+                    ${tagsHtml}
+                </div>
+            </div>
+
+            <!-- Subnets -->
+            <div class="bg-slate-800/30 rounded-xl p-6 border border-slate-700/50">
+                <h4 class="text-white text-lg font-semibold mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-blue-400">lan</span>
+                    Subnets (${totalSubnets})
+                </h4>
+                ${subnetsHtml}
+            </div>
+
+            <!-- Ressources Réseau -->
+            <div class="bg-slate-800/30 rounded-xl p-6 border border-slate-700/50">
+                <h4 class="text-white text-lg font-semibold mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-red-400">shield</span>
+                    Ressources Réseau
+                </h4>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    ${securityGroupsHtml}
+                    <div class="bg-slate-800/40 px-4 py-3 rounded-lg text-center">
+                        <p class="text-slate-400 text-xs mb-1">Network ACLs</p>
+                        <p class="text-white text-2xl font-bold">${vpc.network_acls_count || 0}</p>
+                    </div>
+                    <div class="bg-slate-800/40 px-4 py-3 rounded-lg text-center">
+                        <p class="text-slate-400 text-xs mb-1">Route Tables</p>
+                        <p class="text-white text-2xl font-bold">${vpc.route_tables_count || 0}</p>
+                    </div>
+                    <div class="bg-slate-800/40 px-4 py-3 rounded-lg text-center">
+                        <p class="text-slate-400 text-xs mb-1">NAT Gateways</p>
+                        <p class="text-white text-2xl font-bold">${vpc.nat_gateways_count || 0}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sécurité & Connectivité -->
+            <div class="bg-slate-800/30 rounded-xl p-6 border border-slate-700/50">
+                <h4 class="text-white text-lg font-semibold mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-green-400">security</span>
+                    Sécurité & Connectivité
+                </h4>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div class="bg-slate-800/40 px-4 py-3 rounded-lg">
+                        <p class="text-slate-400 text-xs mb-1">Flow Logs</p>
+                        <p class="text-white font-medium">${vpc.flow_logs_enabled ? '✅ Activé' : '❌ Désactivé'}</p>
+                    </div>
+                    <div class="bg-slate-800/40 px-4 py-3 rounded-lg">
+                        <p class="text-slate-400 text-xs mb-1">VPC Endpoints</p>
+                        <p class="text-white font-medium">${vpc.vpc_endpoints_count || 0}</p>
+                    </div>
+                    <div class="bg-slate-800/40 px-4 py-3 rounded-lg">
+                        <p class="text-slate-400 text-xs mb-1">Peering Connections</p>
+                        <p class="text-white font-medium">${vpc.vpc_peering_connections_count || 0}</p>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     /**

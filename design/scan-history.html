@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudDiagnoze - Scan History</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="css/dashboard-modern.css">
+</head>
+<body class="bg-slate-950 text-white font-['Space_Grotesk']">
+    <div class="flex min-h-screen w-full">
+        <!-- Sidebar -->
+        <aside class="sidebar flex w-64 flex-col gap-4 p-4">
+            <!-- Logo -->
+            <div class="flex items-center gap-3">
+                <div class="flex flex-col">
+                    <h1 class="sidebar-logo">CloudDiagnoze</h1>
+                    <p class="sidebar-subtitle">Multi-Cloud Scanner</p>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex flex-col gap-2 mt-4">
+                <a class="nav-link" href="dashbord.html">
+                    <span class="material-symbols-outlined text-2xl">dashboard</span>
+                    <p class="text-sm font-medium leading-normal">Dashboard Global</p>
+                </a>
+                <a class="nav-link" href="dashboard-ec2.html">
+                    <span class="material-symbols-outlined text-2xl">dns</span>
+                    <p class="text-sm font-medium leading-normal">EC2 Instances</p>
+                </a>
+                <a class="nav-link" href="dashboard-s3.html">
+                    <span class="material-symbols-outlined text-2xl">folder</span>
+                    <p class="text-sm font-medium leading-normal">S3 Buckets</p>
+                </a>
+                <a class="nav-link" href="dashboard-vpc.html">
+                    <span class="material-symbols-outlined text-2xl">cloud</span>
+                    <p class="text-sm font-medium leading-normal">VPC Networks</p>
+                </a>
+                <a class="nav-link" href="config-scan-new.html">
+                    <span class="material-symbols-outlined text-2xl">radar</span>
+                    <p class="text-sm font-medium leading-normal">New Scan</p>
+                </a>
+                <a class="nav-link active" href="scan-history.html">
+                    <span class="material-symbols-outlined text-2xl">history</span>
+                    <p class="text-sm font-medium leading-normal">Scan History</p>
+                </a>
+            </nav>
+
+            <!-- User Menu -->
+            <div id="user-menu-container" class="mt-auto"></div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col overflow-y-auto">
+            <!-- Header -->
+            <header class="header flex items-center justify-between px-10 py-3">
+                <div class="flex items-center gap-4">
+                    <span class="material-symbols-outlined text-primary text-xl">history</span>
+                    <h2 class="header-title">Scan History</h2>
+                </div>
+                <div class="flex items-center gap-4">
+                    <!-- Search -->
+                    <div class="flex items-center gap-2 bg-slate-800/50 rounded-lg px-4 py-2 border border-slate-700/50">
+                        <span class="material-symbols-outlined text-slate-400">search</span>
+                        <input
+                            type="text"
+                            placeholder="Search resources..."
+                            class="bg-transparent border-none outline-none text-white placeholder-slate-400 w-64"
+                        />
+                    </div>
+
+                    <!-- Notifications -->
+                    <button class="relative flex items-center justify-center h-10 w-10 bg-slate-800/50 rounded-lg text-slate-300 hover:bg-primary/20 hover:text-primary border border-slate-700/50">
+                        <span class="material-symbols-outlined">notifications</span>
+                        <div class="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full border-2 border-background-dark bg-red-500"></div>
+                    </button>
+
+                    <!-- User Info -->
+                    <div id="user-info-header" class="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-800/50 border border-slate-700/50 cursor-pointer hover:bg-slate-800">
+                        <span class="material-symbols-outlined text-primary text-3xl">account_circle</span>
+                        <div class="flex flex-col">
+                            <p id="user-name-header" class="text-white text-sm font-medium">Chargement...</p>
+                            <p id="user-email-header" class="text-slate-400 text-xs">...</p>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div class="p-8">
+                <!-- Page Title -->
+                <div class="mb-8">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1 class="text-4xl font-bold text-white mb-2">Historique des Scans</h1>
+                            <p class="text-slate-400">Consultez et naviguez dans l'historique de vos scans</p>
+                        </div>
+                        <button id="refresh-btn" class="btn-primary flex items-center gap-2 px-4 py-2">
+                            <span class="material-symbols-outlined">refresh</span>
+                            Actualiser
+                        </button>
+                    </div>
+                </div>
+
+            <!-- Evolution Chart -->
+            <div class="glass-card p-6 mb-6">
+                <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-cyan-400">trending_up</span>
+                    Évolution des Ressources
+                </h2>
+                <div class="h-64">
+                    <canvas id="evolution-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="glass-card p-6 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-2">Service</label>
+                        <select id="filter-service" class="input-field">
+                            <option value="all">Tous les services</option>
+                            <option value="ec2">EC2</option>
+                            <option value="s3">S3</option>
+                            <option value="vpc">VPC</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-2">Période</label>
+                        <select id="filter-period" class="input-field">
+                            <option value="all">Toute la période</option>
+                            <option value="today">Aujourd'hui</option>
+                            <option value="week">Cette semaine</option>
+                            <option value="month">Ce mois</option>
+                            <option value="year">Cette année</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-2">Statut</label>
+                        <select id="filter-status" class="input-field">
+                            <option value="all">Tous les statuts</option>
+                            <option value="success">Succès</option>
+                            <option value="failed">Échec</option>
+                            <option value="partial">Partiel</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-2">Rechercher par ID</label>
+                        <input type="text" id="search-id" placeholder="Ex: 123" class="input-field">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scans Table -->
+            <div class="glass-card overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-slate-800/50 border-b border-slate-700">
+                            <tr class="text-left text-slate-300 font-semibold">
+                                <th class="px-6 py-4">ID</th>
+                                <th class="px-6 py-4">Date & Heure</th>
+                                <th class="px-6 py-4">Services</th>
+                                <th class="px-6 py-4">Ressources</th>
+                                <th class="px-6 py-4">Statut</th>
+                                <th class="px-6 py-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scans-table-body">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="flex items-center justify-between p-6 border-t border-slate-700">
+                    <div class="text-sm text-slate-400">
+                        <span id="pagination-info">Affichage de 0 scans</span>
+                    </div>
+                    <div id="pagination-controls" class="flex gap-2">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal: Scan Details -->
+    <div id="modal-scan-details" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="glass-card rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between p-6 border-b border-slate-700">
+                <h2 id="modal-title" class="text-2xl font-bold text-white flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">info</span>
+                    Détails du Scan
+                </h2>
+                <button id="close-modal" class="text-slate-400 hover:text-white transition-colors">
+                    <span class="material-symbols-outlined text-2xl">close</span>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                <div id="modal-content" class="space-y-6">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/user-menu.js"></script>
+    <script src="js/scan-history.js"></script>
+</body>
+</html>
+

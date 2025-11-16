@@ -370,12 +370,12 @@
                     <p class="text-sm font-medium leading-normal">VPC Networks</p>
                 </a>
                 <a class="nav-link" href="config-scan-new.html">
-                    <span class="material-symbols-outlined text-2xl">play_circle</span>
+                    <span class="material-symbols-outlined text-2xl">radar</span>
                     <p class="text-sm font-medium leading-normal">New Scan</p>
                 </a>
-                <a class="nav-link" href="rapport-scan.html">
-                    <span class="material-symbols-outlined text-2xl">description</span>
-                    <p class="text-sm font-medium leading-normal">Rapports</p>
+                <a class="nav-link" href="scan-history.html">
+                    <span class="material-symbols-outlined text-2xl">history</span>
+                    <p class="text-sm font-medium leading-normal">Scan History</p>
                 </a>
             </nav>
         </aside>
@@ -431,28 +431,28 @@
                     <!-- Card 1: Total VPCs -->
                     <div class="stat-card">
                         <p class="stat-label">Total VPCs</p>
-                        <p id="total-vpcs" class="stat-value">0</p>
+                        <p id="total-vpcs" class="stat-value" style="color: #fb923c;">0</p>
                         <p id="vpcs-detail" class="text-slate-400 text-sm font-medium mt-2">0 régions</p>
                     </div>
 
                     <!-- Card 2: Active Regions -->
                     <div class="stat-card">
                         <p class="stat-label">Régions Actives</p>
-                        <p id="active-regions" class="stat-value">0</p>
+                        <p id="active-regions" class="stat-value" style="color: #10b981;">0</p>
                         <p id="regions-detail" class="text-slate-400 text-sm font-medium mt-2">Régions AWS</p>
                     </div>
 
                     <!-- Card 3: Total Subnets -->
                     <div class="stat-card">
                         <p class="stat-label">Total Subnets</p>
-                        <p id="total-subnets" class="stat-value">0</p>
+                        <p id="total-subnets" class="stat-value" style="color: #06b6d4;">0</p>
                         <p id="subnets-detail" class="text-slate-400 text-sm font-medium mt-2">Public + Privé</p>
                     </div>
 
                     <!-- Card 4: Security Score -->
                     <div class="stat-card">
                         <p class="stat-label">Score de Sécurité</p>
-                        <p id="security-score" class="stat-value">0%</p>
+                        <p id="security-score" class="stat-value" style="color: #137FEC;">0%</p>
                         <p id="security-detail" class="text-slate-400 text-sm font-medium mt-2">Flow Logs + IGW</p>
                     </div>
                 </div>
@@ -539,8 +539,8 @@
             <!-- Header -->
             <div class="sticky top-0 bg-slate-900/90 backdrop-blur-md border-b border-slate-700 p-6 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <span class="material-symbols-outlined text-blue-400 text-2xl">dns</span>
-                    <h3 id="modal-title" class="text-white text-xl font-bold">Détails de l'instance</h3>
+                    <span class="material-symbols-outlined text-orange-400 text-2xl">cloud</span>
+                    <h3 id="modal-title" class="text-white text-xl font-bold">Détails du VPC</h3>
                 </div>
                 <button id="close-modal" class="text-slate-400 hover:text-white transition-colors">
                     <span class="material-symbols-outlined text-2xl">close</span>

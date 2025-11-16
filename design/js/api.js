@@ -66,7 +66,8 @@ class CloudDiagnozeAPI {
             latest_only: params.latest_only !== undefined ? params.latest_only : true,
             ...(params.client_id && { client_id: params.client_id }),
             ...(params.region && { region: params.region }),
-            ...(params.state && { state: params.state })
+            ...(params.state && { state: params.state }),
+            ...(params.scan_id && { scan_id: params.scan_id })
         });
 
         return await this.request(`${API_CONFIG.ENDPOINTS.EC2_INSTANCES}?${queryParams}`);
@@ -87,7 +88,8 @@ class CloudDiagnozeAPI {
             limit: params.limit || 100,
             latest_only: params.latest_only !== undefined ? params.latest_only : true,
             ...(params.client_id && { client_id: params.client_id }),
-            ...(params.region && { region: params.region })
+            ...(params.region && { region: params.region }),
+            ...(params.scan_id && { scan_id: params.scan_id })
         });
 
         return await this.request(`${API_CONFIG.ENDPOINTS.S3_BUCKETS}?${queryParams}`);
@@ -108,7 +110,8 @@ class CloudDiagnozeAPI {
             limit: params.limit || 100,
             latest_only: params.latest_only !== undefined ? params.latest_only : true,
             ...(params.client_id && { client_id: params.client_id }),
-            ...(params.region && { region: params.region })
+            ...(params.region && { region: params.region }),
+            ...(params.scan_id && { scan_id: params.scan_id })
         });
 
         return await this.request(`${API_CONFIG.ENDPOINTS.VPC_INSTANCES}?${queryParams}`);

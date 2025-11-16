@@ -74,6 +74,7 @@ async def get_ec2_instances(
     region: Optional[str] = None,
     state: Optional[str] = None,
     latest_only: bool = True,
+    scan_id: Optional[int] = None,
     limit: int = 50,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -95,7 +96,26 @@ async def get_ec2_instances(
         Liste des instances EC2 avec leurs performances
     """
     try:
-        if latest_only:
+        if scan_id:
+            # Récupérer un scan spécifique par son ID
+            specific_scan = db.query(ScanRun).filter(
+                ScanRun.id == scan_id,
+                ScanRun.service_type == 'ec2',
+                ScanRun.user_id == current_user.id
+            ).first()
+
+            if not specific_scan:
+                return {
+                    "total_instances": 0,
+                    "instances": [],
+                    "scan_id": None,
+                    "scan_timestamp": None
+                }
+
+            # Construire la requête pour ce scan spécifique
+            query = db.query(EC2Instance).filter(EC2Instance.scan_run_id == specific_scan.id)
+            latest_scan = specific_scan
+        elif latest_only:
             # Récupérer le dernier scan EC2 DE L'UTILISATEUR CONNECTÉ
             latest_scan = db.query(ScanRun).filter(
                 ScanRun.service_type == 'ec2',
@@ -115,6 +135,7 @@ async def get_ec2_instances(
         else:
             # Mode historique : récupérer toutes les instances
             query = db.query(EC2Instance)
+            latest_scan = None
 
         if client_id:
             query = query.filter(EC2Instance.client_id == client_id)
@@ -229,6 +250,7 @@ async def get_s3_buckets(
     client_id: Optional[str] = None,
     region: Optional[str] = None,
     latest_only: bool = True,
+    scan_id: Optional[int] = None,
     limit: int = 50,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -249,7 +271,26 @@ async def get_s3_buckets(
         Liste des buckets S3 avec leurs performances
     """
     try:
-        if latest_only:
+        if scan_id:
+            # Récupérer un scan spécifique par son ID
+            specific_scan = db.query(ScanRun).filter(
+                ScanRun.id == scan_id,
+                ScanRun.service_type == 's3',
+                ScanRun.user_id == current_user.id
+            ).first()
+
+            if not specific_scan:
+                return {
+                    "total_buckets": 0,
+                    "buckets": [],
+                    "scan_id": None,
+                    "scan_timestamp": None
+                }
+
+            # Construire la requête pour ce scan spécifique
+            query = db.query(S3Bucket).filter(S3Bucket.scan_run_id == specific_scan.id)
+            latest_scan = specific_scan
+        elif latest_only:
             # Récupérer le dernier scan S3 DE L'UTILISATEUR CONNECTÉ
             latest_scan = db.query(ScanRun).filter(
                 ScanRun.service_type == 's3',
@@ -269,6 +310,7 @@ async def get_s3_buckets(
         else:
             # Mode historique : récupérer tous les buckets
             query = db.query(S3Bucket)
+            latest_scan = None
 
         if client_id:
             query = query.filter(S3Bucket.client_id == client_id)
@@ -387,6 +429,7 @@ async def get_vpc_instances(
     client_id: Optional[str] = None,
     region: Optional[str] = None,
     latest_only: bool = True,
+    scan_id: Optional[int] = None,
     limit: int = 50,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -407,7 +450,26 @@ async def get_vpc_instances(
         Liste des VPCs avec leurs métadonnées
     """
     try:
-        if latest_only:
+        if scan_id:
+            # Récupérer un scan spécifique par son ID
+            specific_scan = db.query(ScanRun).filter(
+                ScanRun.id == scan_id,
+                ScanRun.service_type == 'vpc',
+                ScanRun.user_id == current_user.id
+            ).first()
+
+            if not specific_scan:
+                return {
+                    "total_vpcs": 0,
+                    "vpcs": [],
+                    "scan_id": None,
+                    "scan_timestamp": None
+                }
+
+            # Récupérer les VPCs de ce scan spécifique
+            query = db.query(VPCInstance).filter(VPCInstance.scan_run_id == specific_scan.id)
+            latest_scan = specific_scan
+        elif latest_only:
             # Récupérer le dernier scan VPC DE L'UTILISATEUR CONNECTÉ
             latest_scan = db.query(ScanRun).filter(
                 ScanRun.service_type == 'vpc',
@@ -427,6 +489,7 @@ async def get_vpc_instances(
         else:
             # Récupérer tous les VPCs DE L'UTILISATEUR CONNECTÉ
             query = db.query(VPCInstance).join(ScanRun).filter(ScanRun.user_id == current_user.id)
+            latest_scan = None
 
         # Appliquer les filtres optionnels
         if client_id:

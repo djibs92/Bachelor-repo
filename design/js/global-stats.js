@@ -5,31 +5,50 @@ class GlobalStats {
     constructor() {
         this.ec2Instances = [];
         this.s3Buckets = [];
+        this.vpcInstances = [];
         this.scanRuns = [];
     }
 
     /**
-     * Charge toutes les données (EC2 + S3 + Scans)
+     * Charge toutes les données (EC2 + S3 + VPC + Scans)
      */
-    async loadAllData() {
+    async loadAllData(options = {}) {
         try {
+            const { scan_id } = options;
+
+            // Paramètres de requête
+            const queryParams = {
+                limit: 100,
+                latest_only: !scan_id, // Si scan_id est fourni, on ne veut pas latest_only
+                ...(scan_id && { scan_id })
+            };
+
             // Charger les instances EC2
-            const ec2Data = await api.getEC2Instances({ latest_only: true, limit: 100 });
+            const ec2Data = await api.getEC2Instances(queryParams);
             this.ec2Instances = ec2Data.instances || [];
 
             // Charger les buckets S3
-            const s3Data = await api.getS3Buckets({ latest_only: true, limit: 100 });
+            const s3Data = await api.getS3Buckets(queryParams);
             this.s3Buckets = s3Data.buckets || [];
+
+            // Charger les VPCs
+            const vpcData = await api.getVPCInstances(queryParams);
+            this.vpcInstances = vpcData.vpcs || [];
 
             // Charger l'historique des scans
             const scansData = await api.getScanRuns({ limit: 100 });
-            this.scanRuns = scansData.scans || [];  // ✅ Correction: l'API retourne "scans" pas "scan_runs"
+            this.scanRuns = scansData.scans || [];
 
-            console.log(`✅ Données chargées: ${this.ec2Instances.length} EC2, ${this.s3Buckets.length} S3, ${this.scanRuns.length} scans`);
-            
+            if (scan_id) {
+                console.log(`✅ Données du scan #${scan_id} chargées: ${this.ec2Instances.length} EC2, ${this.s3Buckets.length} S3, ${this.vpcInstances.length} VPC`);
+            } else {
+                console.log(`✅ Données chargées: ${this.ec2Instances.length} EC2, ${this.s3Buckets.length} S3, ${this.vpcInstances.length} VPC, ${this.scanRuns.length} scans`);
+            }
+
             return {
                 ec2: this.ec2Instances,
                 s3: this.s3Buckets,
+                vpc: this.vpcInstances,
                 scans: this.scanRuns
             };
         } catch (error) {
@@ -43,9 +62,10 @@ class GlobalStats {
      */
     getTotalResources() {
         return {
-            total: this.ec2Instances.length + this.s3Buckets.length,
+            total: this.ec2Instances.length + this.s3Buckets.length + this.vpcInstances.length,
             ec2: this.ec2Instances.length,
-            s3: this.s3Buckets.length
+            s3: this.s3Buckets.length,
+            vpc: this.vpcInstances.length
         };
     }
 
@@ -65,7 +85,8 @@ class GlobalStats {
             total: scansThisMonth.length,
             ec2: scansThisMonth.filter(s => s.service_type === 'ec2').length,
             s3: scansThisMonth.filter(s => s.service_type === 's3').length,
-            scans: scansThisMonth  // Ajout de la liste complète des scans
+            vpc: scansThisMonth.filter(s => s.service_type === 'vpc').length,
+            scans: scansThisMonth
         };
     }
 
@@ -164,8 +185,8 @@ class GlobalStats {
      * Répartition des ressources par type
      */
     getResourceDistribution() {
-        const total = this.ec2Instances.length + this.s3Buckets.length;
-        
+        const total = this.ec2Instances.length + this.s3Buckets.length + this.vpcInstances.length;
+
         return {
             ec2: {
                 count: this.ec2Instances.length,
@@ -174,6 +195,10 @@ class GlobalStats {
             s3: {
                 count: this.s3Buckets.length,
                 percentage: total > 0 ? Math.round((this.s3Buckets.length / total) * 100) : 0
+            },
+            vpc: {
+                count: this.vpcInstances.length,
+                percentage: total > 0 ? Math.round((this.vpcInstances.length / total) * 100) : 0
             },
             total: total
         };
@@ -249,6 +274,24 @@ class GlobalStats {
 
         this.ec2Instances.forEach(instance => {
             const region = instance.region || 'unknown';
+            regions[region] = (regions[region] || 0) + 1;
+        });
+
+        return {
+            regions: regions,
+            labels: Object.keys(regions),
+            data: Object.values(regions)
+        };
+    }
+
+    /**
+     * Répartition des VPCs par région
+     */
+    getVPCRegionDistribution() {
+        const regions = {};
+
+        this.vpcInstances.forEach(vpc => {
+            const region = vpc.region || 'unknown';
             regions[region] = (regions[region] || 0) + 1;
         });
 
