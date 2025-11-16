@@ -347,8 +347,13 @@ class DashboardVPC {
                 </td>
                 <td class="px-6 py-4 text-gray-300">${vpc.region || 'N/A'}</td>
                 <td class="px-6 py-4 text-center">
-                    <span class="text-blue-400 font-semibold">${vpc.subnet_count || 0}</span>
-                    <span class="text-xs text-gray-500 ml-1">(${vpc.public_subnets_count || 0}/${vpc.private_subnets_count || 0})</span>
+                    <div class="flex flex-col items-center gap-1">
+                        <span class="text-white font-semibold">${vpc.subnet_count || 0}</span>
+                        <div class="flex gap-2 text-xs">
+                            <span class="text-blue-400">🌐 ${vpc.public_subnets_count || 0}</span>
+                            <span class="text-purple-400">🔒 ${vpc.private_subnets_count || 0}</span>
+                        </div>
+                    </div>
                 </td>
                 <td class="px-6 py-4 text-center">
                     ${vpc.internet_gateway_attached ?

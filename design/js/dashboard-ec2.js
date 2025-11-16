@@ -76,17 +76,57 @@ class DashboardEC2 {
 
         // Card 3: CPU Moyen
         const cpuStats = ec2Stats.getAverageCPU();
-        document.getElementById('avg-cpu').textContent = `${cpuStats.average}%`;
+        const cpuElement = document.getElementById('avg-cpu');
+        cpuElement.textContent = `${cpuStats.average}%`;
+        cpuElement.style.color = this.getColorByPercentage(cpuStats.average);
         document.getElementById('cpu-detail').textContent =
             `Min: ${cpuStats.min}% | Max: ${cpuStats.max}%`;
 
         // Card 4: Trafic Réseau
         const trafficStats = ec2Stats.getNetworkTrafficStats();
-        document.getElementById('total-network').textContent = trafficStats.totalFormatted;
+        const networkElement = document.getElementById('total-network');
+        networkElement.textContent = trafficStats.totalFormatted;
+        // Pour le réseau, on utilise un pourcentage basé sur des seuils réalistes
+        const networkPercentage = this.calculateNetworkPercentage(trafficStats.total);
+        networkElement.style.color = this.getColorByPercentage(networkPercentage);
         document.getElementById('network-detail').textContent =
             `${trafficStats.inFormatted} IN | ${trafficStats.outFormatted} OUT`;
 
         console.log('✅ Stats cards mises à jour');
+    }
+
+    /**
+     * Retourne une couleur selon le pourcentage (vert -> jaune -> orange -> rouge)
+     */
+    getColorByPercentage(percentage) {
+        if (percentage < 30) {
+            return '#10b981'; // Vert (low usage)
+        } else if (percentage < 50) {
+            return '#fbbf24'; // Jaune (moderate)
+        } else if (percentage < 75) {
+            return '#fb923c'; // Orange (high)
+        } else {
+            return '#ef4444'; // Rouge (critical)
+        }
+    }
+
+    /**
+     * Calcule un pourcentage pour le trafic réseau basé sur des seuils réalistes
+     * < 1 GB = vert, 1-10 GB = jaune, 10-50 GB = orange, > 50 GB = rouge
+     */
+    calculateNetworkPercentage(bytes) {
+        const GB = 1024 * 1024 * 1024;
+        const trafficGB = bytes / GB;
+
+        if (trafficGB < 1) {
+            return 15; // Vert (< 30%)
+        } else if (trafficGB < 10) {
+            return 40; // Jaune (30-50%)
+        } else if (trafficGB < 50) {
+            return 60; // Orange (50-75%)
+        } else {
+            return 85; // Rouge (> 75%)
+        }
     }
 
     /**
