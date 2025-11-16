@@ -220,6 +220,74 @@
             opacity: 0.1;
         }
 
+        /* Globe Background for Region Cards */
+        .region-card-with-globe {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .globe-background {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 280px;
+            height: 280px;
+            background-image:
+                /* Continents outline effect */
+                radial-gradient(ellipse 40px 30px at 30% 35%, rgba(19, 127, 236, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse 50px 40px at 70% 40%, rgba(19, 127, 236, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse 35px 45px at 50% 65%, rgba(19, 127, 236, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse 45px 35px at 25% 60%, rgba(19, 127, 236, 0.13) 0%, transparent 50%),
+                /* Globe grid lines - latitude */
+                repeating-linear-gradient(0deg, transparent, transparent 18px, rgba(19, 127, 236, 0.08) 18px, rgba(19, 127, 236, 0.08) 20px),
+                /* Globe grid lines - longitude */
+                repeating-linear-gradient(90deg, transparent, transparent 18px, rgba(19, 127, 236, 0.08) 18px, rgba(19, 127, 236, 0.08) 20px),
+                /* Main globe sphere */
+                radial-gradient(circle at center,
+                    rgba(19, 127, 236, 0.08) 0%,
+                    rgba(19, 127, 236, 0.05) 40%,
+                    rgba(19, 127, 236, 0.12) 70%,
+                    transparent 100%);
+            border-radius: 50%;
+            opacity: 0.6;
+            z-index: 0;
+            pointer-events: none;
+            animation: globe-rotate 60s linear infinite, globe-pulse 4s ease-in-out infinite;
+            box-shadow:
+                inset 0 0 50px rgba(19, 127, 236, 0.15),
+                inset -20px -20px 40px rgba(19, 127, 236, 0.1),
+                0 0 60px rgba(19, 127, 236, 0.2);
+        }
+
+        /* Globe rotation animation */
+        @keyframes globe-rotate {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        /* Globe pulse animation */
+        @keyframes globe-pulse {
+            0%, 100% {
+                opacity: 0.5;
+                box-shadow:
+                    inset 0 0 50px rgba(19, 127, 236, 0.15),
+                    inset -20px -20px 40px rgba(19, 127, 236, 0.1),
+                    0 0 60px rgba(19, 127, 236, 0.2);
+            }
+            50% {
+                opacity: 0.7;
+                box-shadow:
+                    inset 0 0 60px rgba(19, 127, 236, 0.2),
+                    inset -20px -20px 50px rgba(19, 127, 236, 0.15),
+                    0 0 80px rgba(19, 127, 236, 0.3);
+            }
+        }
+
         /* Sidebar */
         .sidebar {
             background: rgba(15, 23, 42, 0.8);
@@ -499,36 +567,42 @@
                     </div>
 
                     <!-- EC2 Regions -->
-                    <div class="glass-card p-6">
-                        <div class="mb-4">
+                    <div class="glass-card p-6 region-card-with-globe">
+                        <div class="mb-4 relative z-10">
                             <p class="text-white text-base font-medium leading-normal">EC2 Instances</p>
                             <p class="text-white tracking-light text-[32px] font-bold leading-tight truncate">Active Regions</p>
                         </div>
-                        <div style="height: 240px;">
+                        <div style="height: 240px;" class="relative z-10">
                             <canvas id="chart-ec2-regions"></canvas>
                         </div>
+                        <!-- Globe Background -->
+                        <div class="globe-background"></div>
                     </div>
 
                     <!-- S3 Buckets -->
-                    <div class="glass-card p-6">
-                        <div class="mb-4">
+                    <div class="glass-card p-6 region-card-with-globe">
+                        <div class="mb-4 relative z-10">
                             <p class="text-white text-base font-medium leading-normal">S3 Buckets</p>
                             <p class="text-white tracking-light text-[32px] font-bold leading-tight truncate">Active Regions</p>
                         </div>
-                        <div style="height: 240px;">
+                        <div style="height: 240px;" class="relative z-10">
                             <canvas id="chart-s3-regions"></canvas>
                         </div>
+                        <!-- Globe Background -->
+                        <div class="globe-background"></div>
                     </div>
 
                     <!-- VPC Networks -->
-                    <div class="glass-card p-6">
-                        <div class="mb-4">
+                    <div class="glass-card p-6 region-card-with-globe">
+                        <div class="mb-4 relative z-10">
                             <p class="text-white text-base font-medium leading-normal">VPC Networks</p>
                             <p class="text-white tracking-light text-[32px] font-bold leading-tight truncate">Active Regions</p>
                         </div>
-                        <div style="height: 240px;">
+                        <div style="height: 240px;" class="relative z-10">
                             <canvas id="chart-vpc-regions"></canvas>
                         </div>
+                        <!-- Globe Background -->
+                        <div class="globe-background"></div>
                     </div>
                 </div>
 
