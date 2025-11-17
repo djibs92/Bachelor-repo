@@ -371,12 +371,8 @@
             overflow: hidden;
             pointer-events: none;
             border-radius: 14px;
-            opacity: 0;
-            transition: opacity 0.4s;
-        }
-
-        .logo-container:hover .binary-rain {
             opacity: 1;
+            transition: opacity 0.4s;
         }
 
         /* Binary digits */
@@ -835,9 +831,7 @@
 
     <!-- Binary Rain Effect -->
     <script>
-        const logoContainer = document.getElementById('logoContainer');
         const binaryRain = document.getElementById('binaryRain');
-        let rainInterval;
 
         function createBinaryDigit() {
             const digit = document.createElement('span');
@@ -862,23 +856,14 @@
             }, (duration + 0.5) * 1000);
         }
 
-        logoContainer.addEventListener('mouseenter', () => {
-            // Create initial burst of digits
-            for (let i = 0; i < 8; i++) {
-                setTimeout(() => createBinaryDigit(), i * 100);
-            }
+        // Start the rain effect immediately
+        // Create initial burst of digits
+        for (let i = 0; i < 8; i++) {
+            setTimeout(() => createBinaryDigit(), i * 100);
+        }
 
-            // Continue creating digits while hovering
-            rainInterval = setInterval(createBinaryDigit, 200);
-        });
-
-        logoContainer.addEventListener('mouseleave', () => {
-            clearInterval(rainInterval);
-            // Clear all digits after a delay
-            setTimeout(() => {
-                binaryRain.innerHTML = '';
-            }, 500);
-        });
+        // Continue creating digits continuously
+        setInterval(createBinaryDigit, 200);
     </script>
 </body>
 </html>
