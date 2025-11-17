@@ -1,0 +1,284 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradient pour le cloud - style image de référence (bleu clair) -->
+    <linearGradient id="cloudGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#b8dff0;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#7ec4e0;stop-opacity:0.95" />
+      <stop offset="100%" style="stop-color:#5ab3d6;stop-opacity:0.9" />
+    </linearGradient>
+
+    <!-- Gradient radial pour les bosses (effet 3D) -->
+    <radialGradient id="bumpGradient" cx="35%" cy="35%">
+      <stop offset="0%" style="stop-color:#e0f2f9;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#a0d5eb;stop-opacity:0.95" />
+      <stop offset="100%" style="stop-color:#6bb6d6;stop-opacity:0.9" />
+    </radialGradient>
+
+    <!-- Gradient pour les cercles holographiques -->
+    <radialGradient id="circleGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#137FEC;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#00d4ff;stop-opacity:0.1" />
+    </radialGradient>
+    
+    <!-- Glow effect -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Strong glow for circles -->
+    <filter id="strongGlow">
+      <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Filtre pour effet nuage vaporeux -->
+    <filter id="cloudBlur">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo"/>
+      <feBlend in="SourceGraphic" in2="goo"/>
+    </filter>
+
+    <!-- Filtre pour les bords doux du nuage -->
+    <filter id="softEdge">
+      <feGaussianBlur stdDeviation="1.5"/>
+    </filter>
+  </defs>
+  
+  <!-- Cercles concentriques holographiques (arrière-plan) -->
+  <circle cx="100" cy="100" r="95" fill="none" stroke="#137FEC" stroke-width="0.5" opacity="0.2" filter="url(#strongGlow)">
+    <animate attributeName="r" values="95;98;95" dur="4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.2;0.4;0.2" dur="4s" repeatCount="indefinite"/>
+  </circle>
+  
+  <circle cx="100" cy="100" r="85" fill="none" stroke="#00d4ff" stroke-width="0.8" opacity="0.3" filter="url(#strongGlow)">
+    <animate attributeName="r" values="85;88;85" dur="3.5s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.3;0.5;0.3" dur="3.5s" repeatCount="indefinite"/>
+  </circle>
+  
+  <circle cx="100" cy="100" r="75" fill="none" stroke="#137FEC" stroke-width="1" opacity="0.4" filter="url(#strongGlow)">
+    <animate attributeName="r" values="75;78;75" dur="3s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.4;0.6;0.4" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- Grille technique (style holographique) -->
+  <g opacity="0.15" stroke="#00d4ff" stroke-width="0.5">
+    <line x1="100" y1="30" x2="100" y2="170"/>
+    <line x1="30" y1="100" x2="170" y2="100"/>
+    <line x1="50" y1="50" x2="150" y2="150"/>
+    <line x1="150" y1="50" x2="50" y2="150"/>
+  </g>
+  
+  <!-- Cloud shape - Forme réaliste de nuage -->
+  <g id="cloud-main">
+    <!-- Couche arrière du nuage (ombre/profondeur) -->
+    <path d="M 60 100
+             C 60 100, 58 92, 62 85
+             C 64 80, 68 76, 74 74
+             C 76 70, 80 66, 86 64
+             C 90 62, 95 62, 100 62
+             C 105 62, 110 62, 114 64
+             C 120 66, 124 70, 126 74
+             C 132 76, 136 80, 138 85
+             C 142 92, 140 100, 140 100
+             C 140 106, 135 112, 127 114
+             L 73 114
+             C 65 112, 60 106, 60 100 Z"
+          fill="#7ec4e0"
+          opacity="0.6"
+          filter="url(#softEdge)">
+      <animate attributeName="opacity" values="0.6;0.7;0.6" dur="4s" repeatCount="indefinite"/>
+    </path>
+
+    <!-- Forme principale du nuage avec contours irréguliers -->
+    <path d="M 65 98
+             C 65 98, 63 90, 67 83
+             C 69 78, 73 74, 78 72
+             C 80 68, 84 64, 90 62
+             C 94 60, 98 60, 100 60
+             C 102 60, 106 60, 110 62
+             C 116 64, 120 68, 122 72
+             C 127 74, 131 78, 133 83
+             C 137 90, 135 98, 135 98
+             C 135 104, 130 110, 122 112
+             L 78 112
+             C 70 110, 65 104, 65 98 Z"
+          fill="url(#cloudGradient)"
+          filter="url(#cloudBlur)">
+      <animate attributeName="opacity" values="0.95;1;0.95" dur="3s" repeatCount="indefinite"/>
+    </path>
+
+    <!-- Bosses du nuage pour donner du volume -->
+    <!-- Bosse gauche -->
+    <path d="M 70 85
+             C 70 78, 75 72, 82 72
+             C 89 72, 94 78, 94 85
+             C 94 88, 92 90, 90 92
+             C 85 90, 80 88, 75 87
+             C 72 86, 70 86, 70 85 Z"
+          fill="#b8dff0"
+          opacity="0.8"
+          filter="url(#softEdge)">
+      <animate attributeName="opacity" values="0.8;0.9;0.8" dur="3.2s" repeatCount="indefinite"/>
+    </path>
+
+    <!-- Bosse centrale (la plus haute) -->
+    <path d="M 88 70
+             C 88 62, 93 56, 100 56
+             C 107 56, 112 62, 112 70
+             C 112 74, 110 77, 107 80
+             C 104 78, 100 77, 96 77
+             C 92 77, 90 75, 88 70 Z"
+          fill="#c5e7f5"
+          opacity="0.85"
+          filter="url(#softEdge)">
+      <animate attributeName="opacity" values="0.85;0.95;0.85" dur="2.8s" repeatCount="indefinite"/>
+    </path>
+
+    <!-- Bosse droite -->
+    <path d="M 106 85
+             C 106 78, 111 72, 118 72
+             C 125 72, 130 78, 130 85
+             C 130 88, 128 90, 125 92
+             C 120 90, 115 88, 110 87
+             C 108 86, 106 86, 106 85 Z"
+          fill="#b8dff0"
+          opacity="0.8"
+          filter="url(#softEdge)">
+      <animate attributeName="opacity" values="0.8;0.9;0.8" dur="3.4s" repeatCount="indefinite"/>
+    </path>
+
+    <!-- Highlights pour effet 3D -->
+    <ellipse cx="92" cy="68" rx="14" ry="10"
+             fill="#e0f2f9"
+             opacity="0.7"
+             filter="url(#softEdge)">
+      <animate attributeName="opacity" values="0.7;0.85;0.7" dur="3s" repeatCount="indefinite"/>
+    </ellipse>
+
+    <ellipse cx="108" cy="70" rx="12" ry="8"
+             fill="#e0f2f9"
+             opacity="0.7"
+             filter="url(#softEdge)">
+      <animate attributeName="opacity" values="0.7;0.85;0.7" dur="3.3s" repeatCount="indefinite"/>
+    </ellipse>
+
+    <!-- Petits détails de texture -->
+    <circle cx="85" cy="80" r="6" fill="#d0ebf7" opacity="0.6" filter="url(#softEdge)"/>
+    <circle cx="100" cy="75" r="5" fill="#d0ebf7" opacity="0.6" filter="url(#softEdge)"/>
+    <circle cx="115" cy="80" r="6" fill="#d0ebf7" opacity="0.6" filter="url(#softEdge)"/>
+  </g>
+  
+
+
+  <!-- Pluie de code binaire (0 et 1) qui tombe du nuage -->
+  <g id="binary-rain" font-family="JetBrains Mono, monospace" font-size="8" fill="#00d4ff" opacity="0.8">
+    <!-- Colonne 1 -->
+    <text x="70" y="115">
+      <tspan>1</tspan>
+      <animate attributeName="y" values="115;125;135;145;155;165;175" dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.9;0.8;0.7;0.6;0.5;0.3;0" dur="3s" repeatCount="indefinite"/>
+    </text>
+    <text x="70" y="120">
+      <tspan>0</tspan>
+      <animate attributeName="y" values="120;130;140;150;160;170;180" dur="3.2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.9;0.8;0.7;0.6;0.5;0.3;0" dur="3.2s" repeatCount="indefinite"/>
+    </text>
+
+    <!-- Colonne 2 -->
+    <text x="80" y="118">
+      <tspan>0</tspan>
+      <animate attributeName="y" values="118;128;138;148;158;168;178" dur="2.8s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.9;0.8;0.7;0.6;0.5;0.3;0" dur="2.8s" repeatCount="indefinite"/>
+    </text>
+    <text x="80" y="125">
+      <tspan>1</tspan>
+      <animate attributeName="y" values="125;135;145;155;165;175;185" dur="3.1s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.9;0.8;0.7;0.6;0.5;0.3;0" dur="3.1s" repeatCount="indefinite"/>
+    </text>
+
+    <!-- Colonne 3 (centrale) -->
+    <text x="90" y="116">
+      <tspan>1</tspan>
+      <animate attributeName="y" values="116;126;136;146;156;166;176" dur="2.9s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.9;0.8;0.7;0.6;0.5;0.3;0" dur="2.9s" repeatCount="indefinite"/>
+    </text>
+    <text x="90" y="122">
+      <tspan>0</tspan>
+      <animate attributeName="y" values="122;132;142;152;162;172;182" dur="3.3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.9;0.8;0.7;0.6;0.5;0.3;0" dur="3.3s" repeatCount="indefinite"/>
+    </text>
+    <text x="90" y="130">
+      <tspan>1</tspan>
+      <animate attributeName="y" values="130;140;150;160;170;180;190" dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.9;0.8;0.7;0.6;0.5;0.3;0" dur="3s" repeatCount="indefinite"/>
+    </text>
+
+    <!-- Colonne 4 (centrale) -->
+    <text x="100" y="114">
+      <tspan>0</tspan>
+      <animate attributeName="y" values="114;124;134;144;154;164;174" dur="2.7s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="1;0.9;0.8;0.7;0.5;0.3;0" dur="2.7s" repeatCount="indefinite"/>
+    </text>
+    <text x="100" y="120">
+      <tspan>1</tspan>
+      <animate attributeName="y" values="120;130;140;150;160;170;180" dur="3.2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="1;0.9;0.8;0.7;0.5;0.3;0" dur="3.2s" repeatCount="indefinite"/>
+    </text>
+    <text x="100" y="128">
+      <tspan>0</tspan>
+      <animate attributeName="y" values="128;138;148;158;168;178;188" dur="2.9s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="1;0.9;0.8;0.7;0.5;0.3;0" dur="2.9s" repeatCount="indefinite"/>
+    </text>
+
+    <!-- Colonne 5 -->
+    <text x="110" y="117">
+      <tspan>1</tspan>
+      <animate attributeName="y" values="117;127;137;147;157;167;177" dur="3.1s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.9;0.8;0.7;0.6;0.5;0.3;0" dur="3.1s" repeatCount="indefinite"/>
+    </text>
+    <text x="110" y="124">
+      <tspan>0</tspan>
+      <animate attributeName="y" values="124;134;144;154;164;174;184" dur="2.8s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.9;0.8;0.7;0.6;0.5;0.3;0" dur="2.8s" repeatCount="indefinite"/>
+    </text>
+
+    <!-- Colonne 6 -->
+    <text x="120" y="119">
+      <tspan>0</tspan>
+      <animate attributeName="y" values="119;129;139;149;159;169;179" dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.9;0.8;0.7;0.6;0.5;0.3;0" dur="3s" repeatCount="indefinite"/>
+    </text>
+    <text x="120" y="126">
+      <tspan>1</tspan>
+      <animate attributeName="y" values="126;136;146;156;166;176;186" dur="3.3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.9;0.8;0.7;0.6;0.5;0.3;0" dur="3.3s" repeatCount="indefinite"/>
+    </text>
+
+    <!-- Colonne 7 -->
+    <text x="130" y="116">
+      <tspan>1</tspan>
+      <animate attributeName="y" values="116;126;136;146;156;166;176" dur="2.9s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.9;0.8;0.7;0.6;0.5;0.3;0" dur="2.9s" repeatCount="indefinite"/>
+    </text>
+    <text x="130" y="123">
+      <tspan>0</tspan>
+      <animate attributeName="y" values="123;133;143;153;163;173;183" dur="3.1s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.9;0.8;0.7;0.6;0.5;0.3;0" dur="3.1s" repeatCount="indefinite"/>
+    </text>
+  </g>
+
+  <!-- Cercle de scan rotatif -->
+  <circle cx="100" cy="100" r="65" fill="none" stroke="#00d4ff" stroke-width="1.5" opacity="0.3"
+          stroke-dasharray="10 190" filter="url(#strongGlow)">
+    <animateTransform attributeName="transform" type="rotate" from="0 100 100" to="360 100 100"
+                      dur="8s" repeatCount="indefinite"/>
+  </circle>
+</svg>
+

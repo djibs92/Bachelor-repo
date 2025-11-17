@@ -37,12 +37,21 @@ class ScanHistoryManager {
      */
     async loadScans() {
         try {
+            console.log('🔄 Chargement des scans depuis l\'API...');
             const data = await api.getScansHistory({ limit: 1000 });
-            console.log('📊 Scans chargés:', data);
-            
+            console.log('📊 Réponse API complète:', data);
+            console.log('📊 Nombre de scans reçus:', data.scans ? data.scans.length : 0);
+
             this.allScans = data.scans || [];
             this.filteredScans = [...this.allScans];
-            
+
+            console.log('✅ allScans:', this.allScans.length, 'scans');
+            console.log('✅ filteredScans:', this.filteredScans.length, 'scans');
+
+            if (this.allScans.length > 0) {
+                console.log('📋 Premier scan:', this.allScans[0]);
+            }
+
         } catch (error) {
             console.error('❌ Erreur chargement scans:', error);
             this.showNotification('Erreur lors du chargement des scans', 'error');
@@ -178,10 +187,15 @@ class ScanHistoryManager {
      * Applique les filtres
      */
     applyFilters() {
+        console.log('🔍 Application des filtres...');
+        console.log('📊 allScans avant filtrage:', this.allScans.length);
+
         const serviceFilter = document.getElementById('filter-service')?.value || 'all';
         const periodFilter = document.getElementById('filter-period')?.value || 'all';
         const statusFilter = document.getElementById('filter-status')?.value || 'all';
         const searchId = document.getElementById('search-id')?.value.trim() || '';
+
+        console.log('🔧 Filtres actifs:', { serviceFilter, periodFilter, statusFilter, searchId });
 
         this.filteredScans = this.allScans.filter(scan => {
             // Filtre service
@@ -226,6 +240,8 @@ class ScanHistoryManager {
             return true;
         });
 
+        console.log('✅ filteredScans après filtrage:', this.filteredScans.length);
+
         this.currentPage = 1;
         this.displayScans();
     }
@@ -234,11 +250,18 @@ class ScanHistoryManager {
      * Affiche les scans avec pagination
      */
     displayScans() {
+        console.log('📺 displayScans() appelé');
         const tbody = document.getElementById('scans-table-body');
-        if (!tbody) return;
+        if (!tbody) {
+            console.error('❌ Element scans-table-body non trouvé !');
+            return;
+        }
+
+        console.log('✅ tbody trouvé');
 
         // Grouper les scans par timestamp (même scan = plusieurs services)
         const groupedScans = this.groupScansByTimestamp(this.filteredScans);
+        console.log('📦 Scans groupés:', groupedScans.length, 'groupes');
 
         // Pagination
         const totalPages = Math.ceil(groupedScans.length / this.itemsPerPage);
@@ -246,8 +269,11 @@ class ScanHistoryManager {
         const endIndex = startIndex + this.itemsPerPage;
         const pageScans = groupedScans.slice(startIndex, endIndex);
 
+        console.log('📄 Page actuelle:', this.currentPage, '- Scans à afficher:', pageScans.length);
+
         // Afficher les scans
         if (pageScans.length === 0) {
+            console.log('⚠️ Aucun scan à afficher');
             tbody.innerHTML = `
                 <tr>
                     <td colspan="6" class="px-6 py-12 text-center">
@@ -263,10 +289,13 @@ class ScanHistoryManager {
         }
 
         tbody.innerHTML = '';
-        pageScans.forEach(scanGroup => {
+        pageScans.forEach((scanGroup, index) => {
+            console.log(`➕ Ajout du scan ${index + 1}:`, scanGroup);
             const row = this.createScanRow(scanGroup);
             tbody.appendChild(row);
         });
+
+        console.log('✅ Tous les scans ajoutés au tableau');
 
         // Mettre à jour la pagination
         this.updatePagination(groupedScans.length, totalPages);
@@ -583,8 +612,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialiser le gestionnaire d'historique
     try {
         await scanHistoryManager.init();
+        console.log('✅ Scan History Manager initialisé avec succès');
     } catch (error) {
         console.error('❌ Erreur initialisation scan history:', error);
+    }
+
+    // Event listener pour le bouton refresh
+    const refreshBtn = document.getElementById('refresh-btn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', async () => {
+            console.log('🔄 Rafraîchissement de l\'historique...');
+            await scanHistoryManager.loadScans();
+            scanHistoryManager.applyFilters();
+        });
     }
 });
 

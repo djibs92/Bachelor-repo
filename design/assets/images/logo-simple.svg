@@ -1,0 +1,87 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="cloudGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:0.9" />
+      <stop offset="50%" style="stop-color:#137FEC;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0ea5e9;stop-opacity:0.8" />
+    </linearGradient>
+    
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Cercle de fond -->
+  <circle cx="32" cy="32" r="30" fill="none" stroke="#137FEC" stroke-width="0.5" opacity="0.3"/>
+  <circle cx="32" cy="32" r="26" fill="none" stroke="#00d4ff" stroke-width="0.5" opacity="0.4"/>
+  
+  <!-- Cloud shape - style cloud computing réaliste -->
+  <g filter="url(#glow)">
+    <!-- Base du cloud -->
+    <ellipse cx="32" cy="34" rx="10" ry="4" fill="url(#cloudGrad)" opacity="0.95"/>
+
+    <!-- Bosse gauche -->
+    <circle cx="25" cy="29" r="4.5" fill="url(#cloudGrad)" opacity="0.95"/>
+
+    <!-- Bosse centrale (la plus grande) -->
+    <circle cx="32" cy="27" r="5.5" fill="url(#cloudGrad)" opacity="0.98"/>
+
+    <!-- Bosse droite -->
+    <circle cx="39" cy="29" r="4.5" fill="url(#cloudGrad)" opacity="0.95"/>
+
+    <!-- Contour subtil -->
+    <path d="M 22 34
+             C 22 34, 21 30, 23 28
+             C 24 26, 25 26, 26 26
+             C 26 25, 28 23, 30 22
+             C 31 22, 32 22, 32 22
+             C 33 22, 34 22, 35 23
+             C 37 24, 38 25, 38 26
+             C 39 26, 40 26, 41 28
+             C 43 30, 42 34, 42 34
+             Z"
+          fill="url(#cloudGrad)"
+          stroke="#00d4ff"
+          stroke-width="0.5"
+          opacity="0.3"/>
+  </g>
+  
+  <!-- Network points - repositionnés -->
+  <g opacity="0.9" filter="url(#glow)">
+    <!-- Ligne supérieure -->
+    <circle cx="26" cy="25" r="1.3" fill="#00d4ff"/>
+    <circle cx="32" cy="24" r="1.3" fill="#137FEC"/>
+    <circle cx="38" cy="25" r="1.3" fill="#00d4ff"/>
+
+    <!-- Ligne centrale -->
+    <circle cx="24" cy="29" r="1.3" fill="#137FEC"/>
+    <circle cx="32" cy="29" r="1.8" fill="#0ea5e9"/>
+    <circle cx="40" cy="29" r="1.3" fill="#00d4ff"/>
+
+    <!-- Ligne inférieure -->
+    <circle cx="28" cy="32" r="1.3" fill="#137FEC"/>
+    <circle cx="36" cy="32" r="1.3" fill="#00d4ff"/>
+
+    <!-- Connections -->
+    <line x1="26" y1="25" x2="32" y2="24" stroke="#137FEC" stroke-width="0.5" opacity="0.6"/>
+    <line x1="32" y1="24" x2="38" y2="25" stroke="#137FEC" stroke-width="0.5" opacity="0.6"/>
+    <line x1="24" y1="29" x2="32" y2="29" stroke="#00d4ff" stroke-width="0.6" opacity="0.6"/>
+    <line x1="32" y1="29" x2="40" y2="29" stroke="#00d4ff" stroke-width="0.6" opacity="0.6"/>
+    <line x1="28" y1="32" x2="36" y2="32" stroke="#137FEC" stroke-width="0.5" opacity="0.6"/>
+    <line x1="26" y1="25" x2="24" y2="29" stroke="#00d4ff" stroke-width="0.5" opacity="0.5"/>
+    <line x1="32" y1="24" x2="32" y2="29" stroke="#0ea5e9" stroke-width="0.7" opacity="0.7"/>
+    <line x1="38" y1="25" x2="40" y2="29" stroke="#137FEC" stroke-width="0.5" opacity="0.5"/>
+    <line x1="24" y1="29" x2="28" y2="32" stroke="#00d4ff" stroke-width="0.5" opacity="0.5"/>
+    <line x1="32" y1="29" x2="28" y2="32" stroke="#137FEC" stroke-width="0.5" opacity="0.5"/>
+    <line x1="32" y1="29" x2="36" y2="32" stroke="#00d4ff" stroke-width="0.5" opacity="0.5"/>
+    <line x1="40" y1="29" x2="36" y2="32" stroke="#137FEC" stroke-width="0.5" opacity="0.5"/>
+  </g>
+
+  <!-- Central point -->
+  <circle cx="32" cy="29" r="2.2" fill="#00d4ff" opacity="0.95" filter="url(#glow)"/>
+</svg>
+

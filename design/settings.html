@@ -39,6 +39,105 @@
 
     <!-- CSS Dashboard Modern -->
     <link rel="stylesheet" href="css/dashboard-modern.css">
+    <style>
+        .logo-container {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            flex-shrink: 0;
+            margin: 0 auto;
+        }
+
+        .logo-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 18px;
+            padding: 8px;
+            background:
+                radial-gradient(circle at 30% 30%, rgba(0, 212, 255, 0.15) 0%, transparent 60%),
+                linear-gradient(135deg, rgba(19, 127, 236, 0.1) 0%, rgba(0, 212, 255, 0.08) 100%);
+            box-shadow:
+                0 0 30px rgba(19, 127, 236, 0.5),
+                0 0 60px rgba(0, 212, 255, 0.3),
+                inset 0 0 25px rgba(19, 127, 236, 0.12);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            animation: logo-pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes logo-pulse {
+            0%, 100% {
+                box-shadow:
+                    0 0 30px rgba(19, 127, 236, 0.5),
+                    0 0 60px rgba(0, 212, 255, 0.3),
+                    inset 0 0 25px rgba(19, 127, 236, 0.12);
+            }
+            50% {
+                box-shadow:
+                    0 0 45px rgba(19, 127, 236, 0.7),
+                    0 0 90px rgba(0, 212, 255, 0.5),
+                    inset 0 0 35px rgba(19, 127, 236, 0.18);
+            }
+        }
+
+        .logo-image:hover {
+            transform: scale(1.08) rotate(3deg);
+            box-shadow:
+                0 0 50px rgba(19, 127, 236, 0.8),
+                0 0 100px rgba(0, 212, 255, 0.6),
+                inset 0 0 40px rgba(19, 127, 236, 0.25);
+        }
+
+        /* Binary rain effect container */
+        .binary-rain {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+            border-radius: 18px;
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+
+        .logo-container:hover .binary-rain {
+            opacity: 1;
+        }
+
+        /* Binary digits */
+        .binary-digit {
+            position: absolute;
+            color: rgba(0, 212, 255, 0.8);
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            font-weight: bold;
+            animation: binary-fall linear infinite;
+            text-shadow: 0 0 5px rgba(0, 212, 255, 0.8);
+        }
+
+        @keyframes binary-fall {
+            0% {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100px);
+                opacity: 0;
+            }
+        }
+            100% {
+                transform: translateX(100%) translateY(100%) rotate(45deg);
+            }
+        }
+    </style>
 </head>
 
 <body class="bg-background-dark font-sans text-white overflow-hidden">
@@ -79,13 +178,16 @@
             <div class="flex flex-col h-full">
                 <!-- Logo -->
                 <div class="p-6 border-b border-slate-800/50">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
-                            <span class="material-symbols-outlined text-primary text-2xl">analytics</span>
+                    <div class="flex flex-col items-center gap-4">
+                        <div class="logo-container" id="logoContainer">
+                            <img src="assets/images/logo.svg"
+                                 alt="CloudDiagnoze Logo"
+                                 class="logo-image">
+                    <div class="binary-rain" id="binaryRain"></div>
                         </div>
-                        <div>
-                            <h1 class="logo-text text-xl">CloudDiagnoze</h1>
-                            <p class="text-xs text-slate-400 font-mono">v2.0</p>
+                        <div class="flex flex-col items-center text-center">
+                            <h1 class="sidebar-logo text-xl mb-1">CloudDiagnoze</h1>
+                            <p class="sidebar-subtitle text-xs">Multi-Cloud Scanner</p>
                         </div>
                     </div>
                 </div>
@@ -379,6 +481,54 @@
             </div>
         </main>
     </div>
+
+    <!-- Binary Rain Effect -->
+    <script>
+        const logoContainer = document.getElementById('logoContainer');
+        const binaryRain = document.getElementById('binaryRain');
+        let rainInterval;
+
+        function createBinaryDigit() {
+            const digit = document.createElement('span');
+            digit.className = 'binary-digit';
+            digit.textContent = Math.random() > 0.5 ? '1' : '0';
+            
+            // Random horizontal position
+            digit.style.left = Math.random() * 100 + '%';
+            
+            // Random animation duration (1.5s to 3s)
+            const duration = 1.5 + Math.random() * 1.5;
+            digit.style.animationDuration = duration + 's';
+            
+            // Random delay
+            digit.style.animationDelay = Math.random() * 0.5 + 's';
+            
+            binaryRain.appendChild(digit);
+            
+            // Remove digit after animation
+            setTimeout(() => {
+                digit.remove();
+            }, (duration + 0.5) * 1000);
+        }
+
+        logoContainer.addEventListener('mouseenter', () => {
+            // Create initial burst of digits
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => createBinaryDigit(), i * 100);
+            }
+            
+            // Continue creating digits while hovering
+            rainInterval = setInterval(createBinaryDigit, 200);
+        });
+
+        logoContainer.addEventListener('mouseleave', () => {
+            clearInterval(rainInterval);
+            // Clear all digits after a delay
+            setTimeout(() => {
+                binaryRain.innerHTML = '';
+            }, 500);
+        });
+    </script>
 </body>
 </html>
 
