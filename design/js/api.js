@@ -38,6 +38,16 @@ class CloudDiagnozeAPI {
     }
 
     /**
+     * Récupère la dernière session de scan (tous les services scannés ensemble)
+     */
+    async getLatestScanSession(scanId = null) {
+        const url = scanId
+            ? `${API_CONFIG.ENDPOINTS.LATEST_SCAN_SESSION}?scan_id=${scanId}`
+            : API_CONFIG.ENDPOINTS.LATEST_SCAN_SESSION;
+        return await this.request(url);
+    }
+
+    /**
      * Récupère l'historique des scans
      */
     async getScansHistory(params = {}) {

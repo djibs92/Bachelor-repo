@@ -3,7 +3,7 @@
  */
 class ConfigScan {
     constructor() {
-        this.selectedServices = ['ec2', 's3', 'vpc']; // Services sélectionnés par défaut
+        this.selectedServices = []; // Services sélectionnés par défaut (vide au départ)
         this.selectedRegions = []; // Régions sélectionnées
         this.allRegions = [
             'us-east-1',
@@ -73,7 +73,8 @@ class ConfigScan {
 
         if (!card || !checkbox || checkbox.disabled) return;
 
-        const isSelected = card.classList.contains('selected');
+        // Vérifier si le service est déjà dans la liste (source de vérité)
+        const isSelected = this.selectedServices.includes(service);
 
         if (isSelected) {
             // Désactiver
@@ -84,7 +85,10 @@ class ConfigScan {
             // Activer
             card.classList.add('selected');
             checkbox.checked = true;
-            this.selectedServices.push(service);
+            // Ajouter uniquement si pas déjà présent (évite les doublons)
+            if (!this.selectedServices.includes(service)) {
+                this.selectedServices.push(service);
+            }
         }
 
         console.log('Services sélectionnés:', this.selectedServices);
@@ -176,11 +180,13 @@ class ConfigScan {
                 await this.scanService(service);
             }
 
-            this.showNotification('Scan terminé avec succès !', 'success');
-            this.hideScanStatus();
-
             // Recharger l'historique
             await this.loadScanHistory();
+
+            this.hideScanStatus();
+
+            // Notification avec redirection vers dashboard
+            this.showSuccessNotificationWithRedirect();
 
         } catch (error) {
             console.error('❌ Erreur lors du scan:', error);
@@ -437,13 +443,12 @@ class ConfigScan {
      * Réinitialise la configuration
      */
     resetConfig() {
-        // Réinitialiser les services
-        this.selectedServices = ['ec2', 's3', 'vpc'];
+        // Réinitialiser les services (tout décocher)
+        this.selectedServices = [];
         document.querySelectorAll('.service-card').forEach(card => {
-            const service = card.getAttribute('data-service');
             const checkbox = card.querySelector('input[type="checkbox"]');
 
-            // Décocher tous les services par défaut
+            // Décocher tous les services
             card.classList.remove('selected');
             if (checkbox) checkbox.checked = false;
         });
@@ -482,6 +487,40 @@ class ConfigScan {
         setTimeout(() => {
             notification.remove();
         }, 3000);
+    }
+
+    /**
+     * Affiche une notification de succès avec bouton de redirection
+     */
+    showSuccessNotificationWithRedirect() {
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 bg-green-500/10 border border-green-500 text-green-500 px-6 py-4 rounded-lg backdrop-blur-sm z-50 animate-fade-in shadow-lg';
+        notification.innerHTML = `
+            <div class="flex items-center gap-4">
+                <span class="material-symbols-outlined text-3xl">check_circle</span>
+                <div class="flex-1">
+                    <p class="font-bold text-lg">Scan terminé avec succès !</p>
+                    <p class="text-sm text-green-400/80 mt-1">Les résultats sont maintenant disponibles</p>
+                </div>
+                <button onclick="window.location.href='dashbord.html'"
+                        class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                    Voir le dashboard
+                </button>
+                <button onclick="this.parentElement.parentElement.remove()"
+                        class="text-green-400 hover:text-green-300">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        // Auto-fermeture après 10 secondes
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 10000);
     }
 }
 

@@ -536,8 +536,10 @@ class ScanHistoryManager {
      * Charge un scan dans le Dashboard Global
      */
     loadScanInDashboard(scanGroup) {
-        // Rediriger vers le Dashboard Global avec le scan_id
-        window.location.href = `dashbord.html?scan_id=${scanGroup.id}`;
+        // Rediriger vers le Dashboard Global avec le premier scan_id du groupe
+        // Le dashboard chargera tous les scans de cette session (fenêtre de 5 minutes)
+        const firstScanId = scanGroup.scans[0]?.scan_id || scanGroup.id;
+        window.location.href = `dashbord.html?scan_id=${firstScanId}`;
     }
 
     /**

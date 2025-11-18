@@ -11,9 +11,28 @@ class S3Stats {
      */
     async loadBuckets() {
         try {
-            const data = await api.getS3Buckets({ latest_only: true, limit: 100 });
+            // Vérifier si S3 a été scanné dans la dernière session
+            const session = await api.getLatestScanSession();
+            const scannedServices = session.services || [];
+
+            if (!scannedServices.includes('s3')) {
+                console.log('⚪ S3 non scanné dans la dernière session');
+                this.buckets = [];
+                return this.buckets;
+            }
+
+            // Récupérer le scan_id S3 de cette session
+            const s3Scan = session.scans?.find(s => s.service_type === 's3');
+            if (!s3Scan) {
+                console.log('⚪ Aucun scan S3 trouvé dans la session');
+                this.buckets = [];
+                return this.buckets;
+            }
+
+            // S3 a été scanné, charger les données avec le scan_id spécifique
+            const data = await api.getS3Buckets({ limit: 100, scan_id: s3Scan.scan_id });
             this.buckets = data.buckets || [];
-            console.log(`✅ ${this.buckets.length} buckets S3 chargés`);
+            console.log(`✅ ${this.buckets.length} buckets S3 chargés (scan #${s3Scan.scan_id})`);
             return this.buckets;
         } catch (error) {
             console.error('❌ Erreur chargement buckets S3:', error);

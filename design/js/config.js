@@ -8,6 +8,7 @@ const API_CONFIG = {
     
     // Endpoints disponibles
     ENDPOINTS: {
+        LATEST_SCAN_SESSION: '/scans/latest-session',
         SCANS_HISTORY: '/scans/history',
         EC2_INSTANCES: '/ec2/instances',
         EC2_INSTANCE_BY_ID: '/ec2/instances',

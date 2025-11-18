@@ -12,9 +12,28 @@ class EC2Stats {
      */
     async loadInstances() {
         try {
-            const data = await api.getEC2Instances({ limit: 100 });
+            // Vérifier si EC2 a été scanné dans la dernière session
+            const session = await api.getLatestScanSession();
+            const scannedServices = session.services || [];
+
+            if (!scannedServices.includes('ec2')) {
+                console.log('⚪ EC2 non scanné dans la dernière session');
+                this.instances = [];
+                return this.instances;
+            }
+
+            // Récupérer le scan_id EC2 de cette session
+            const ec2Scan = session.scans?.find(s => s.service_type === 'ec2');
+            if (!ec2Scan) {
+                console.log('⚪ Aucun scan EC2 trouvé dans la session');
+                this.instances = [];
+                return this.instances;
+            }
+
+            // EC2 a été scanné, charger les données avec le scan_id spécifique
+            const data = await api.getEC2Instances({ limit: 100, scan_id: ec2Scan.scan_id });
             this.instances = data.instances || [];
-            console.log(`✅ ${this.instances.length} instances EC2 chargées`);
+            console.log(`✅ ${this.instances.length} instances EC2 chargées (scan #${ec2Scan.scan_id})`);
             return this.instances;
         } catch (error) {
             console.error('❌ Erreur chargement instances EC2:', error);

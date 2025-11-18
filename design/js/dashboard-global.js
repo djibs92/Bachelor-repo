@@ -4,6 +4,7 @@
 class DashboardGlobal {
     constructor() {
         this.charts = {};
+        this.autoRefreshInterval = null;
     }
 
     /**
@@ -45,12 +46,128 @@ class DashboardGlobal {
             // Masquer le loader
             this.hideLoader();
 
+            // Démarrer le rafraîchissement automatique (toutes les 30 secondes)
+            // Seulement si on affiche le dernier scan (pas un scan historique)
+            if (!scanId) {
+                this.startAutoRefresh();
+            }
+
             console.log('✅ Dashboard global chargé avec succès');
         } catch (error) {
             console.error('❌ Erreur initialisation dashboard global:', error);
             this.hideLoader();
             this.showError('Erreur lors du chargement du dashboard');
         }
+    }
+
+    /**
+     * Démarre le rafraîchissement automatique des données
+     */
+    startAutoRefresh() {
+        // Arrêter l'interval existant s'il y en a un
+        if (this.autoRefreshInterval) {
+            clearInterval(this.autoRefreshInterval);
+        }
+
+        console.log('🔄 Rafraîchissement automatique activé (toutes les 30s)');
+
+        // Rafraîchir toutes les 30 secondes
+        this.autoRefreshInterval = setInterval(async () => {
+            console.log('🔄 Rafraîchissement automatique des données...');
+            try {
+                await this.refreshData();
+            } catch (error) {
+                console.error('❌ Erreur lors du rafraîchissement:', error);
+            }
+        }, 30000); // 30 secondes
+    }
+
+    /**
+     * Arrête le rafraîchissement automatique
+     */
+    stopAutoRefresh() {
+        if (this.autoRefreshInterval) {
+            clearInterval(this.autoRefreshInterval);
+            this.autoRefreshInterval = null;
+            console.log('⏸️ Rafraîchissement automatique désactivé');
+        }
+    }
+
+    /**
+     * Rafraîchit les données du dashboard sans recharger la page
+     */
+    async refreshData() {
+        try {
+            // Animation du bouton de rafraîchissement
+            const refreshBtn = document.getElementById('refresh-btn');
+            const refreshIcon = refreshBtn?.querySelector('.material-symbols-outlined');
+
+            if (refreshBtn) {
+                refreshBtn.disabled = true;
+                refreshBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+            if (refreshIcon) {
+                refreshIcon.classList.add('animate-spin');
+            }
+
+            console.log('🔄 Rafraîchissement des données...');
+
+            // Recharger les données (dernier scan uniquement)
+            await window.globalStats.loadAllData();
+
+            // Détruire et recréer les graphiques
+            this.destroyCharts();
+
+            // Mettre à jour l'interface
+            this.updateStatsCards();
+            this.createCharts();
+            this.updateAlertsSection();
+
+            // Retirer l'animation
+            if (refreshBtn) {
+                refreshBtn.disabled = false;
+                refreshBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+            if (refreshIcon) {
+                refreshIcon.classList.remove('animate-spin');
+            }
+
+            console.log('✅ Données rafraîchies');
+
+            // Afficher une notification de succès
+            this.showSuccessToast('Données mises à jour');
+        } catch (error) {
+            console.error('❌ Erreur rafraîchissement:', error);
+
+            // Retirer l'animation en cas d'erreur
+            const refreshBtn = document.getElementById('refresh-btn');
+            const refreshIcon = refreshBtn?.querySelector('.material-symbols-outlined');
+            if (refreshBtn) {
+                refreshBtn.disabled = false;
+                refreshBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+            if (refreshIcon) {
+                refreshIcon.classList.remove('animate-spin');
+            }
+
+            this.showError('Erreur lors du rafraîchissement');
+        }
+    }
+
+    /**
+     * Affiche un toast de succès
+     */
+    showSuccessToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-4 right-4 bg-green-500/10 border border-green-500 text-green-500 px-4 py-3 rounded-lg backdrop-blur-sm z-50 animate-fade-in';
+        toast.innerHTML = `
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg">check_circle</span>
+                <span class="text-sm font-medium">${message}</span>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
     }
 
     /**
@@ -663,8 +780,14 @@ class DashboardGlobal {
             const row = document.createElement('tr');
             row.className = 'border-b border-slate-700 hover:bg-slate-800/50';
 
-            const typeColor = resource.type === 'EC2' ? 'text-blue-400' : 'text-green-400';
-            const stateColor = resource.state === 'running' || resource.state === 'active' ? 'text-green-400' : 'text-red-400';
+            // Couleur par type de ressource
+            let typeColor = 'text-slate-400';
+            if (resource.type === 'EC2') typeColor = 'text-blue-400';
+            else if (resource.type === 'S3') typeColor = 'text-green-400';
+            else if (resource.type === 'VPC') typeColor = 'text-orange-400';
+
+            // Couleur selon l'état
+            const stateColor = resource.state === 'running' || resource.state === 'active' || resource.state === 'available' ? 'text-green-400' : 'text-red-400';
 
             row.innerHTML = `
                 <td class="px-4 py-3"><span class="font-medium ${typeColor}">${resource.type}</span></td>

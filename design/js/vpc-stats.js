@@ -14,13 +14,36 @@ class VPCStats {
      */
     async loadVPCs(params = {}) {
         try {
-            console.log('📡 Appel API getVPCInstances avec params:', params);
-            const data = await api.getVPCInstances(params);
+            // Vérifier si VPC a été scanné dans la dernière session
+            const session = await api.getLatestScanSession();
+            const scannedServices = session.services || [];
+
+            if (!scannedServices.includes('vpc')) {
+                console.log('⚪ VPC non scanné dans la dernière session');
+                this.vpcs = [];
+                this.scanId = null;
+                this.scanTimestamp = null;
+                return this.vpcs;
+            }
+
+            // Récupérer le scan_id VPC de cette session
+            const vpcScan = session.scans?.find(s => s.service_type === 'vpc');
+            if (!vpcScan) {
+                console.log('⚪ Aucun scan VPC trouvé dans la session');
+                this.vpcs = [];
+                this.scanId = null;
+                this.scanTimestamp = null;
+                return this.vpcs;
+            }
+
+            // VPC a été scanné, charger les données avec le scan_id spécifique
+            console.log('📡 Appel API getVPCInstances avec scan_id:', vpcScan.scan_id);
+            const data = await api.getVPCInstances({ ...params, limit: 100, scan_id: vpcScan.scan_id });
             console.log('📦 Données reçues de l\'API:', data);
             this.vpcs = data.vpcs || [];
             this.scanId = data.scan_id;
             this.scanTimestamp = data.scan_timestamp;
-            console.log(`✅ ${this.vpcs.length} VPCs chargés dans VPCStats`);
+            console.log(`✅ ${this.vpcs.length} VPCs chargés (scan #${vpcScan.scan_id})`);
             return this.vpcs;
         } catch (error) {
             console.error('❌ Erreur lors du chargement des VPCs:', error);

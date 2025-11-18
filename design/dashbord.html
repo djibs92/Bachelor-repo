@@ -574,9 +574,16 @@
         <main class="flex-1 flex flex-col overflow-y-auto main-content">
             <!-- Header -->
             <header class="header flex items-center justify-between px-10 py-3">
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-6">
                     <span class="material-symbols-outlined text-primary text-xl">public</span>
                     <h2 class="header-title">Global Infrastructure Overview</h2>
+                    <!-- Bouton de rafraîchissement -->
+                    <button id="refresh-btn" onclick="dashboardGlobal.refreshData()"
+                            class="flex items-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary px-3 py-2 rounded-lg border border-primary/30 transition-colors ml-2"
+                            title="Rafraîchir les données">
+                        <span class="material-symbols-outlined">refresh</span>
+                        <span class="text-sm font-medium">Rafraîchir</span>
+                    </button>
                 </div>
                 <div class="flex items-center gap-4">
                     <!-- Search -->

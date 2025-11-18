@@ -16,33 +16,12 @@ class GlobalStats {
         try {
             const { scan_id } = options;
 
-            // Paramètres de requête
-            const queryParams = {
-                limit: 100,
-                latest_only: !scan_id, // Si scan_id est fourni, on ne veut pas latest_only
-                ...(scan_id && { scan_id })
-            };
-
-            // Charger les instances EC2
-            const ec2Data = await api.getEC2Instances(queryParams);
-            this.ec2Instances = ec2Data.instances || [];
-
-            // Charger les buckets S3
-            const s3Data = await api.getS3Buckets(queryParams);
-            this.s3Buckets = s3Data.buckets || [];
-
-            // Charger les VPCs
-            const vpcData = await api.getVPCInstances(queryParams);
-            this.vpcInstances = vpcData.vpcs || [];
-
-            // Charger l'historique des scans
-            const scansData = await api.getScanRuns({ limit: 100 });
-            this.scanRuns = scansData.scans || [];
-
             if (scan_id) {
-                console.log(`✅ Données du scan #${scan_id} chargées: ${this.ec2Instances.length} EC2, ${this.s3Buckets.length} S3, ${this.vpcInstances.length} VPC`);
+                // Mode historique : charger une session spécifique par son scan_id
+                await this.loadLatestSession(scan_id);
             } else {
-                console.log(`✅ Données chargées: ${this.ec2Instances.length} EC2, ${this.s3Buckets.length} S3, ${this.vpcInstances.length} VPC, ${this.scanRuns.length} scans`);
+                // Mode normal : charger la dernière SESSION de scan
+                await this.loadLatestSession();
             }
 
             return {
@@ -53,6 +32,98 @@ class GlobalStats {
             };
         } catch (error) {
             console.error('❌ Erreur chargement données globales:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Charge la dernière session de scan (uniquement les services scannés ensemble)
+     */
+    async loadLatestSession(scanId = null) {
+        try {
+            // 1. Récupérer la dernière session de scan (ou une session spécifique)
+            const session = await api.getLatestScanSession(scanId);
+
+            console.log('📊 Session de scan chargée:', session);
+
+            // 2. Réinitialiser toutes les données
+            this.ec2Instances = [];
+            this.s3Buckets = [];
+            this.vpcInstances = [];
+
+            // 3. Créer un map des scan_id par service
+            const scanIdByService = {};
+            if (session.scans && session.scans.length > 0) {
+                session.scans.forEach(scan => {
+                    scanIdByService[scan.service_type] = scan.scan_id;
+                });
+            }
+
+            console.log('📋 Scan IDs par service:', scanIdByService);
+
+            // 4. Charger UNIQUEMENT les services présents dans la session avec leurs scan_id spécifiques
+            const scannedServices = session.services || [];
+
+            if (scannedServices.includes('ec2') && scanIdByService.ec2) {
+                const ec2Data = await api.getEC2Instances({ limit: 100, scan_id: scanIdByService.ec2 });
+                this.ec2Instances = ec2Data.instances || [];
+                console.log(`✅ EC2: ${this.ec2Instances.length} instances chargées (scan #${scanIdByService.ec2})`);
+            } else {
+                console.log('⚪ EC2: Non scanné dans cette session');
+            }
+
+            if (scannedServices.includes('s3') && scanIdByService.s3) {
+                const s3Data = await api.getS3Buckets({ limit: 100, scan_id: scanIdByService.s3 });
+                this.s3Buckets = s3Data.buckets || [];
+                console.log(`✅ S3: ${this.s3Buckets.length} buckets chargés (scan #${scanIdByService.s3})`);
+            } else {
+                console.log('⚪ S3: Non scanné dans cette session');
+            }
+
+            if (scannedServices.includes('vpc') && scanIdByService.vpc) {
+                const vpcData = await api.getVPCInstances({ limit: 100, scan_id: scanIdByService.vpc });
+                this.vpcInstances = vpcData.vpcs || [];
+                console.log(`✅ VPC: ${this.vpcInstances.length} VPCs chargés (scan #${scanIdByService.vpc})`);
+            } else {
+                console.log('⚪ VPC: Non scanné dans cette session');
+            }
+
+            // 5. Charger l'historique des scans (pour la sidebar)
+            const scansData = await api.getScanRuns({ limit: 100 });
+            this.scanRuns = scansData.scans || [];
+
+            console.log(`✅ Session chargée: ${scannedServices.join(', ') || 'aucun service'} | Total: ${this.ec2Instances.length + this.s3Buckets.length + this.vpcInstances.length} ressources`);
+        } catch (error) {
+            console.error('❌ Erreur chargement session:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Charge un scan spécifique (mode historique)
+     */
+    async loadSpecificScan(scan_id) {
+        try {
+            console.log(`📊 Chargement du scan #${scan_id}...`);
+
+            // Charger les données avec le scan_id spécifique
+            const queryParams = { limit: 100, scan_id };
+
+            const ec2Data = await api.getEC2Instances(queryParams);
+            this.ec2Instances = ec2Data.instances || [];
+
+            const s3Data = await api.getS3Buckets(queryParams);
+            this.s3Buckets = s3Data.buckets || [];
+
+            const vpcData = await api.getVPCInstances(queryParams);
+            this.vpcInstances = vpcData.vpcs || [];
+
+            const scansData = await api.getScanRuns({ limit: 100 });
+            this.scanRuns = scansData.scans || [];
+
+            console.log(`✅ Scan #${scan_id} chargé: ${this.ec2Instances.length} EC2, ${this.s3Buckets.length} S3, ${this.vpcInstances.length} VPC`);
+        } catch (error) {
+            console.error(`❌ Erreur chargement scan #${scan_id}:`, error);
             throw error;
         }
     }
@@ -350,7 +421,7 @@ class GlobalStats {
     }
 
     /**
-     * Retourne la liste complète de toutes les ressources (EC2 + S3)
+     * Retourne la liste complète de toutes les ressources (EC2 + S3 + VPC)
      */
     getAllResourcesList() {
         const resources = [];
@@ -359,7 +430,7 @@ class GlobalStats {
         this.ec2Instances.forEach(instance => {
             resources.push({
                 type: 'EC2',
-                name: instance.name || instance.instance_id,
+                name: instance.tags?.Name || `Instance sans nom`,
                 id: instance.instance_id,
                 region: instance.region || 'N/A',
                 state: instance.state || 'unknown',
@@ -376,6 +447,18 @@ class GlobalStats {
                 region: bucket.region || 'N/A',
                 state: 'active',
                 instanceType: 'Bucket'
+            });
+        });
+
+        // Ajouter les VPCs
+        this.vpcInstances.forEach(vpc => {
+            resources.push({
+                type: 'VPC',
+                name: vpc.tags?.Name || `VPC sans nom`,
+                id: vpc.vpc_id,
+                region: vpc.region || 'N/A',
+                state: vpc.state || 'available',
+                instanceType: vpc.is_default ? 'Default VPC' : 'Custom VPC'
             });
         });
 
