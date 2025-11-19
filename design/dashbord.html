@@ -54,6 +54,33 @@
             overflow-x: hidden;
         }
 
+        /* Custom Scrollbar pour toutes les zones scrollables */
+        *::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        *::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 10px;
+        }
+
+        *::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(19, 127, 236, 0.6), rgba(19, 127, 236, 0.4));
+            border-radius: 10px;
+            border: 2px solid rgba(15, 23, 42, 0.3);
+        }
+
+        *::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, rgba(19, 127, 236, 0.8), rgba(19, 127, 236, 0.6));
+        }
+
+        /* Firefox scrollbar */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(19, 127, 236, 0.5) rgba(15, 23, 42, 0.3);
+        }
+
         /* Animations */
         @keyframes float {
             0%, 100% { transform: translateY(0px) translateX(0px); }
@@ -559,6 +586,10 @@
                     <span class="material-symbols-outlined text-2xl">cloud</span>
                     <p class="text-sm font-medium leading-normal">VPC Networks</p>
                 </a>
+                <a class="nav-link" href="dashboard-rds.html">
+                    <span class="material-symbols-outlined text-2xl">database</span>
+                    <p class="text-sm font-medium leading-normal">RDS Databases</p>
+                </a>
                 <a class="nav-link" href="config-scan-new.html">
                     <span class="material-symbols-outlined text-2xl">radar</span>
                     <p class="text-sm font-medium leading-normal">New Scan</p>
@@ -656,7 +687,7 @@
                     <!-- Resource Distribution (Donut) -->
                     <div class="glass-card p-6">
                         <p class="text-white text-base font-medium leading-normal">Resource Distribution</p>
-                        <p class="text-white tracking-light text-[32px] font-bold leading-tight truncate">EC2 | S3 | VPC</p>
+                        <p class="text-white tracking-light text-[32px] font-bold leading-tight truncate">Services</p>
                         <div class="flex min-h-[220px] flex-1 items-center justify-center py-4">
                             <div style="height: 180px; width: 180px; position: relative;">
                                 <canvas id="chart-resource-distribution"></canvas>
@@ -668,10 +699,8 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="flex justify-around text-xs font-medium text-slate-300">
-                            <div class="flex items-center gap-2"><div class="h-2 w-2 rounded-full bg-blue-500"></div>EC2 <span id="ec2-percent">0%</span></div>
-                            <div class="flex items-center gap-2"><div class="h-2 w-2 rounded-full bg-green-500"></div>S3 <span id="s3-percent">0%</span></div>
-                            <div class="flex items-center gap-2"><div class="h-2 w-2 rounded-full" style="background-color: #fb923c;"></div>VPC <span id="vpc-percent">0%</span></div>
+                        <div id="resource-distribution-legend" class="flex justify-around text-xs font-medium text-slate-300">
+                            <!-- Légende dynamique générée par JS -->
                         </div>
                     </div>
 

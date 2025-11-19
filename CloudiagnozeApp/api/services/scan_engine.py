@@ -34,15 +34,25 @@ async def scan_list_service(scan_id: str, provider: str, services: List[str], au
 
             scanner = ScannerFactory.create_scanner(provider, service, session, client_id, regions)
 
-            # VPC scanner écrit directement en BDD (pas Event2CBP)
-            if service == "vpc":
+            # VPC et RDS scanners écrivent directement en BDD (pas Event2CBP)
+            if service in ["vpc", "rds"]:
+                logger.info(f"🔧 Utilisation du pattern Direct DB pour {service.upper()}")
                 db = SessionLocal()
                 try:
+                    logger.info(f"🚀 Lancement du scanner {service.upper()}...")
                     result = scanner.scan(db, user_id)
                     results.append(result)
-                    logger.success(f"✅ VPC scanné : {result.get('total_vpcs', 0)} VPCs trouvés et sauvegardés")
+                    logger.info(f"📊 Résultat du scan {service.upper()}: {result}")
+
+                    if service == "vpc":
+                        logger.success(f"✅ VPC scanné : {result.get('total_vpcs', 0)} VPCs trouvés et sauvegardés")
+                    elif service == "rds":
+                        logger.success(f"✅ RDS scanné : {result.get('total_instances', 0)} instances RDS trouvées et sauvegardées")
+
                 except Exception as e:
-                    logger.error(f"❌ Erreur scan VPC : {e}")
+                    logger.error(f"❌ Erreur scan {service.upper()} : {e}")
+                    import traceback
+                    logger.error(traceback.format_exc())
                     db.rollback()
                     raise
                 finally:

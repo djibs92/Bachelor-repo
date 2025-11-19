@@ -15,6 +15,7 @@ const API_CONFIG = {
         S3_BUCKETS: '/s3/buckets',
         S3_BUCKET_BY_NAME: '/s3/buckets',
         VPC_INSTANCES: '/vpc/instances',
+        RDS_INSTANCES: '/rds/instances',
         ADMIN_CLEAR_USER_DATA: '/admin/clear-user-data',
         ADMIN_CLEAR_DATABASE: '/admin/clear-database'
     },

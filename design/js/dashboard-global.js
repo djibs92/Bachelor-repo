@@ -34,7 +34,7 @@ class DashboardGlobal {
                 await this.loadSpecificScan(scanId);
             } else {
                 // Charger les données du dernier scan (comportement par défaut)
-                await window.window.globalStats.loadAllData();
+                await window.globalStats.loadAllData();
             }
 
             // Mettre à jour l'interface
@@ -268,7 +268,14 @@ class DashboardGlobal {
         // Total Resources
         const totalResources = window.globalStats.getTotalResources();
         document.getElementById('total-resources').textContent = totalResources.total;
-        document.getElementById('total-resources-detail').textContent = `${totalResources.ec2} EC2 | ${totalResources.s3} S3 | ${totalResources.vpc} VPC`;
+
+        // Construire le détail en incluant seulement les services avec des ressources
+        const details = [];
+        if (totalResources.ec2 > 0) details.push(`${totalResources.ec2} EC2`);
+        if (totalResources.s3 > 0) details.push(`${totalResources.s3} S3`);
+        if (totalResources.vpc > 0) details.push(`${totalResources.vpc} VPC`);
+        if (totalResources.rds > 0) details.push(`${totalResources.rds} RDS`);
+        document.getElementById('total-resources-detail').textContent = details.join(' | ') || 'Aucune ressource';
 
         // Active Alerts
         const alerts = window.globalStats.getActiveAlerts();
@@ -280,7 +287,14 @@ class DashboardGlobal {
         // Scans This Month
         const scans = window.globalStats.getScansThisMonth();
         document.getElementById('scans-month').textContent = scans.total;
-        document.getElementById('scans-month-detail').textContent = `${scans.ec2} EC2 | ${scans.s3} S3 | ${scans.vpc} VPC`;
+
+        // Construire le détail des scans
+        const scanDetails = [];
+        if (scans.ec2 > 0) scanDetails.push(`${scans.ec2} EC2`);
+        if (scans.s3 > 0) scanDetails.push(`${scans.s3} S3`);
+        if (scans.vpc > 0) scanDetails.push(`${scans.vpc} VPC`);
+        if (scans.rds > 0) scanDetails.push(`${scans.rds} RDS`);
+        document.getElementById('scans-month-detail').textContent = scanDetails.join(' | ') || 'Aucun scan';
 
         // Security Score
         const securityScore = window.globalStats.getSecurityScore();
@@ -327,17 +341,39 @@ class DashboardGlobal {
 
         const data = window.globalStats.getResourceDistribution();
 
+        // Construire les labels et données dynamiquement
+        const labels = [];
+        const chartData = [];
+        const colors = [];
+
+        if (data.ec2.count > 0) {
+            labels.push('EC2 Instances');
+            chartData.push(data.ec2.count);
+            colors.push('#3b82f6');  // Bleu EC2
+        }
+        if (data.s3.count > 0) {
+            labels.push('S3 Buckets');
+            chartData.push(data.s3.count);
+            colors.push('#10b981');  // Vert S3
+        }
+        if (data.vpc.count > 0) {
+            labels.push('VPC Networks');
+            chartData.push(data.vpc.count);
+            colors.push('#fb923c');  // Orange VPC
+        }
+        if (data.rds.count > 0) {
+            labels.push('RDS Databases');
+            chartData.push(data.rds.count);
+            colors.push('#06b6d4');  // Cyan RDS
+        }
+
         this.charts.resourceDistribution = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: ['EC2 Instances', 'S3 Buckets', 'VPC Networks'],
+                labels: labels,
                 datasets: [{
-                    data: [data.ec2.count, data.s3.count, data.vpc.count],
-                    backgroundColor: [
-                        '#3b82f6',  // Bleu EC2
-                        '#10b981',  // Vert S3
-                        '#fb923c'   // Orange VPC
-                    ],
+                    data: chartData,
+                    backgroundColor: colors,
                     borderWidth: 0,  // Pas de bordure - clé pour la qualité !
                     hoverBorderWidth: 0,
                     hoverOffset: 15,  // Effet hover moderne
@@ -399,20 +435,31 @@ class DashboardGlobal {
             }
         });
 
-        // Mettre à jour les pourcentages
-        const ec2PercentEl = document.getElementById('ec2-percent');
-        const s3PercentEl = document.getElementById('s3-percent');
-        const vpcPercentEl = document.getElementById('vpc-percent');
+        // Mettre à jour la légende dynamiquement
+        const legendContainer = document.getElementById('resource-distribution-legend');
+        if (legendContainer) {
+            let legendHTML = '';
 
-        if (ec2PercentEl) ec2PercentEl.textContent = `${data.ec2.percentage}%`;
-        if (s3PercentEl) s3PercentEl.textContent = `${data.s3.percentage}%`;
-        if (vpcPercentEl) vpcPercentEl.textContent = `${data.vpc.percentage}%`;
+            if (data.ec2.count > 0) {
+                legendHTML += `<div class="flex items-center gap-2"><div class="h-2 w-2 rounded-full bg-blue-500"></div>EC2 <span>${data.ec2.percentage}%</span></div>`;
+            }
+            if (data.s3.count > 0) {
+                legendHTML += `<div class="flex items-center gap-2"><div class="h-2 w-2 rounded-full bg-green-500"></div>S3 <span>${data.s3.percentage}%</span></div>`;
+            }
+            if (data.vpc.count > 0) {
+                legendHTML += `<div class="flex items-center gap-2"><div class="h-2 w-2 rounded-full" style="background-color: #fb923c;"></div>VPC <span>${data.vpc.percentage}%</span></div>`;
+            }
+            if (data.rds.count > 0) {
+                legendHTML += `<div class="flex items-center gap-2"><div class="h-2 w-2 rounded-full" style="background-color: #06b6d4;"></div>RDS <span>${data.rds.percentage}%</span></div>`;
+            }
+
+            legendContainer.innerHTML = legendHTML;
+        }
 
         // Mettre à jour le total au centre du donut
         const totalElement = document.getElementById('total-resources-donut');
         if (totalElement) {
-            const total = data.ec2.count + data.s3.count + data.vpc.count;
-            totalElement.textContent = total;
+            totalElement.textContent = data.total;
         }
     }
 

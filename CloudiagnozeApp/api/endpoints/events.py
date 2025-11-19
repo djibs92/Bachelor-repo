@@ -3,7 +3,7 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from datetime import datetime
 
-from api.database import get_db, ScanRun, EC2Instance, EC2Performance, S3Bucket, S3Performance, VPCInstance, VPCPerformance, User
+from api.database import get_db, ScanRun, EC2Instance, EC2Performance, S3Bucket, S3Performance, VPCInstance, VPCPerformance, RDSInstance, RDSPerformance, User
 from api.endpoints.auth import get_current_user
 
 router = APIRouter()
@@ -66,10 +66,10 @@ async def get_latest_scan_session(
                 }
 
         # Fenêtre de temps : uniquement les scans lancés dans la même session utilisateur
-        # On prend uniquement les scans dans les 30 secondes AVANT et APRÈS le scan de référence
-        # Cela permet de grouper les scans multi-services lancés ensemble
+        # On prend uniquement les scans dans les 2 minutes AVANT et APRÈS le scan de référence
+        # Cela permet de grouper les scans multi-services lancés ensemble (même si certains prennent du temps)
         from datetime import timedelta
-        session_window = timedelta(seconds=30)
+        session_window = timedelta(seconds=120)  # 2 minutes pour capturer tous les scans multi-services
         session_start = reference_scan.scan_timestamp - session_window
         session_end = reference_scan.scan_timestamp + session_window
 
@@ -646,6 +646,155 @@ async def get_vpc_instances(
         raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération des VPCs: {str(e)}")
 
 
+@router.get("/rds/instances")
+async def get_rds_instances(
+    client_id: Optional[str] = None,
+    region: Optional[str] = None,
+    latest_only: bool = True,
+    scan_id: Optional[int] = None,
+    limit: int = 50,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Récupère les instances RDS depuis la base de données.
+
+    ⚠️ ISOLATION DES COMPTES : Seules les instances RDS de l'utilisateur connecté sont retournées.
+
+    Args:
+        client_id: Filtrer par client (optionnel)
+        region: Filtrer par région (optionnel)
+        latest_only: Si True, récupère uniquement les instances du dernier scan (défaut: True)
+        limit: Nombre maximum d'instances à retourner (défaut: 50)
+        current_user: Utilisateur connecté (injecté automatiquement)
+
+    Returns:
+        Liste des instances RDS avec leurs métadonnées
+    """
+    try:
+        if scan_id:
+            # Récupérer un scan spécifique par son ID
+            specific_scan = db.query(ScanRun).filter(
+                ScanRun.id == scan_id,
+                ScanRun.service_type == 'rds',
+                ScanRun.user_id == current_user.id
+            ).first()
+
+            if not specific_scan:
+                return {
+                    "total_instances": 0,
+                    "instances": [],
+                    "scan_id": None,
+                    "scan_timestamp": None
+                }
+
+            # Récupérer les instances RDS de ce scan spécifique
+            query = db.query(RDSInstance).filter(RDSInstance.scan_run_id == specific_scan.id)
+            latest_scan = specific_scan
+        elif latest_only:
+            # Récupérer le dernier scan RDS DE L'UTILISATEUR CONNECTÉ
+            latest_scan = db.query(ScanRun).filter(
+                ScanRun.service_type == 'rds',
+                ScanRun.user_id == current_user.id
+            ).order_by(ScanRun.scan_timestamp.desc()).first()
+
+            if not latest_scan:
+                return {
+                    "total_instances": 0,
+                    "instances": [],
+                    "scan_id": None,
+                    "scan_timestamp": None
+                }
+
+            # Récupérer les instances RDS de ce scan
+            query = db.query(RDSInstance).filter(RDSInstance.scan_run_id == latest_scan.id)
+        else:
+            # Récupérer toutes les instances RDS DE L'UTILISATEUR CONNECTÉ
+            query = db.query(RDSInstance).join(ScanRun).filter(ScanRun.user_id == current_user.id)
+            latest_scan = None
+
+        # Appliquer les filtres optionnels
+        if client_id:
+            query = query.filter(RDSInstance.client_id == client_id)
+
+        if region:
+            query = query.filter(RDSInstance.region == region)
+
+        # Limiter le nombre de résultats
+        instances = query.limit(limit).all()
+
+        # Formater la réponse
+        result = []
+        for instance in instances:
+            instance_data = {
+                "id": instance.id,
+                "db_instance_identifier": instance.db_instance_identifier,
+                "client_id": instance.client_id,
+                "db_instance_class": instance.db_instance_class,
+                "engine": instance.engine,
+                "engine_version": instance.engine_version,
+                "db_instance_status": instance.db_instance_status,
+                "allocated_storage": instance.allocated_storage,
+                "storage_type": instance.storage_type,
+                "storage_encrypted": instance.storage_encrypted,
+                "iops": instance.iops,
+                "vpc_id": instance.vpc_id,
+                "db_subnet_group_name": instance.db_subnet_group_name,
+                "availability_zone": instance.availability_zone,
+                "multi_az": instance.multi_az,
+                "publicly_accessible": instance.publicly_accessible,
+                "endpoint_address": instance.endpoint_address,
+                "endpoint_port": instance.endpoint_port,
+                "master_username": instance.master_username,
+                "iam_database_authentication_enabled": instance.iam_database_authentication_enabled,
+                "deletion_protection": instance.deletion_protection,
+                "backup_retention_period": instance.backup_retention_period,
+                "preferred_backup_window": instance.preferred_backup_window,
+                "preferred_maintenance_window": instance.preferred_maintenance_window,
+                "latest_restorable_time": instance.latest_restorable_time.isoformat() if instance.latest_restorable_time else None,
+                "auto_minor_version_upgrade": instance.auto_minor_version_upgrade,
+                "enhanced_monitoring_resource_arn": instance.enhanced_monitoring_resource_arn,
+                "monitoring_interval": instance.monitoring_interval,
+                "performance_insights_enabled": instance.performance_insights_enabled,
+                "region": instance.region,
+                "tags": instance.tags,
+                "security_groups": instance.security_groups,
+                "parameter_groups": instance.parameter_groups,
+                "option_groups": instance.option_groups,
+                "instance_create_time": instance.instance_create_time.isoformat() if instance.instance_create_time else None,
+                "scan_timestamp": instance.scan_timestamp.isoformat() if instance.scan_timestamp else None
+            }
+
+            # Ajouter les performances si disponibles
+            if instance.performance:
+                instance_data["performance"] = {
+                    "cpu_utilization_avg": instance.performance.cpu_utilization_avg,
+                    "freeable_memory_bytes": instance.performance.freeable_memory_bytes,
+                    "free_storage_space_bytes": instance.performance.free_storage_space_bytes,
+                    "database_connections": instance.performance.database_connections,
+                    "read_iops_avg": instance.performance.read_iops_avg,
+                    "write_iops_avg": instance.performance.write_iops_avg,
+                    "read_latency_avg": instance.performance.read_latency_avg,
+                    "write_latency_avg": instance.performance.write_latency_avg,
+                    "read_throughput_bytes": instance.performance.read_throughput_bytes,
+                    "write_throughput_bytes": instance.performance.write_throughput_bytes,
+                    "network_receive_throughput_bytes": instance.performance.network_receive_throughput_bytes,
+                    "network_transmit_throughput_bytes": instance.performance.network_transmit_throughput_bytes
+                }
+
+            result.append(instance_data)
+
+        return {
+            "total_instances": len(result),
+            "instances": result,
+            "scan_id": latest_scan.id if latest_only and latest_scan else None,
+            "scan_timestamp": latest_scan.scan_timestamp.isoformat() if latest_only and latest_scan else None
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération des instances RDS: {str(e)}")
+
+
 # ========================================
 # ENDPOINTS D'ADMINISTRATION
 # ========================================
@@ -687,6 +836,8 @@ async def clear_database(
         s3_performance_count = db.query(S3Performance).count()
         vpc_instances_count = db.query(VPCInstance).count()
         vpc_performance_count = db.query(VPCPerformance).count()
+        rds_instances_count = db.query(RDSInstance).count()
+        rds_performance_count = db.query(RDSPerformance).count()
 
         # Utiliser TRUNCATE pour réinitialiser les AUTO_INCREMENT
         # TRUNCATE supprime toutes les lignes ET remet les compteurs à 0
@@ -694,9 +845,11 @@ async def clear_database(
         db.execute("TRUNCATE TABLE ec2_performance")
         db.execute("TRUNCATE TABLE s3_performance")
         db.execute("TRUNCATE TABLE vpc_performance")
+        db.execute("TRUNCATE TABLE rds_performance")
         db.execute("TRUNCATE TABLE ec2_instances")
         db.execute("TRUNCATE TABLE s3_buckets")
         db.execute("TRUNCATE TABLE vpc_instances")
+        db.execute("TRUNCATE TABLE rds_instances")
         db.execute("TRUNCATE TABLE scan_runs")
         db.execute("TRUNCATE TABLE users")
         db.execute("SET FOREIGN_KEY_CHECKS = 1")
@@ -716,6 +869,8 @@ async def clear_database(
                 "s3_performance": s3_performance_count,
                 "vpc_instances": vpc_instances_count,
                 "vpc_performance": vpc_performance_count,
+                "rds_instances": rds_instances_count,
+                "rds_performance": rds_performance_count,
                 "total": (
                     users_count +
                     scan_runs_count +
@@ -724,7 +879,9 @@ async def clear_database(
                     s3_buckets_count +
                     s3_performance_count +
                     vpc_instances_count +
-                    vpc_performance_count
+                    vpc_performance_count +
+                    rds_instances_count +
+                    rds_performance_count
                 )
             }
         }
@@ -793,6 +950,8 @@ async def clear_user_data(
                     "s3_performance": 0,
                     "vpc_instances": 0,
                     "vpc_performance": 0,
+                    "rds_instances": 0,
+                    "rds_performance": 0,
                     "total": 0
                 }
             }
@@ -802,15 +961,18 @@ async def clear_user_data(
         ec2_instances_count = db.query(EC2Instance).filter(EC2Instance.scan_run_id.in_(scan_ids)).count()
         s3_buckets_count = db.query(S3Bucket).filter(S3Bucket.scan_run_id.in_(scan_ids)).count()
         vpc_instances_count = db.query(VPCInstance).filter(VPCInstance.scan_run_id.in_(scan_ids)).count()
+        rds_instances_count = db.query(RDSInstance).filter(RDSInstance.scan_run_id.in_(scan_ids)).count()
 
-        # Compter les métriques (via les instances/buckets/vpcs)
+        # Compter les métriques (via les instances/buckets/vpcs/rds)
         ec2_instance_ids = [inst.id for inst in db.query(EC2Instance.id).filter(EC2Instance.scan_run_id.in_(scan_ids)).all()]
         s3_bucket_ids = [bucket.id for bucket in db.query(S3Bucket.id).filter(S3Bucket.scan_run_id.in_(scan_ids)).all()]
         vpc_instance_ids = [vpc.id for vpc in db.query(VPCInstance.id).filter(VPCInstance.scan_run_id.in_(scan_ids)).all()]
+        rds_instance_ids = [rds.id for rds in db.query(RDSInstance.id).filter(RDSInstance.scan_run_id.in_(scan_ids)).all()]
 
         ec2_performance_count = db.query(EC2Performance).filter(EC2Performance.ec2_instance_id.in_(ec2_instance_ids)).count() if ec2_instance_ids else 0
         s3_performance_count = db.query(S3Performance).filter(S3Performance.s3_bucket_id.in_(s3_bucket_ids)).count() if s3_bucket_ids else 0
         vpc_performance_count = db.query(VPCPerformance).filter(VPCPerformance.vpc_instance_id.in_(vpc_instance_ids)).count() if vpc_instance_ids else 0
+        rds_performance_count = db.query(RDSPerformance).filter(RDSPerformance.rds_instance_id.in_(rds_instance_ids)).count() if rds_instance_ids else 0
 
         # Supprimer dans l'ordre (des enfants vers les parents pour respecter les foreign keys)
 
@@ -826,16 +988,23 @@ async def clear_user_data(
         if vpc_instance_ids:
             db.query(VPCPerformance).filter(VPCPerformance.vpc_instance_id.in_(vpc_instance_ids)).delete(synchronize_session=False)
 
-        # 4. Supprimer les instances EC2
+        # 4. Supprimer les métriques RDS
+        if rds_instance_ids:
+            db.query(RDSPerformance).filter(RDSPerformance.rds_instance_id.in_(rds_instance_ids)).delete(synchronize_session=False)
+
+        # 5. Supprimer les instances EC2
         db.query(EC2Instance).filter(EC2Instance.scan_run_id.in_(scan_ids)).delete(synchronize_session=False)
 
-        # 5. Supprimer les buckets S3
+        # 6. Supprimer les buckets S3
         db.query(S3Bucket).filter(S3Bucket.scan_run_id.in_(scan_ids)).delete(synchronize_session=False)
 
-        # 6. Supprimer les VPCs
+        # 7. Supprimer les VPCs
         db.query(VPCInstance).filter(VPCInstance.scan_run_id.in_(scan_ids)).delete(synchronize_session=False)
 
-        # 7. Supprimer les scan_runs
+        # 8. Supprimer les instances RDS
+        db.query(RDSInstance).filter(RDSInstance.scan_run_id.in_(scan_ids)).delete(synchronize_session=False)
+
+        # 9. Supprimer les scan_runs
         db.query(ScanRun).filter(ScanRun.user_id == current_user.id).delete(synchronize_session=False)
 
         # Commit de la transaction
@@ -854,6 +1023,8 @@ async def clear_user_data(
                 "s3_performance": s3_performance_count,
                 "vpc_instances": vpc_instances_count,
                 "vpc_performance": vpc_performance_count,
+                "rds_instances": rds_instances_count,
+                "rds_performance": rds_performance_count,
                 "total": (
                     scan_runs_count +
                     ec2_instances_count +
@@ -861,7 +1032,9 @@ async def clear_user_data(
                     s3_buckets_count +
                     s3_performance_count +
                     vpc_instances_count +
-                    vpc_performance_count
+                    vpc_performance_count +
+                    rds_instances_count +
+                    rds_performance_count
                 )
             }
         }

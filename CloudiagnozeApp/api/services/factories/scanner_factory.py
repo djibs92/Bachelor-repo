@@ -41,7 +41,7 @@ class ScannerFactory:
             from api.services.provider.aws.scanners.vpc_scanner import VPCScanner
             return VPCScanner(session,client_id,regions)
         elif service == "rds":
-            from api.services.provider.aws.scanners.rds_scan import RDSScanner
+            from api.services.provider.aws.scanners.rds_scanner import RDSScanner
             return RDSScanner(session,client_id,regions)
         # elif service == "iam":
         #     from api.services.provider.aws.scanners.iam_scan import IAMScanner

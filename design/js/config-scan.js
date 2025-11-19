@@ -175,10 +175,9 @@ class ConfigScan {
             // Afficher le statut
             this.showScanStatus();
 
-            // Lancer les scans pour chaque service
-            for (const service of this.selectedServices) {
-                await this.scanService(service);
-            }
+            // ✅ LANCER UN SEUL SCAN AVEC TOUS LES SERVICES (au lieu de plusieurs scans séparés)
+            // Cela garantit que tous les services auront le même timestamp et seront groupés dans la même session
+            await this.scanAllServices(this.selectedServices);
 
             // Recharger l'historique
             await this.loadScanHistory();
@@ -196,24 +195,25 @@ class ConfigScan {
     }
 
     /**
-     * Scanne un service spécifique
+     * Lance un scan avec TOUS les services sélectionnés en une seule requête
+     * Cela garantit que tous les services auront le même timestamp et seront groupés dans la même session
      */
-    async scanService(service) {
-        console.log(`📡 Scan ${service.toUpperCase()}...`);
+    async scanAllServices(services) {
+        console.log(`📡 Scan de ${services.length} service(s): ${services.join(', ').toUpperCase()}...`);
 
         // Mettre à jour le statut
-        document.getElementById('current-service').textContent = service.toUpperCase();
+        document.getElementById('current-service').textContent = services.join(', ').toUpperCase();
         document.getElementById('current-region').textContent = this.selectedRegions.join(', ');
 
-        // ✅ UTILISER LE ROLE ARN DE L'UTILISATEUR
+        // ✅ LANCER UN SEUL SCAN AVEC TOUS LES SERVICES
         const scanRequest = {
             provider: 'aws',
-            services: [service],
+            services: services,  // ✅ Tous les services en une seule requête
             auth_mode: {
                 type: 'sts',
-                role_arn: this.userRoleArn  // ✅ Role ARN de l'utilisateur connecté
+                role_arn: this.userRoleArn
             },
-            client_id: 'ASM-Enterprise', // TODO: À récupérer de l'authentification
+            client_id: 'ASM-Enterprise',
             regions: this.selectedRegions
         };
 
@@ -223,7 +223,7 @@ class ConfigScan {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authManager.getToken()}`  // ✅ AJOUT DU TOKEN JWT
+                    'Authorization': `Bearer ${authManager.getToken()}`
                 },
                 body: JSON.stringify(scanRequest)
             });
@@ -234,15 +234,23 @@ class ConfigScan {
             }
 
             const data = await response.json();
-            console.log(`✅ Scan ${service} lancé:`, data);
+            console.log(`✅ Scan multi-services lancé:`, data);
 
-            // Simuler la progression (en attendant le vrai statut)
-            await this.simulateScanProgress(service);
+            // Simuler la progression
+            await this.simulateScanProgress(services.join(', '));
 
         } catch (error) {
-            console.error(`❌ Erreur scan ${service}:`, error);
+            console.error(`❌ Erreur scan multi-services:`, error);
             throw error;
         }
+    }
+
+    /**
+     * Scanne un service spécifique (conservé pour compatibilité)
+     * @deprecated Utiliser scanAllServices à la place
+     */
+    async scanService(service) {
+        return this.scanAllServices([service]);
     }
 
     /**

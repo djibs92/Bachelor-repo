@@ -1,16 +1,17 @@
 /**
- * Classe pour calculer les statistiques globales (EC2 + S3)
+ * Classe pour calculer les statistiques globales (EC2 + S3 + VPC + RDS)
  */
 class GlobalStats {
     constructor() {
         this.ec2Instances = [];
         this.s3Buckets = [];
         this.vpcInstances = [];
+        this.rdsInstances = [];
         this.scanRuns = [];
     }
 
     /**
-     * Charge toutes les données (EC2 + S3 + VPC + Scans)
+     * Charge toutes les données (EC2 + S3 + VPC + RDS + Scans)
      */
     async loadAllData(options = {}) {
         try {
@@ -28,6 +29,7 @@ class GlobalStats {
                 ec2: this.ec2Instances,
                 s3: this.s3Buckets,
                 vpc: this.vpcInstances,
+                rds: this.rdsInstances,
                 scans: this.scanRuns
             };
         } catch (error) {
@@ -50,6 +52,7 @@ class GlobalStats {
             this.ec2Instances = [];
             this.s3Buckets = [];
             this.vpcInstances = [];
+            this.rdsInstances = [];
 
             // 3. Créer un map des scan_id par service
             const scanIdByService = {};
@@ -88,11 +91,19 @@ class GlobalStats {
                 console.log('⚪ VPC: Non scanné dans cette session');
             }
 
+            if (scannedServices.includes('rds') && scanIdByService.rds) {
+                const rdsData = await api.getRDSInstances({ limit: 100, scan_id: scanIdByService.rds });
+                this.rdsInstances = rdsData.instances || [];
+                console.log(`✅ RDS: ${this.rdsInstances.length} instances chargées (scan #${scanIdByService.rds})`);
+            } else {
+                console.log('⚪ RDS: Non scanné dans cette session');
+            }
+
             // 5. Charger l'historique des scans (pour la sidebar)
             const scansData = await api.getScanRuns({ limit: 100 });
             this.scanRuns = scansData.scans || [];
 
-            console.log(`✅ Session chargée: ${scannedServices.join(', ') || 'aucun service'} | Total: ${this.ec2Instances.length + this.s3Buckets.length + this.vpcInstances.length} ressources`);
+            console.log(`✅ Session chargée: ${scannedServices.join(', ') || 'aucun service'} | Total: ${this.ec2Instances.length + this.s3Buckets.length + this.vpcInstances.length + this.rdsInstances.length} ressources`);
         } catch (error) {
             console.error('❌ Erreur chargement session:', error);
             throw error;
@@ -118,10 +129,13 @@ class GlobalStats {
             const vpcData = await api.getVPCInstances(queryParams);
             this.vpcInstances = vpcData.vpcs || [];
 
+            const rdsData = await api.getRDSInstances(queryParams);
+            this.rdsInstances = rdsData.instances || [];
+
             const scansData = await api.getScanRuns({ limit: 100 });
             this.scanRuns = scansData.scans || [];
 
-            console.log(`✅ Scan #${scan_id} chargé: ${this.ec2Instances.length} EC2, ${this.s3Buckets.length} S3, ${this.vpcInstances.length} VPC`);
+            console.log(`✅ Scan #${scan_id} chargé: ${this.ec2Instances.length} EC2, ${this.s3Buckets.length} S3, ${this.vpcInstances.length} VPC, ${this.rdsInstances.length} RDS`);
         } catch (error) {
             console.error(`❌ Erreur chargement scan #${scan_id}:`, error);
             throw error;
@@ -133,10 +147,11 @@ class GlobalStats {
      */
     getTotalResources() {
         return {
-            total: this.ec2Instances.length + this.s3Buckets.length + this.vpcInstances.length,
+            total: this.ec2Instances.length + this.s3Buckets.length + this.vpcInstances.length + this.rdsInstances.length,
             ec2: this.ec2Instances.length,
             s3: this.s3Buckets.length,
-            vpc: this.vpcInstances.length
+            vpc: this.vpcInstances.length,
+            rds: this.rdsInstances.length
         };
     }
 
@@ -157,6 +172,7 @@ class GlobalStats {
             ec2: scansThisMonth.filter(s => s.service_type === 'ec2').length,
             s3: scansThisMonth.filter(s => s.service_type === 's3').length,
             vpc: scansThisMonth.filter(s => s.service_type === 'vpc').length,
+            rds: scansThisMonth.filter(s => s.service_type === 'rds').length,
             scans: scansThisMonth
         };
     }
@@ -303,7 +319,7 @@ class GlobalStats {
      * Répartition des ressources par type
      */
     getResourceDistribution() {
-        const total = this.ec2Instances.length + this.s3Buckets.length + this.vpcInstances.length;
+        const total = this.ec2Instances.length + this.s3Buckets.length + this.vpcInstances.length + this.rdsInstances.length;
 
         return {
             ec2: {
@@ -317,6 +333,10 @@ class GlobalStats {
             vpc: {
                 count: this.vpcInstances.length,
                 percentage: total > 0 ? Math.round((this.vpcInstances.length / total) * 100) : 0
+            },
+            rds: {
+                count: this.rdsInstances.length,
+                percentage: total > 0 ? Math.round((this.rdsInstances.length / total) * 100) : 0
             },
             total: total
         };

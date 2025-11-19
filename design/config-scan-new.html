@@ -555,6 +555,10 @@
                     <span class="material-symbols-outlined text-2xl">cloud</span>
                     <p class="text-sm font-medium leading-normal">VPC Networks</p>
                 </a>
+                <a class="nav-link" href="dashboard-rds.html">
+                    <span class="material-symbols-outlined text-2xl">database</span>
+                    <p class="text-sm font-medium leading-normal">RDS Databases</p>
+                </a>
                 <a class="nav-link active" href="config-scan-new.html">
                     <span class="material-symbols-outlined text-2xl">radar</span>
                     <p class="text-sm font-medium leading-normal">New Scan</p>
@@ -693,20 +697,25 @@
                                     <input type="checkbox" class="hidden" data-service-toggle="vpc"/>
                                 </div>
 
-                                <!-- RDS Card (Disabled for now) -->
-                                <div class="service-card glass-card rounded-xl p-6 cursor-not-allowed border-2 border-slate-700 opacity-50"
-                                     data-service="rds">
+                                <!-- RDS Card -->
+                                <div class="service-card glass-card rounded-xl p-6 cursor-pointer border-2 border-slate-700"
+                                     data-service="rds" onclick="configScan.toggleService('rds')">
+                                    <!-- Badge de sélection -->
+                                    <div class="selection-badge">
+                                        <span class="material-symbols-outlined text-white text-lg">check</span>
+                                    </div>
+
                                     <div class="flex items-center gap-4 mb-4">
-                                        <div class="service-icon-container w-16 h-16 bg-purple-500/20 rounded-xl flex items-center justify-center">
-                                            <span class="material-symbols-outlined text-purple-400 text-4xl">database</span>
+                                        <div class="service-icon-container w-16 h-16 bg-cyan-500/20 rounded-xl flex items-center justify-center">
+                                            <span class="material-symbols-outlined text-cyan-400 text-4xl">database</span>
                                         </div>
                                         <div>
                                             <h4 class="text-white font-bold text-lg">RDS</h4>
                                             <p class="text-slate-400 text-sm">Database</p>
                                         </div>
                                     </div>
-                                    <p class="text-slate-400 text-sm">Bientôt disponible</p>
-                                    <input type="checkbox" disabled class="hidden" data-service-toggle="rds"/>
+                                    <p class="text-slate-400 text-sm">Bases de données relationnelles, performance</p>
+                                    <input type="checkbox" class="hidden" data-service-toggle="rds"/>
                                 </div>
 
 

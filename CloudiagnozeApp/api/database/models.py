@@ -70,7 +70,7 @@ class ScanRun(Base):
     # Colonnes
     id = Column(Integer, primary_key=True, autoincrement=True, comment="ID unique du scan")
     client_id = Column(String(100), nullable=False, comment="Identifiant du client (ex: ASM-Enterprise)")
-    service_type = Column(Enum('ec2', 's3', 'vpc'), nullable=False, comment="Type de service scanné")
+    service_type = Column(String(20), nullable=False, comment="Type de service scanné (ec2, s3, vpc, rds, etc.)")
     scan_timestamp = Column(DateTime, nullable=False, default=datetime.now, comment="Date et heure du scan")
     total_resources = Column(Integer, default=0, comment="Nombre total de ressources trouvées")
     status = Column(Enum('success', 'partial', 'failed'), default='success', comment="Statut du scan")
@@ -85,6 +85,8 @@ class ScanRun(Base):
     s3_buckets = relationship("S3Bucket", back_populates="scan_run", cascade="all, delete-orphan")
     # Un ScanRun peut avoir plusieurs VPCInstance
     vpc_instances = relationship("VPCInstance", back_populates="scan_run", cascade="all, delete-orphan")
+    # Un ScanRun peut avoir plusieurs RDSInstance
+    rds_instances = relationship("RDSInstance", back_populates="scan_run", cascade="all, delete-orphan")
     
     def __repr__(self):
         """Représentation textuelle de l'objet (pour le debug)"""
@@ -399,4 +401,137 @@ class VPCPerformance(Base):
 
     def __repr__(self):
         return f"<VPCPerformance(id={self.id}, network_in={self.network_in_bytes}, network_out={self.network_out_bytes})>"
+
+
+# ========================================
+# MODÈLE : RDSInstance
+# ========================================
+# Représente la table 'rds_instances'
+# Stocke toutes les métadonnées d'une instance RDS
+class RDSInstance(Base):
+    """
+    Métadonnées des instances RDS (Relational Database Service).
+
+    Chaque ligne = un snapshot d'une instance RDS à un moment donné.
+    Permet de garder l'historique des instances de bases de données.
+    """
+    __tablename__ = "rds_instances"
+
+    # Clé primaire
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # Clé étrangère (lien vers scan_runs)
+    scan_run_id = Column(Integer, ForeignKey('scan_runs.id', ondelete='CASCADE'), nullable=False)
+
+    # Identifiants
+    resource_id = Column(String(255), nullable=False, comment="ARN de l'instance RDS")
+    db_instance_identifier = Column(String(255), nullable=False, index=True, comment="Identifiant de l'instance RDS")
+    client_id = Column(String(100), nullable=False, index=True, comment="Identifiant du client")
+
+    # Configuration de base
+    db_instance_class = Column(String(50), comment="Classe d'instance (ex: db.t3.micro)")
+    engine = Column(String(50), comment="Moteur de base de données (mysql, postgres, etc.)")
+    engine_version = Column(String(50), comment="Version du moteur")
+    db_instance_status = Column(String(50), index=True, comment="Statut de l'instance (available, stopped, etc.)")
+
+    # Configuration de stockage
+    allocated_storage = Column(Integer, comment="Stockage alloué (GB)")
+    storage_type = Column(String(50), comment="Type de stockage (gp2, gp3, io1, etc.)")
+    storage_encrypted = Column(Boolean, default=False, comment="Stockage chiffré")
+    iops = Column(Integer, comment="IOPS provisionnées (si applicable)")
+
+    # Configuration réseau
+    vpc_id = Column(String(50), comment="ID du VPC")
+    db_subnet_group_name = Column(String(255), comment="Nom du subnet group")
+    availability_zone = Column(String(50), comment="Zone de disponibilité")
+    multi_az = Column(Boolean, default=False, comment="Déploiement Multi-AZ")
+    publicly_accessible = Column(Boolean, default=False, comment="Accessible publiquement")
+    endpoint_address = Column(String(255), comment="Adresse de l'endpoint")
+    endpoint_port = Column(Integer, comment="Port de l'endpoint")
+
+    # Configuration de sécurité
+    master_username = Column(String(255), comment="Nom d'utilisateur master")
+    iam_database_authentication_enabled = Column(Boolean, default=False, comment="Authentification IAM activée")
+    deletion_protection = Column(Boolean, default=False, comment="Protection contre la suppression")
+
+    # Backup et maintenance
+    backup_retention_period = Column(Integer, comment="Période de rétention des backups (jours)")
+    preferred_backup_window = Column(String(50), comment="Fenêtre de backup préférée")
+    preferred_maintenance_window = Column(String(50), comment="Fenêtre de maintenance préférée")
+    latest_restorable_time = Column(DateTime, comment="Dernière heure restaurable")
+    auto_minor_version_upgrade = Column(Boolean, default=False, comment="Mise à jour automatique des versions mineures")
+
+    # Monitoring
+    enhanced_monitoring_resource_arn = Column(String(255), comment="ARN de la ressource Enhanced Monitoring")
+    monitoring_interval = Column(Integer, comment="Intervalle de monitoring (secondes)")
+    performance_insights_enabled = Column(Boolean, default=False, comment="Performance Insights activé")
+
+    # Région et localisation
+    region = Column(String(50), index=True, comment="Région AWS (ex: eu-west-3)")
+
+    # Données JSON (pour flexibilité)
+    tags = Column(JSON, comment="Tags de l'instance")
+    security_groups = Column(JSON, comment="Security groups attachés")
+    parameter_groups = Column(JSON, comment="Parameter groups")
+    option_groups = Column(JSON, comment="Option groups")
+
+    # Tracking
+    instance_create_time = Column(DateTime, comment="Date de création de l'instance")
+    scan_timestamp = Column(DateTime, nullable=False, default=datetime.now, comment="Date du scan")
+
+    # Relations
+    scan_run = relationship("ScanRun", back_populates="rds_instances")
+    performance = relationship("RDSPerformance", back_populates="rds_instance", uselist=False, cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<RDSInstance(id={self.id}, db_identifier={self.db_instance_identifier}, engine={self.engine}, status={self.db_instance_status})>"
+
+
+# ========================================
+# MODÈLE : RDSPerformance
+# ========================================
+# Représente la table 'rds_performance'
+# Stocke les métriques CloudWatch pour une instance RDS
+class RDSPerformance(Base):
+    """
+    Métriques de performance CloudWatch pour RDS.
+
+    Chaque ligne = les métriques d'une instance RDS à un moment donné.
+    Lié à RDSInstance par rds_instance_id.
+    """
+    __tablename__ = "rds_performance"
+
+    # Clé primaire
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # Clé étrangère (lien vers rds_instances)
+    rds_instance_id = Column(Integer, ForeignKey('rds_instances.id', ondelete='CASCADE'), nullable=False)
+
+    # Métriques CPU et mémoire
+    cpu_utilization_avg = Column(Float, comment="Utilisation CPU moyenne (%)")
+    freeable_memory_bytes = Column(BigInteger, comment="Mémoire disponible (bytes)")
+
+    # Métriques de stockage
+    free_storage_space_bytes = Column(BigInteger, comment="Espace de stockage libre (bytes)")
+
+    # Métriques de connexions
+    database_connections = Column(Integer, comment="Nombre de connexions à la base de données")
+
+    # Métriques de lecture/écriture
+    read_iops_avg = Column(Float, comment="IOPS de lecture moyennes")
+    write_iops_avg = Column(Float, comment="IOPS d'écriture moyennes")
+    read_latency_avg = Column(Float, comment="Latence de lecture moyenne (ms)")
+    write_latency_avg = Column(Float, comment="Latence d'écriture moyenne (ms)")
+    read_throughput_bytes = Column(BigInteger, comment="Débit de lecture (bytes)")
+    write_throughput_bytes = Column(BigInteger, comment="Débit d'écriture (bytes)")
+
+    # Métriques réseau
+    network_receive_throughput_bytes = Column(BigInteger, comment="Débit réseau reçu (bytes)")
+    network_transmit_throughput_bytes = Column(BigInteger, comment="Débit réseau transmis (bytes)")
+
+    # Relation
+    rds_instance = relationship("RDSInstance", back_populates="performance")
+
+    def __repr__(self):
+        return f"<RDSPerformance(id={self.id}, cpu={self.cpu_utilization_avg}%, connections={self.database_connections})>"
 

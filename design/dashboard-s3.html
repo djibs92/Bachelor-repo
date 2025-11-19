@@ -54,6 +54,33 @@
             overflow-x: hidden;
         }
 
+        /* Custom Scrollbar pour toutes les modals et zones scrollables */
+        *::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        *::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 10px;
+        }
+
+        *::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(19, 127, 236, 0.6), rgba(19, 127, 236, 0.4));
+            border-radius: 10px;
+            border: 2px solid rgba(15, 23, 42, 0.3);
+        }
+
+        *::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, rgba(19, 127, 236, 0.8), rgba(19, 127, 236, 0.6));
+        }
+
+        /* Firefox scrollbar */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(19, 127, 236, 0.5) rgba(15, 23, 42, 0.3);
+        }
+
         /* Animations */
         @keyframes float {
             0%, 100% { transform: translateY(0px) translateX(0px); }
@@ -465,6 +492,10 @@
                     <span class="material-symbols-outlined text-2xl">cloud</span>
                     <p class="text-sm font-medium leading-normal">VPC Networks</p>
                 </a>
+                <a class="nav-link" href="dashboard-rds.html">
+                    <span class="material-symbols-outlined text-2xl">database</span>
+                    <p class="text-sm font-medium leading-normal">RDS Databases</p>
+                </a>
                 <a class="nav-link" href="config-scan-new.html">
                     <span class="material-symbols-outlined text-2xl">radar</span>
                     <p class="text-sm font-medium leading-normal">New Scan</p>
@@ -673,9 +704,9 @@
 
     <!-- Modal Détails Bucket -->
     <div id="bucket-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="glass-card rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%); backdrop-filter: blur(20px); border: 1px solid rgba(71, 85, 105, 0.3); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
             <!-- Header -->
-            <div class="sticky top-0 bg-slate-900/90 backdrop-blur-md border-b border-slate-700 p-6 flex items-center justify-between">
+            <div class="sticky top-0 border-b border-slate-700/50 p-6 flex items-center justify-between" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%); backdrop-filter: blur(20px);">
                 <div class="flex items-center gap-3">
                     <span class="material-symbols-outlined text-blue-400 text-2xl">folder</span>
                     <h3 id="modal-title" class="text-white text-xl font-bold">Détails du bucket</h3>
