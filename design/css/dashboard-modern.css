@@ -350,6 +350,17 @@ body {
     color: white;
 }
 
+.btn-icon.btn-success {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: #10B981;
+    color: #10B981;
+}
+
+.btn-icon.btn-success:hover {
+    background: #10B981;
+    color: white;
+}
+
 /* Input Fields */
 .input-field {
     width: 100%;

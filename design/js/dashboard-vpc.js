@@ -414,6 +414,12 @@ class DashboardVPC {
                 }
             });
         }
+
+        // Télécharger JSON
+        const downloadBtn = document.getElementById('download-vpc-json');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', () => this.downloadVPCJSON());
+        }
     }
 
     /**
@@ -423,6 +429,9 @@ class DashboardVPC {
         const modal = document.getElementById('instance-modal');
         const modalTitle = document.getElementById('modal-title');
         const modalContent = document.getElementById('modal-content');
+
+        // Stocker le VPC courant pour le téléchargement
+        this.currentVPC = vpc;
 
         // Titre
         const vpcName = vpc.tags?.Name || vpc.vpc_id;
@@ -443,6 +452,54 @@ class DashboardVPC {
         const modal = document.getElementById('instance-modal');
         modal.classList.add('hidden');
         document.body.style.overflow = 'auto';
+        this.currentVPC = null;
+    }
+
+    /**
+     * Télécharge les détails du VPC en JSON
+     */
+    downloadVPCJSON() {
+        if (!this.currentVPC) {
+            console.error('❌ Aucun VPC sélectionné');
+            return;
+        }
+
+        // Préparer les données pour l'export
+        const exportData = {
+            export_info: {
+                service: 'VPC',
+                export_date: new Date().toISOString(),
+                resource_type: 'vpc',
+                resource_id: this.currentVPC.vpc_id
+            },
+            vpc: this.currentVPC
+        };
+
+        // Convertir en JSON formaté
+        const jsonString = JSON.stringify(exportData, null, 2);
+
+        // Créer un blob
+        const blob = new Blob([jsonString], { type: 'application/json' });
+
+        // Créer un lien de téléchargement
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+
+        // Nom du fichier avec timestamp
+        const vpcName = this.currentVPC.tags?.Name || this.currentVPC.vpc_id;
+        const timestamp = new Date().toISOString().split('T')[0];
+        a.download = `vpc-${vpcName}-${timestamp}.json`;
+
+        // Déclencher le téléchargement
+        document.body.appendChild(a);
+        a.click();
+
+        // Nettoyer
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        console.log('✅ VPC exporté en JSON:', vpcName);
     }
 
     /**

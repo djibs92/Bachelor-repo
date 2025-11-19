@@ -26,6 +26,17 @@ class CloudDiagnozeAPI {
                 }
             });
 
+            // Gérer les erreurs 401 (token expiré)
+            if (response.status === 401) {
+                console.log('🔒 Token expiré (401), nettoyage et redirection...');
+                if (authManager) {
+                    authManager.clearAuth();
+                }
+                // Rediriger vers la page de login
+                window.location.href = 'login.html';
+                throw new Error('Session expirée. Veuillez vous reconnecter.');
+            }
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }

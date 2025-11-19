@@ -669,9 +669,15 @@
                     <span class="material-symbols-outlined text-orange-400 text-2xl">cloud</span>
                     <h3 id="modal-title" class="text-white text-xl font-bold">Détails du VPC</h3>
                 </div>
-                <button id="close-modal" class="text-slate-400 hover:text-white transition-colors">
-                    <span class="material-symbols-outlined text-2xl">close</span>
-                </button>
+                <div class="flex items-center gap-3">
+                    <button id="download-vpc-json" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 transition-all hover:scale-105">
+                        <span class="material-symbols-outlined text-lg">download</span>
+                        <span class="text-sm font-medium">Export JSON</span>
+                    </button>
+                    <button id="close-modal" class="text-slate-400 hover:text-white transition-colors">
+                        <span class="material-symbols-outlined text-2xl">close</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Content -->

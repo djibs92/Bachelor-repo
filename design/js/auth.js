@@ -71,6 +71,47 @@ class AuthManager {
     }
 
     /**
+     * Vérifie si le token est valide en appelant l'API
+     * Retourne true si valide, false sinon (et supprime le token expiré)
+     */
+    async validateToken() {
+        if (!this.token) {
+            return false;
+        }
+
+        try {
+            const response = await fetch(`${AUTH_API_BASE_URL}/me`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            if (response.status === 401) {
+                // Token expiré ou invalide
+                console.log('🔒 Token expiré, nettoyage...');
+                this.clearAuth();
+                return false;
+            }
+
+            if (!response.ok) {
+                console.error('Erreur lors de la validation du token:', response.status);
+                return false;
+            }
+
+            // Token valide, mettre à jour les infos utilisateur
+            const data = await response.json();
+            localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data));
+            this.user = data;
+            return true;
+
+        } catch (error) {
+            console.error('Erreur validateToken:', error);
+            return false;
+        }
+    }
+
+    /**
      * Inscription d'un nouvel utilisateur
      */
     async signup(email, password, fullName = null, companyName = null, roleArn = null) {
@@ -249,10 +290,18 @@ class AuthManager {
     /**
      * Redirige vers le dashboard si déjà connecté (pour login/signup pages)
      */
-    redirectIfAuthenticated() {
+    async redirectIfAuthenticated() {
         if (this.isAuthenticated()) {
-            window.location.href = 'dashbord.html';
-            return true;
+            // Vérifier si le token est valide
+            const isValid = await this.validateToken();
+            if (isValid) {
+                window.location.href = 'dashbord.html';
+                return true;
+            } else {
+                // Token expiré, rester sur la page de login
+                console.log('🔒 Token expiré, affichage de la page de login');
+                return false;
+            }
         }
         return false;
     }

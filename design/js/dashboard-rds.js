@@ -1288,6 +1288,9 @@ class DashboardRDS {
         const instance = this.rdsStats.instances.find(i => i.db_instance_identifier === instanceId);
         if (!instance) return;
 
+        // Stocker l'instance courante pour le téléchargement
+        this.currentInstance = instance;
+
         const modal = document.getElementById('instance-modal');
         const modalTitle = document.getElementById('modal-title');
         const modalContent = document.getElementById('modal-content');
@@ -1302,14 +1305,70 @@ class DashboardRDS {
         // Fermer la modal
         const closeBtn = document.getElementById('close-modal');
         if (closeBtn) {
-            closeBtn.onclick = () => modal.classList.add('hidden');
+            closeBtn.onclick = () => {
+                modal.classList.add('hidden');
+                this.currentInstance = null;
+            };
         }
 
         modal.onclick = (e) => {
             if (e.target === modal) {
                 modal.classList.add('hidden');
+                this.currentInstance = null;
             }
         };
+
+        // Télécharger JSON
+        const downloadBtn = document.getElementById('download-rds-json');
+        if (downloadBtn) {
+            downloadBtn.onclick = () => this.downloadInstanceJSON();
+        }
+    }
+
+    /**
+     * Télécharge les détails de l'instance RDS en JSON
+     */
+    downloadInstanceJSON() {
+        if (!this.currentInstance) {
+            console.error('❌ Aucune instance RDS sélectionnée');
+            return;
+        }
+
+        // Préparer les données pour l'export
+        const exportData = {
+            export_info: {
+                service: 'RDS',
+                export_date: new Date().toISOString(),
+                resource_type: 'database_instance',
+                resource_id: this.currentInstance.db_instance_identifier
+            },
+            database: this.currentInstance
+        };
+
+        // Convertir en JSON formaté
+        const jsonString = JSON.stringify(exportData, null, 2);
+
+        // Créer un blob
+        const blob = new Blob([jsonString], { type: 'application/json' });
+
+        // Créer un lien de téléchargement
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+
+        // Nom du fichier avec timestamp
+        const timestamp = new Date().toISOString().split('T')[0];
+        a.download = `rds-${this.currentInstance.db_instance_identifier}-${timestamp}.json`;
+
+        // Déclencher le téléchargement
+        document.body.appendChild(a);
+        a.click();
+
+        // Nettoyer
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        console.log('✅ Instance RDS exportée en JSON:', this.currentInstance.db_instance_identifier);
     }
 
     /**

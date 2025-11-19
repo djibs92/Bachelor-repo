@@ -543,8 +543,10 @@
     <!-- Scripts -->
     <script src="js/auth.js"></script>
     <script>
-        // Rediriger si déjà connecté
-        authManager.redirectIfAuthenticated();
+        // Rediriger si déjà connecté (asynchrone)
+        (async () => {
+            await authManager.redirectIfAuthenticated();
+        })();
 
         // Gestion du formulaire d'inscription
         document.getElementById('signup-form').addEventListener('submit', async (e) => {

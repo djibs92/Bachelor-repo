@@ -404,6 +404,9 @@ class ScanHistoryManager {
                     <button class="btn-icon btn-primary" title="Charger dans Dashboard" data-action="load">
                         <span class="material-symbols-outlined">dashboard</span>
                     </button>
+                    <button class="btn-icon btn-success" title="Télécharger JSON" data-action="download">
+                        <span class="material-symbols-outlined">download</span>
+                    </button>
                 </div>
             </td>
         `;
@@ -411,6 +414,7 @@ class ScanHistoryManager {
         // Événements
         row.querySelector('[data-action="details"]').addEventListener('click', () => this.showScanDetails(scanGroup));
         row.querySelector('[data-action="load"]').addEventListener('click', () => this.loadScanInDashboard(scanGroup));
+        row.querySelector('[data-action="download"]').addEventListener('click', () => this.downloadScanJSON(scanGroup));
 
         return row;
     }
@@ -557,6 +561,67 @@ class ScanHistoryManager {
     showNotification(message, type = 'info') {
         // Utiliser le système de notification existant si disponible
         console.log(`[${type.toUpperCase()}] ${message}`);
+    }
+
+    /**
+     * Télécharge les détails complets d'un scan en JSON
+     */
+    async downloadScanJSON(scanGroup) {
+        console.log('📥 Téléchargement du scan en JSON:', scanGroup);
+
+        try {
+            // Appeler l'API pour récupérer les détails complets
+            const token = authManager ? authManager.getToken() : localStorage.getItem('clouddiagnoze_token');
+            const response = await fetch(`${API_CONFIG.BASE_URL}/scans/${scanGroup.id}/export`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erreur API: ${response.status} ${response.statusText}`);
+            }
+
+            const exportData = await response.json();
+
+            // Convertir en JSON formaté
+            const jsonString = JSON.stringify(exportData, null, 2);
+
+            // Créer un blob
+            const blob = new Blob([jsonString], { type: 'application/json' });
+
+            // Créer un lien de téléchargement
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+
+            // Nom du fichier avec timestamp
+            const date = new Date(scanGroup.timestamp);
+            const dateStr = date.toISOString().split('T')[0];
+            const timeStr = date.toTimeString().split(' ')[0].replace(/:/g, '-');
+            a.download = `scan-${scanGroup.id}-${dateStr}-${timeStr}.json`;
+
+            // Déclencher le téléchargement
+            document.body.appendChild(a);
+            a.click();
+
+            // Nettoyer
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            console.log('✅ Scan exporté en JSON:', scanGroup.id);
+
+        } catch (error) {
+            console.error('❌ Erreur lors du téléchargement:', error);
+
+            // L'erreur 401 est déjà gérée dans api.js
+            // Afficher juste un message pour les autres erreurs
+            if (!error.message.includes('Session expirée')) {
+                alert(`Erreur lors du téléchargement du scan: ${error.message}`);
+            }
+        }
     }
 }
 

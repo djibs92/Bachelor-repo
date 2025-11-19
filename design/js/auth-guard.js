@@ -6,7 +6,7 @@
  */
 
 // Vérifier l'authentification immédiatement
-(function() {
+(async function() {
     // Vérifier si authManager existe (chargé depuis auth.js)
     if (typeof authManager === 'undefined') {
         console.error('AuthManager non chargé ! Assurez-vous que auth.js est inclus avant auth-guard.js');
@@ -21,16 +21,13 @@
         return;
     }
 
-    // Optionnel : Vérifier la validité du token en appelant /me
-    // (Décommenter si vous voulez vérifier le token à chaque chargement de page)
-    /*
-    authManager.getCurrentUser().then(result => {
-        if (!result.success) {
-            console.log('Token invalide, redirection vers login...');
-            window.location.href = 'login.html';
-        }
-    });
-    */
+    // ✅ Vérifier la validité du token en appelant l'API
+    const isValid = await authManager.validateToken();
+    if (!isValid) {
+        console.log('🔒 Token invalide ou expiré, redirection vers login...');
+        window.location.href = 'login.html';
+        return;
+    }
 
     console.log('✅ Utilisateur authentifié:', authManager.user);
 })();

@@ -1050,6 +1050,9 @@ class DashboardEC2 {
             }
         });
 
+        // Télécharger JSON
+        document.getElementById('download-instance-json').addEventListener('click', () => this.downloadInstanceJSON());
+
         this.listenersAttached = true;
     }
 
@@ -1159,6 +1162,9 @@ class DashboardEC2 {
         const modalTitle = document.getElementById('modal-title');
         const modalContent = document.getElementById('modal-content');
 
+        // Stocker l'instance courante pour le téléchargement
+        this.currentInstance = instance;
+
         // Titre
         const instanceName = instance.tags?.Name || instance.instance_id;
         modalTitle.textContent = `Détails : ${instanceName}`;
@@ -1178,6 +1184,54 @@ class DashboardEC2 {
         const modal = document.getElementById('instance-modal');
         modal.classList.add('hidden');
         document.body.style.overflow = 'auto';
+        this.currentInstance = null;
+    }
+
+    /**
+     * Télécharge les détails de l'instance en JSON
+     */
+    downloadInstanceJSON() {
+        if (!this.currentInstance) {
+            console.error('❌ Aucune instance sélectionnée');
+            return;
+        }
+
+        // Préparer les données pour l'export
+        const exportData = {
+            export_info: {
+                service: 'EC2',
+                export_date: new Date().toISOString(),
+                resource_type: 'instance',
+                resource_id: this.currentInstance.instance_id
+            },
+            instance: this.currentInstance
+        };
+
+        // Convertir en JSON formaté
+        const jsonString = JSON.stringify(exportData, null, 2);
+
+        // Créer un blob
+        const blob = new Blob([jsonString], { type: 'application/json' });
+
+        // Créer un lien de téléchargement
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+
+        // Nom du fichier avec timestamp
+        const instanceName = this.currentInstance.tags?.Name || this.currentInstance.instance_id;
+        const timestamp = new Date().toISOString().split('T')[0];
+        a.download = `ec2-${instanceName}-${timestamp}.json`;
+
+        // Déclencher le téléchargement
+        document.body.appendChild(a);
+        a.click();
+
+        // Nettoyer
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        console.log('✅ Instance exportée en JSON:', instanceName);
     }
 
     /**

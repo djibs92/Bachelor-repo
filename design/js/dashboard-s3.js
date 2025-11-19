@@ -759,6 +759,9 @@ class DashboardS3 {
             }
         });
 
+        // Télécharger JSON
+        document.getElementById('download-bucket-json').addEventListener('click', () => this.downloadBucketJSON());
+
         this.listenersAttached = true;
     }
 
@@ -813,6 +816,9 @@ class DashboardS3 {
         const modalTitle = document.getElementById('modal-title');
         const modalContent = document.getElementById('modal-content');
 
+        // Stocker le bucket courant pour le téléchargement
+        this.currentBucket = bucket;
+
         // Titre
         modalTitle.textContent = `Détails : ${bucket.bucket_name}`;
 
@@ -831,6 +837,53 @@ class DashboardS3 {
         const modal = document.getElementById('bucket-modal');
         modal.classList.add('hidden');
         document.body.style.overflow = 'auto';
+        this.currentBucket = null;
+    }
+
+    /**
+     * Télécharge les détails du bucket en JSON
+     */
+    downloadBucketJSON() {
+        if (!this.currentBucket) {
+            console.error('❌ Aucun bucket sélectionné');
+            return;
+        }
+
+        // Préparer les données pour l'export
+        const exportData = {
+            export_info: {
+                service: 'S3',
+                export_date: new Date().toISOString(),
+                resource_type: 'bucket',
+                resource_id: this.currentBucket.bucket_name
+            },
+            bucket: this.currentBucket
+        };
+
+        // Convertir en JSON formaté
+        const jsonString = JSON.stringify(exportData, null, 2);
+
+        // Créer un blob
+        const blob = new Blob([jsonString], { type: 'application/json' });
+
+        // Créer un lien de téléchargement
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+
+        // Nom du fichier avec timestamp
+        const timestamp = new Date().toISOString().split('T')[0];
+        a.download = `s3-${this.currentBucket.bucket_name}-${timestamp}.json`;
+
+        // Déclencher le téléchargement
+        document.body.appendChild(a);
+        a.click();
+
+        // Nettoyer
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        console.log('✅ Bucket exporté en JSON:', this.currentBucket.bucket_name);
     }
 
     /**
