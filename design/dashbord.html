@@ -683,7 +683,7 @@
                 </div>
 
                 <!-- Charts Row -->
-                <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-4">
+                <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-5">
                     <!-- Resource Distribution (Donut) -->
                     <div class="glass-card p-6">
                         <p class="text-white text-base font-medium leading-normal">Resource Distribution</p>
@@ -701,6 +701,55 @@
                         </div>
                         <div id="resource-distribution-legend" class="flex justify-around text-xs font-medium text-slate-300">
                             <!-- Légende dynamique générée par JS -->
+                        </div>
+                    </div>
+
+                    <!-- Infrastructure Health Score -->
+                    <div class="glass-card p-6 relative overflow-hidden">
+                        <div class="relative z-10">
+                            <p class="text-white text-base font-medium leading-normal">Infrastructure</p>
+                            <p class="text-white tracking-light text-[32px] font-bold leading-tight truncate">Health Score</p>
+
+                            <!-- Jauge circulaire -->
+                            <div class="flex items-center justify-center py-4">
+                                <div style="height: 160px; width: 160px; position: relative;">
+                                    <canvas id="chart-health-score"></canvas>
+                                    <!-- Centre de la jauge avec score -->
+                                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                        <p id="health-score-value" class="text-white text-4xl font-bold">--</p>
+                                        <p id="health-score-label" class="text-slate-400 text-xs font-medium mt-1">Calculating...</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Breakdown des scores -->
+                            <div class="grid grid-cols-2 gap-2 mt-2 text-xs">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-blue-400" style="font-size: 14px;">shield</span>
+                                    <span class="text-slate-400">Security:</span>
+                                    <span id="health-security" class="text-white font-semibold">--</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-green-400" style="font-size: 14px;">speed</span>
+                                    <span class="text-slate-400">Perf:</span>
+                                    <span id="health-performance" class="text-white font-semibold">--</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-amber-400" style="font-size: 14px;">savings</span>
+                                    <span class="text-slate-400">Cost:</span>
+                                    <span id="health-cost" class="text-white font-semibold">--</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-purple-400" style="font-size: 14px;">verified</span>
+                                    <span class="text-slate-400">Comp:</span>
+                                    <span id="health-compliance" class="text-white font-semibold">--</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Effet de fond animé -->
+                        <div class="absolute inset-0 opacity-5 pointer-events-none">
+                            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-br from-primary to-cyan-400 rounded-full blur-3xl animate-pulse"></div>
                         </div>
                     </div>
 
@@ -747,11 +796,15 @@
                 <!-- Alerts Row -->
                 <div class="mt-6">
                     <div class="glass-card p-6">
-                        <div class="flex items-center justify-between">
-                            <p class="text-white text-base font-medium leading-normal">Recent Critical Alerts</p>
-                            <span id="alerts-count" class="text-sm text-slate-400">0 alertes</span>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-red-400">warning</span>
+                                <p class="text-white text-base font-medium leading-normal">Critical Alerts</p>
+                            </div>
+                            <span id="alerts-count" class="text-sm text-slate-400">0 alerts</span>
                         </div>
-                        <div id="alerts-container" class="flex flex-col gap-3 mt-4">
+                        <!-- Container scrollable avec hauteur max -->
+                        <div id="alerts-container" class="flex flex-col gap-2 max-h-[280px] overflow-y-auto pr-2 custom-scrollbar">
                             <!-- Les alertes seront injectées ici par JavaScript -->
                         </div>
                     </div>

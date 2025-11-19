@@ -565,6 +565,163 @@ class GlobalStats {
             data: Object.values(scansByDay)
         };
     }
+
+    /**
+     * Calcule le Health Score de l'infrastructure (0-100)
+     */
+    getInfrastructureHealthScore() {
+        const totalResources = this.ec2Instances.length + this.s3Buckets.length +
+                              this.vpcInstances.length + this.rdsInstances.length;
+
+        if (totalResources === 0) {
+            return {
+                overall: 0,
+                security: 0,
+                performance: 0,
+                cost: 0,
+                compliance: 0,
+                details: {
+                    security: { score: 0, checks: [] },
+                    performance: { score: 0, checks: [] },
+                    cost: { score: 0, checks: [] },
+                    compliance: { score: 0, checks: [] }
+                }
+            };
+        }
+
+        // 1. SECURITY SCORE (0-100)
+        const securityChecks = [];
+        let securityPoints = 0;
+        let securityMax = 0;
+
+        // S3 Encryption
+        const s3Encrypted = this.s3Buckets.filter(b => b.encryption_enabled).length;
+        const s3EncryptionScore = this.s3Buckets.length > 0 ? (s3Encrypted / this.s3Buckets.length) * 100 : 100;
+        securityPoints += s3EncryptionScore;
+        securityMax += 100;
+        securityChecks.push({ name: 'S3 Encryption', score: s3EncryptionScore, passed: s3Encrypted, total: this.s3Buckets.length });
+
+        // S3 Public Access Blocked
+        const s3Private = this.s3Buckets.filter(b => b.public_access_blocked && !b.public_read_enabled).length;
+        const s3PrivacyScore = this.s3Buckets.length > 0 ? (s3Private / this.s3Buckets.length) * 100 : 100;
+        securityPoints += s3PrivacyScore;
+        securityMax += 100;
+        securityChecks.push({ name: 'S3 Private Access', score: s3PrivacyScore, passed: s3Private, total: this.s3Buckets.length });
+
+        // RDS Encryption
+        const rdsEncrypted = this.rdsInstances.filter(r => r.storage_encrypted).length;
+        const rdsEncryptionScore = this.rdsInstances.length > 0 ? (rdsEncrypted / this.rdsInstances.length) * 100 : 100;
+        securityPoints += rdsEncryptionScore;
+        securityMax += 100;
+        securityChecks.push({ name: 'RDS Encryption', score: rdsEncryptionScore, passed: rdsEncrypted, total: this.rdsInstances.length });
+
+        const securityScore = securityMax > 0 ? Math.round(securityPoints / securityMax * 100) : 0;
+
+        // 2. PERFORMANCE SCORE (0-100)
+        const performanceChecks = [];
+        let performancePoints = 0;
+        let performanceMax = 0;
+
+        // EC2 CPU < 80%
+        const ec2HealthyCPU = this.ec2Instances.filter(i => !i.performance?.cpu_utilization_avg || i.performance.cpu_utilization_avg < 80).length;
+        const ec2CPUScore = this.ec2Instances.length > 0 ? (ec2HealthyCPU / this.ec2Instances.length) * 100 : 100;
+        performancePoints += ec2CPUScore;
+        performanceMax += 100;
+        performanceChecks.push({ name: 'EC2 CPU Health', score: ec2CPUScore, passed: ec2HealthyCPU, total: this.ec2Instances.length });
+
+        // RDS CPU < 75%
+        const rdsHealthyCPU = this.rdsInstances.filter(r => !r.performance?.cpu_utilization_avg || r.performance.cpu_utilization_avg < 75).length;
+        const rdsCPUScore = this.rdsInstances.length > 0 ? (rdsHealthyCPU / this.rdsInstances.length) * 100 : 100;
+        performancePoints += rdsCPUScore;
+        performanceMax += 100;
+        performanceChecks.push({ name: 'RDS CPU Health', score: rdsCPUScore, passed: rdsHealthyCPU, total: this.rdsInstances.length });
+
+        // RDS Latency < 10ms
+        const rdsHealthyLatency = this.rdsInstances.filter(r => {
+            const readLatency = (r.performance?.read_latency_avg || 0) * 1000;
+            const writeLatency = (r.performance?.write_latency_avg || 0) * 1000;
+            return readLatency < 10 && writeLatency < 10;
+        }).length;
+        const rdsLatencyScore = this.rdsInstances.length > 0 ? (rdsHealthyLatency / this.rdsInstances.length) * 100 : 100;
+        performancePoints += rdsLatencyScore;
+        performanceMax += 100;
+        performanceChecks.push({ name: 'RDS Latency', score: rdsLatencyScore, passed: rdsHealthyLatency, total: this.rdsInstances.length });
+
+        const performanceScore = performanceMax > 0 ? Math.round(performancePoints / performanceMax * 100) : 0;
+
+        // 3. COST OPTIMIZATION SCORE (0-100)
+        const costChecks = [];
+        let costPoints = 0;
+        let costMax = 0;
+
+        // EC2 avec tags (pour cost tracking)
+        const ec2WithTags = this.ec2Instances.filter(i => i.tags && Object.keys(i.tags).length > 0).length;
+        const ec2TagsScore = this.ec2Instances.length > 0 ? (ec2WithTags / this.ec2Instances.length) * 100 : 100;
+        costPoints += ec2TagsScore;
+        costMax += 100;
+        costChecks.push({ name: 'EC2 Tagged', score: ec2TagsScore, passed: ec2WithTags, total: this.ec2Instances.length });
+
+        // S3 Lifecycle policies
+        const s3WithLifecycle = this.s3Buckets.filter(b => b.lifecycle_enabled).length;
+        const s3LifecycleScore = this.s3Buckets.length > 0 ? (s3WithLifecycle / this.s3Buckets.length) * 100 : 100;
+        costPoints += s3LifecycleScore;
+        costMax += 100;
+        costChecks.push({ name: 'S3 Lifecycle', score: s3LifecycleScore, passed: s3WithLifecycle, total: this.s3Buckets.length });
+
+        // RDS Multi-AZ (éviter les coûts de downtime)
+        const rdsMultiAZ = this.rdsInstances.filter(r => r.multi_az).length;
+        const rdsMultiAZScore = this.rdsInstances.length > 0 ? (rdsMultiAZ / this.rdsInstances.length) * 100 : 100;
+        costPoints += rdsMultiAZScore;
+        costMax += 100;
+        costChecks.push({ name: 'RDS Multi-AZ', score: rdsMultiAZScore, passed: rdsMultiAZ, total: this.rdsInstances.length });
+
+        const costScore = costMax > 0 ? Math.round(costPoints / costMax * 100) : 0;
+
+        // 4. COMPLIANCE SCORE (0-100)
+        const complianceChecks = [];
+        let compliancePoints = 0;
+        let complianceMax = 0;
+
+        // S3 Versioning
+        const s3Versioned = this.s3Buckets.filter(b => b.versioning_enabled).length;
+        const s3VersioningScore = this.s3Buckets.length > 0 ? (s3Versioned / this.s3Buckets.length) * 100 : 100;
+        compliancePoints += s3VersioningScore;
+        complianceMax += 100;
+        complianceChecks.push({ name: 'S3 Versioning', score: s3VersioningScore, passed: s3Versioned, total: this.s3Buckets.length });
+
+        // S3 Logging
+        const s3Logged = this.s3Buckets.filter(b => b.logging_enabled).length;
+        const s3LoggingScore = this.s3Buckets.length > 0 ? (s3Logged / this.s3Buckets.length) * 100 : 100;
+        compliancePoints += s3LoggingScore;
+        complianceMax += 100;
+        complianceChecks.push({ name: 'S3 Logging', score: s3LoggingScore, passed: s3Logged, total: this.s3Buckets.length });
+
+        // RDS Backup Retention > 0
+        const rdsBackup = this.rdsInstances.filter(r => r.backup_retention_period && r.backup_retention_period > 0).length;
+        const rdsBackupScore = this.rdsInstances.length > 0 ? (rdsBackup / this.rdsInstances.length) * 100 : 100;
+        compliancePoints += rdsBackupScore;
+        complianceMax += 100;
+        complianceChecks.push({ name: 'RDS Backups', score: rdsBackupScore, passed: rdsBackup, total: this.rdsInstances.length });
+
+        const complianceScore = complianceMax > 0 ? Math.round(compliancePoints / complianceMax * 100) : 0;
+
+        // OVERALL SCORE (moyenne pondérée)
+        const overallScore = Math.round((securityScore * 0.35 + performanceScore * 0.25 + costScore * 0.20 + complianceScore * 0.20));
+
+        return {
+            overall: overallScore,
+            security: securityScore,
+            performance: performanceScore,
+            cost: costScore,
+            compliance: complianceScore,
+            details: {
+                security: { score: securityScore, checks: securityChecks },
+                performance: { score: performanceScore, checks: performanceChecks },
+                cost: { score: costScore, checks: costChecks },
+                compliance: { score: complianceScore, checks: complianceChecks }
+            }
+        };
+    }
 }
 
 // Instance globale

@@ -327,9 +327,95 @@ class DashboardGlobal {
      */
     createCharts() {
         this.createResourceDistributionChart();
+        this.createHealthScoreChart();
         this.createEC2RegionChart();
         this.createS3RegionChart();
         this.createVPCRegionChart();
+    }
+
+    /**
+     * Graphique: Infrastructure Health Score (Jauge circulaire)
+     */
+    createHealthScoreChart() {
+        const ctx = document.getElementById('chart-health-score');
+        if (!ctx) return;
+
+        const healthData = window.globalStats.getInfrastructureHealthScore();
+
+        // Mettre à jour les valeurs textuelles
+        const scoreValue = document.getElementById('health-score-value');
+        const scoreLabel = document.getElementById('health-score-label');
+
+        scoreValue.textContent = healthData.overall;
+
+        // Label selon le score
+        if (healthData.overall >= 90) {
+            scoreLabel.textContent = 'Excellent';
+            scoreLabel.className = 'text-green-400 text-xs font-medium mt-1';
+        } else if (healthData.overall >= 75) {
+            scoreLabel.textContent = 'Good';
+            scoreLabel.className = 'text-blue-400 text-xs font-medium mt-1';
+        } else if (healthData.overall >= 60) {
+            scoreLabel.textContent = 'Fair';
+            scoreLabel.className = 'text-amber-400 text-xs font-medium mt-1';
+        } else if (healthData.overall >= 40) {
+            scoreLabel.textContent = 'Poor';
+            scoreLabel.className = 'text-orange-400 text-xs font-medium mt-1';
+        } else {
+            scoreLabel.textContent = 'Critical';
+            scoreLabel.className = 'text-red-400 text-xs font-medium mt-1';
+        }
+
+        // Mettre à jour les sous-scores
+        document.getElementById('health-security').textContent = healthData.security + '%';
+        document.getElementById('health-performance').textContent = healthData.performance + '%';
+        document.getElementById('health-cost').textContent = healthData.cost + '%';
+        document.getElementById('health-compliance').textContent = healthData.compliance + '%';
+
+        // Couleur du gradient selon le score
+        let gradientColors;
+        if (healthData.overall >= 75) {
+            gradientColors = ['rgba(16, 185, 129, 0.9)', 'rgba(5, 150, 105, 0.7)'];  // Vert
+        } else if (healthData.overall >= 50) {
+            gradientColors = ['rgba(251, 191, 36, 0.9)', 'rgba(245, 158, 11, 0.7)'];  // Jaune
+        } else {
+            gradientColors = ['rgba(239, 68, 68, 0.9)', 'rgba(220, 38, 38, 0.7)'];  // Rouge
+        }
+
+        // Créer le gradient
+        const chartCanvas = ctx.getContext('2d');
+        const gradient = chartCanvas.createLinearGradient(0, 0, 0, 160);
+        gradient.addColorStop(0, gradientColors[0]);
+        gradient.addColorStop(1, gradientColors[1]);
+
+        this.charts.healthScore = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [healthData.overall, 100 - healthData.overall],
+                    backgroundColor: [gradient, 'rgba(30, 41, 59, 0.3)'],
+                    borderWidth: 0,
+                    borderRadius: 8,
+                    cutout: '75%'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                rotation: -90,  // Commencer en haut
+                circumference: 180,  // Demi-cercle
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: false }
+                },
+                animation: {
+                    animateRotate: true,
+                    animateScale: true,
+                    duration: 1500,
+                    easing: 'easeInOutQuart'
+                }
+            }
+        });
     }
 
     /**
@@ -694,15 +780,15 @@ class DashboardGlobal {
 
         // Mettre à jour le compteur
         if (countElement) {
-            countElement.textContent = `${alerts.length} alerte${alerts.length > 1 ? 's' : ''}`;
+            countElement.textContent = `${alerts.length} alert${alerts.length > 1 ? 's' : ''}`;
         }
 
         if (alerts.length === 0) {
             container.innerHTML = `
-                <div class="flex items-center justify-center py-8">
+                <div class="flex items-center justify-center py-6">
                     <div class="text-center">
-                        <span class="material-symbols-outlined text-green-400 text-5xl">check_circle</span>
-                        <p class="text-slate-300 mt-2">Aucune alerte critique</p>
+                        <span class="material-symbols-outlined text-green-400 text-4xl">check_circle</span>
+                        <p class="text-slate-300 text-sm mt-2">No critical alerts</p>
                     </div>
                 </div>
             `;
@@ -720,9 +806,15 @@ class DashboardGlobal {
             }[alert.type];
 
             const bgColor = {
-                'danger': 'bg-red-500/20',
-                'warning': 'bg-orange-500/20',
-                'info': 'bg-blue-500/20'
+                'danger': 'bg-red-500/10',
+                'warning': 'bg-orange-500/10',
+                'info': 'bg-blue-500/10'
+            }[alert.type];
+
+            const borderColor = {
+                'danger': 'border-red-500/30',
+                'warning': 'border-orange-500/30',
+                'info': 'border-blue-500/30'
             }[alert.type];
 
             const icon = {
@@ -731,15 +823,14 @@ class DashboardGlobal {
                 'info': 'info'
             }[alert.type];
 
-            alertDiv.className = 'flex items-start gap-3 rounded-lg bg-slate-800/40 p-3';
+            // Version compacte avec badge de service
+            alertDiv.className = `flex items-center gap-2 rounded-lg ${bgColor} border ${borderColor} p-2.5 hover:bg-slate-800/30 transition-colors`;
             alertDiv.innerHTML = `
-                <div class="flex h-8 w-8 items-center justify-center rounded-full ${bgColor} ${iconColor}">
-                    <span class="material-symbols-outlined text-lg">${icon}</span>
+                <span class="material-symbols-outlined ${iconColor} text-base">${icon}</span>
+                <div class="flex-1 min-w-0">
+                    <p class="text-white text-sm font-medium truncate">${alert.message}</p>
                 </div>
-                <div class="flex-1">
-                    <p class="font-medium text-white">${alert.message}</p>
-                    <p class="text-sm text-slate-400">${alert.service}: ${alert.resource}</p>
-                </div>
+                <span class="px-2 py-0.5 rounded text-xs font-medium ${iconColor} ${bgColor} border ${borderColor} whitespace-nowrap">${alert.service}</span>
             `;
 
             container.appendChild(alertDiv);
