@@ -172,17 +172,43 @@ class ConfigScan {
         console.log('Role ARN:', this.userRoleArn);
 
         try {
-            // Afficher le statut
-            this.showScanStatus();
+            // Désactiver le bouton de scan
+            const scanButton = document.querySelector('button[onclick="configScan.startScan()"]');
+            if (scanButton) {
+                scanButton.disabled = true;
+                scanButton.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+
+            // Afficher les barres de progression pour chaque service sélectionné
+            this.selectedServices.forEach(service => {
+                this.showServiceProgress(service);
+            });
 
             // ✅ LANCER UN SEUL SCAN AVEC TOUS LES SERVICES (au lieu de plusieurs scans séparés)
             // Cela garantit que tous les services auront le même timestamp et seront groupés dans la même session
             await this.scanAllServices(this.selectedServices);
 
+            // Marquer tous les services comme complétés
+            this.selectedServices.forEach(service => {
+                this.completeServiceProgress(service);
+            });
+
+            // Attendre 2 secondes pour montrer le succès
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Cacher les barres de progression
+            this.selectedServices.forEach(service => {
+                this.hideServiceProgress(service);
+            });
+
             // Recharger l'historique
             await this.loadScanHistory();
 
-            this.hideScanStatus();
+            // Réactiver le bouton
+            if (scanButton) {
+                scanButton.disabled = false;
+                scanButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
 
             // Notification avec redirection vers dashboard
             this.showSuccessNotificationWithRedirect();
@@ -190,7 +216,18 @@ class ConfigScan {
         } catch (error) {
             console.error('❌ Erreur lors du scan:', error);
             this.showNotification('Erreur lors du scan: ' + error.message, 'error');
-            this.hideScanStatus();
+
+            // Marquer les services en erreur
+            this.selectedServices.forEach(service => {
+                this.errorServiceProgress(service);
+            });
+
+            // Réactiver le bouton
+            const scanButton = document.querySelector('button[onclick="configScan.startScan()"]');
+            if (scanButton) {
+                scanButton.disabled = false;
+                scanButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
         }
     }
 
@@ -200,10 +237,6 @@ class ConfigScan {
      */
     async scanAllServices(services) {
         console.log(`📡 Scan de ${services.length} service(s): ${services.join(', ').toUpperCase()}...`);
-
-        // Mettre à jour le statut
-        document.getElementById('current-service').textContent = services.join(', ').toUpperCase();
-        document.getElementById('current-region').textContent = this.selectedRegions.join(', ');
 
         // ✅ LANCER UN SEUL SCAN AVEC TOUS LES SERVICES
         const scanRequest = {
@@ -218,6 +251,11 @@ class ConfigScan {
         };
 
         try {
+            // Démarrer la simulation de progression pour tous les services
+            const progressPromises = services.map(service =>
+                this.simulateServiceProgress(service)
+            );
+
             // Appeler l'API avec le token JWT
             const response = await fetch(`${API_CONFIG.BASE_URL}/scans`, {
                 method: 'POST',
@@ -236,8 +274,8 @@ class ConfigScan {
             const data = await response.json();
             console.log(`✅ Scan multi-services lancé:`, data);
 
-            // Simuler la progression
-            await this.simulateScanProgress(services.join(', '));
+            // Attendre que toutes les progressions soient terminées
+            await Promise.all(progressPromises);
 
         } catch (error) {
             console.error(`❌ Erreur scan multi-services:`, error);
@@ -254,20 +292,149 @@ class ConfigScan {
     }
 
     /**
-     * Simule la progression du scan (temporaire)
+     * Affiche la barre de progression pour un service
      */
-    async simulateScanProgress(service) {
-        return new Promise((resolve) => {
-            let resources = 0;
-            const interval = setInterval(() => {
-                resources += Math.floor(Math.random() * 3) + 1;
-                document.getElementById('resources-found').textContent = resources;
-            }, 500);
+    showServiceProgress(service) {
+        const progressDiv = document.querySelector(`[data-service-progress="${service}"]`);
+        const serviceCard = document.querySelector(`[data-service="${service}"]`);
 
+        if (progressDiv) {
+            progressDiv.classList.remove('hidden');
+            // Réinitialiser la progression
+            this.updateServiceProgress(service, 0, 0);
+        }
+
+        if (serviceCard) {
+            serviceCard.classList.add('scanning');
+        }
+    }
+
+    /**
+     * Cache la barre de progression pour un service
+     */
+    hideServiceProgress(service) {
+        const progressDiv = document.querySelector(`[data-service-progress="${service}"]`);
+        const serviceCard = document.querySelector(`[data-service="${service}"]`);
+
+        if (progressDiv) {
+            progressDiv.classList.add('hidden');
+        }
+
+        if (serviceCard) {
+            serviceCard.classList.remove('scanning');
+        }
+    }
+
+    /**
+     * Met à jour la progression d'un service
+     */
+    updateServiceProgress(service, percentage, resourcesCount) {
+        const progressDiv = document.querySelector(`[data-service-progress="${service}"]`);
+        if (!progressDiv) return;
+
+        const progressBar = progressDiv.querySelector('.scan-progress-bar');
+        const percentageText = progressDiv.querySelector('.scan-percentage');
+        const resourcesText = progressDiv.querySelector('.scan-resources-count');
+
+        if (progressBar) {
+            progressBar.style.width = `${percentage}%`;
+        }
+        if (percentageText) {
+            percentageText.textContent = `${percentage}%`;
+        }
+        if (resourcesText) {
+            resourcesText.textContent = `${resourcesCount} ressource${resourcesCount > 1 ? 's' : ''} trouvée${resourcesCount > 1 ? 's' : ''}`;
+        }
+    }
+
+    /**
+     * Marque un service comme complété
+     */
+    completeServiceProgress(service) {
+        const progressDiv = document.querySelector(`[data-service-progress="${service}"]`);
+        const serviceCard = document.querySelector(`[data-service="${service}"]`);
+
+        if (!progressDiv) return;
+
+        const statusText = progressDiv.querySelector('.scan-status-text');
+        const spinner = progressDiv.querySelector('.material-symbols-outlined');
+        const resourcesText = progressDiv.querySelector('.scan-resources-count');
+
+        // Extraire le nombre de ressources actuel
+        const currentText = resourcesText ? resourcesText.textContent : '0 ressources trouvées';
+        const currentResources = parseInt(currentText.match(/\d+/)?.[0] || '0');
+
+        // Mettre à jour à 100%
+        this.updateServiceProgress(service, 100, currentResources);
+
+        if (statusText) {
+            statusText.textContent = '✓ Scan terminé';
+            statusText.classList.add('text-green-400');
+        }
+        if (spinner) {
+            spinner.classList.remove('animate-spin');
+            spinner.textContent = 'check_circle';
+            spinner.classList.add('text-green-400');
+        }
+
+        // Retirer l'animation de scanning
+        if (serviceCard) {
+            serviceCard.classList.remove('scanning');
+        }
+    }
+
+    /**
+     * Marque un service en erreur
+     */
+    errorServiceProgress(service) {
+        const progressDiv = document.querySelector(`[data-service-progress="${service}"]`);
+        if (!progressDiv) return;
+
+        const statusText = progressDiv.querySelector('.scan-status-text');
+        const spinner = progressDiv.querySelector('.material-symbols-outlined');
+        const progressBar = progressDiv.querySelector('.scan-progress-bar');
+
+        if (statusText) {
+            statusText.textContent = '✗ Erreur';
+            statusText.classList.add('text-red-400');
+        }
+        if (spinner) {
+            spinner.classList.remove('animate-spin');
+            spinner.textContent = 'error';
+            spinner.classList.add('text-red-400');
+        }
+        if (progressBar) {
+            progressBar.classList.remove('from-blue-500', 'to-blue-400', 'from-green-500', 'to-green-400', 'from-orange-500', 'to-orange-400', 'from-cyan-500', 'to-cyan-400');
+            progressBar.classList.add('from-red-500', 'to-red-400');
+        }
+    }
+
+    /**
+     * Simule la progression du scan pour un service spécifique
+     */
+    async simulateServiceProgress(service) {
+        return new Promise((resolve) => {
+            let progress = 0;
+            let resources = 0;
+
+            const interval = setInterval(() => {
+                // Augmenter la progression de manière aléatoire
+                progress += Math.floor(Math.random() * 15) + 5;
+                if (progress > 95) progress = 95; // Ne pas atteindre 100% avant la fin
+
+                // Augmenter le nombre de ressources
+                resources += Math.floor(Math.random() * 3) + 1;
+
+                // Mettre à jour l'affichage
+                this.updateServiceProgress(service, progress, resources);
+            }, 400);
+
+            // Terminer après 3-5 secondes (aléatoire pour chaque service)
+            const duration = 3000 + Math.random() * 2000;
             setTimeout(() => {
                 clearInterval(interval);
                 resolve();
-            }, 3000);
+            }, duration);
         });
     }
 
