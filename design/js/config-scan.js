@@ -518,6 +518,8 @@ class ConfigScan {
                             ${scanGroup.scans.map(s => {
                                 const color = s.service_type === 'ec2' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
                                              s.service_type === 's3' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                                             s.service_type === 'vpc' ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' :
+                                             s.service_type === 'rds' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' :
                                              'bg-purple-500/20 text-purple-400 border-purple-500/30';
                                 return `<span class="px-1.5 py-0.5 rounded text-xs font-medium border ${color}">${s.service_type.toUpperCase()}</span>`;
                             }).join('')}
@@ -592,7 +594,9 @@ class ConfigScan {
 
         scanGroup.scans.forEach(scan => {
             const serviceColor = scan.service_type === 'ec2' ? 'text-blue-400' :
-                                scan.service_type === 's3' ? 'text-green-400' : 'text-purple-400';
+                                scan.service_type === 's3' ? 'text-green-400' :
+                                scan.service_type === 'vpc' ? 'text-orange-400' :
+                                scan.service_type === 'rds' ? 'text-purple-400' : 'text-purple-400';
             const statusColor = scan.status === 'success' ? 'text-green-400' :
                                scan.status === 'failed' ? 'text-red-400' : 'text-orange-400';
 

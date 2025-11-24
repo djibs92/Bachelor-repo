@@ -355,7 +355,9 @@ class ScanHistoryManager {
         // Services scannés
         const services = scanGroup.scans.map(s => {
             const color = s.service_type === 'ec2' ? 'bg-blue-500' :
-                         s.service_type === 's3' ? 'bg-green-500' : 'bg-purple-500';
+                         s.service_type === 's3' ? 'bg-green-500' :
+                         s.service_type === 'vpc' ? 'bg-orange-500' :
+                         s.service_type === 'rds' ? 'bg-purple-500' : 'bg-purple-500';
             return `<span class="px-2 py-1 rounded text-xs font-semibold ${color}">${s.service_type.toUpperCase()}</span>`;
         }).join(' ');
 
@@ -507,7 +509,9 @@ class ScanHistoryManager {
         let content = '';
         scanGroup.scans.forEach(scan => {
             const serviceColor = scan.service_type === 'ec2' ? 'text-blue-400' :
-                                scan.service_type === 's3' ? 'text-green-400' : 'text-purple-400';
+                                scan.service_type === 's3' ? 'text-green-400' :
+                                scan.service_type === 'vpc' ? 'text-orange-400' :
+                                scan.service_type === 'rds' ? 'text-purple-400' : 'text-purple-400';
             const statusColor = scan.status === 'success' ? 'text-green-400' :
                                scan.status === 'failed' ? 'text-red-400' : 'text-orange-400';
 
