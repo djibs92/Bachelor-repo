@@ -192,17 +192,22 @@
             animation: pulse-ring 1.5s infinite;
         }
 
-        /* Scan Progress Styles */
-        .scan-progress {
-            animation: fade-in-up 0.4s ease-out;
-        }
-
-        .scan-progress-bar {
-            position: relative;
+        /* ✨ NOUVEAU : Overlay de progression qui remplit toute la carte */
+        .service-card-progress-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 0%;
+            background: linear-gradient(90deg, rgba(19, 127, 236, 0.3) 0%, rgba(19, 127, 236, 0.15) 100%);
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 0;
+            border-radius: 16px;
             overflow: hidden;
         }
 
-        .scan-progress-bar::after {
+        /* Effet shimmer sur l'overlay */
+        .service-card-progress-overlay::after {
             content: '';
             position: absolute;
             top: 0;
@@ -212,7 +217,7 @@
             background: linear-gradient(
                 90deg,
                 transparent,
-                rgba(255, 255, 255, 0.3),
+                rgba(255, 255, 255, 0.2),
                 transparent
             );
             animation: shimmer 2s infinite;
@@ -225,6 +230,26 @@
             100% {
                 transform: translateX(100%);
             }
+        }
+
+        /* Badge de pourcentage (grand, au centre) */
+        .service-card-progress-badge {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            font-size: 2.5rem;
+            font-weight: 700;
+            font-family: 'Orbitron', sans-serif;
+            color: #137FEC;
+            text-shadow: 0 0 20px rgba(19, 127, 236, 0.8);
+            z-index: 2;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .service-card.scanning .service-card-progress-badge {
+            opacity: 1;
         }
 
         /* Service card en mode scanning */
@@ -241,6 +266,44 @@
             50% {
                 box-shadow: 0 0 40px rgba(19, 127, 236, 0.8), inset 0 0 30px rgba(19, 127, 236, 0.25);
             }
+        }
+
+        /* Service card terminé */
+        .service-card.completed {
+            border-color: #10b981;
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
+        }
+
+        .service-card.completed .service-card-progress-overlay {
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.3) 0%, rgba(16, 185, 129, 0.15) 100%);
+        }
+
+        /* Checkmark de complétion (remplace le pourcentage) */
+        .service-card-completion-badge {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%) scale(0);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.6);
+            z-index: 2;
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .service-card.completed .service-card-completion-badge {
+            opacity: 1;
+            transform: translateY(-50%) scale(1);
+        }
+
+        .service-card.completed .service-card-progress-badge {
+            opacity: 0;
         }
 
         /* Background */
@@ -688,9 +751,21 @@
                                 <!-- EC2 Card -->
                                 <div class="service-card glass-card rounded-xl p-6 cursor-pointer border-2 border-slate-700 relative overflow-hidden"
                                      data-service="ec2" onclick="configScan.toggleService('ec2')">
+
+                                    <!-- ✨ Overlay de progression (remplit la carte de gauche à droite) -->
+                                    <div class="service-card-progress-overlay" data-progress-overlay="ec2"></div>
+
                                     <!-- Badge de sélection -->
                                     <div class="selection-badge">
                                         <span class="material-symbols-outlined text-white text-lg">check</span>
+                                    </div>
+
+                                    <!-- ✨ Badge de pourcentage (grand, à droite) -->
+                                    <div class="service-card-progress-badge" data-progress-badge="ec2">0%</div>
+
+                                    <!-- ✨ Badge de complétion (checkmark vert) -->
+                                    <div class="service-card-completion-badge" data-completion-badge="ec2">
+                                        <span class="material-symbols-outlined text-white text-3xl">check</span>
                                     </div>
 
                                     <div class="flex items-center gap-4 mb-4">
@@ -704,30 +779,27 @@
                                     </div>
                                     <p class="text-slate-400 text-sm mb-3">Instances, volumes, snapshots</p>
 
-                                    <!-- Barre de progression (cachée par défaut) -->
-                                    <div class="scan-progress hidden mt-4" data-service-progress="ec2">
-                                        <div class="flex items-center justify-between mb-2">
-                                            <span class="text-xs font-medium text-blue-400 scan-status-text">Scan en cours...</span>
-                                            <span class="text-xs font-bold text-blue-400 scan-percentage">0%</span>
-                                        </div>
-                                        <div class="w-full bg-slate-700/50 rounded-full h-2 overflow-hidden">
-                                            <div class="scan-progress-bar h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
-                                        </div>
-                                        <div class="flex items-center gap-2 mt-2">
-                                            <span class="material-symbols-outlined text-blue-400 text-sm animate-spin">sync</span>
-                                            <span class="text-xs text-slate-400 scan-resources-count">0 ressources trouvées</span>
-                                        </div>
-                                    </div>
-
                                     <input type="checkbox" class="hidden" data-service-toggle="ec2"/>
                                 </div>
 
                                 <!-- S3 Card -->
                                 <div class="service-card glass-card rounded-xl p-6 cursor-pointer border-2 border-slate-700 relative overflow-hidden"
                                      data-service="s3" onclick="configScan.toggleService('s3')">
+
+                                    <!-- ✨ Overlay de progression -->
+                                    <div class="service-card-progress-overlay" data-progress-overlay="s3"></div>
+
                                     <!-- Badge de sélection -->
                                     <div class="selection-badge">
                                         <span class="material-symbols-outlined text-white text-lg">check</span>
+                                    </div>
+
+                                    <!-- ✨ Badge de pourcentage -->
+                                    <div class="service-card-progress-badge" data-progress-badge="s3">0%</div>
+
+                                    <!-- ✨ Badge de complétion -->
+                                    <div class="service-card-completion-badge" data-completion-badge="s3">
+                                        <span class="material-symbols-outlined text-white text-3xl">check</span>
                                     </div>
 
                                     <div class="flex items-center gap-4 mb-4">
@@ -741,30 +813,27 @@
                                     </div>
                                     <p class="text-slate-400 text-sm mb-3">Buckets, objets, configurations</p>
 
-                                    <!-- Barre de progression (cachée par défaut) -->
-                                    <div class="scan-progress hidden mt-4" data-service-progress="s3">
-                                        <div class="flex items-center justify-between mb-2">
-                                            <span class="text-xs font-medium text-green-400 scan-status-text">Scan en cours...</span>
-                                            <span class="text-xs font-bold text-green-400 scan-percentage">0%</span>
-                                        </div>
-                                        <div class="w-full bg-slate-700/50 rounded-full h-2 overflow-hidden">
-                                            <div class="scan-progress-bar h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
-                                        </div>
-                                        <div class="flex items-center gap-2 mt-2">
-                                            <span class="material-symbols-outlined text-green-400 text-sm animate-spin">sync</span>
-                                            <span class="text-xs text-slate-400 scan-resources-count">0 ressources trouvées</span>
-                                        </div>
-                                    </div>
-
                                     <input type="checkbox" class="hidden" data-service-toggle="s3"/>
                                 </div>
 
                                 <!-- VPC Card -->
                                 <div class="service-card glass-card rounded-xl p-6 cursor-pointer border-2 border-slate-700 relative overflow-hidden"
                                      data-service="vpc" onclick="configScan.toggleService('vpc')">
+
+                                    <!-- ✨ Overlay de progression -->
+                                    <div class="service-card-progress-overlay" data-progress-overlay="vpc"></div>
+
                                     <!-- Badge de sélection -->
                                     <div class="selection-badge">
                                         <span class="material-symbols-outlined text-white text-lg">check</span>
+                                    </div>
+
+                                    <!-- ✨ Badge de pourcentage -->
+                                    <div class="service-card-progress-badge" data-progress-badge="vpc">0%</div>
+
+                                    <!-- ✨ Badge de complétion -->
+                                    <div class="service-card-completion-badge" data-completion-badge="vpc">
+                                        <span class="material-symbols-outlined text-white text-3xl">check</span>
                                     </div>
 
                                     <div class="flex items-center gap-4 mb-4">
@@ -778,30 +847,27 @@
                                     </div>
                                     <p class="text-slate-400 text-sm mb-3">Réseaux virtuels, subnets, sécurité</p>
 
-                                    <!-- Barre de progression (cachée par défaut) -->
-                                    <div class="scan-progress hidden mt-4" data-service-progress="vpc">
-                                        <div class="flex items-center justify-between mb-2">
-                                            <span class="text-xs font-medium text-orange-400 scan-status-text">Scan en cours...</span>
-                                            <span class="text-xs font-bold text-orange-400 scan-percentage">0%</span>
-                                        </div>
-                                        <div class="w-full bg-slate-700/50 rounded-full h-2 overflow-hidden">
-                                            <div class="scan-progress-bar h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
-                                        </div>
-                                        <div class="flex items-center gap-2 mt-2">
-                                            <span class="material-symbols-outlined text-orange-400 text-sm animate-spin">sync</span>
-                                            <span class="text-xs text-slate-400 scan-resources-count">0 ressources trouvées</span>
-                                        </div>
-                                    </div>
-
                                     <input type="checkbox" class="hidden" data-service-toggle="vpc"/>
                                 </div>
 
                                 <!-- RDS Card -->
                                 <div class="service-card glass-card rounded-xl p-6 cursor-pointer border-2 border-slate-700 relative overflow-hidden"
                                      data-service="rds" onclick="configScan.toggleService('rds')">
+
+                                    <!-- ✨ Overlay de progression -->
+                                    <div class="service-card-progress-overlay" data-progress-overlay="rds"></div>
+
                                     <!-- Badge de sélection -->
                                     <div class="selection-badge">
                                         <span class="material-symbols-outlined text-white text-lg">check</span>
+                                    </div>
+
+                                    <!-- ✨ Badge de pourcentage -->
+                                    <div class="service-card-progress-badge" data-progress-badge="rds">0%</div>
+
+                                    <!-- ✨ Badge de complétion -->
+                                    <div class="service-card-completion-badge" data-completion-badge="rds">
+                                        <span class="material-symbols-outlined text-white text-3xl">check</span>
                                     </div>
 
                                     <div class="flex items-center gap-4 mb-4">
@@ -814,21 +880,6 @@
                                         </div>
                                     </div>
                                     <p class="text-slate-400 text-sm mb-3">Bases de données relationnelles, performance</p>
-
-                                    <!-- Barre de progression (cachée par défaut) -->
-                                    <div class="scan-progress hidden mt-4" data-service-progress="rds">
-                                        <div class="flex items-center justify-between mb-2">
-                                            <span class="text-xs font-medium text-cyan-400 scan-status-text">Scan en cours...</span>
-                                            <span class="text-xs font-bold text-cyan-400 scan-percentage">0%</span>
-                                        </div>
-                                        <div class="w-full bg-slate-700/50 rounded-full h-2 overflow-hidden">
-                                            <div class="scan-progress-bar h-full bg-gradient-to-r from-cyan-500 to-cyan-400 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
-                                        </div>
-                                        <div class="flex items-center gap-2 mt-2">
-                                            <span class="material-symbols-outlined text-cyan-400 text-sm animate-spin">sync</span>
-                                            <span class="text-xs text-slate-400 scan-resources-count">0 ressources trouvées</span>
-                                        </div>
-                                    </div>
 
                                     <input type="checkbox" class="hidden" data-service-toggle="rds"/>
                                 </div>
@@ -852,8 +903,8 @@
                                 </label>
                             </div>
 
-                            <div id="regions-list" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                <!-- Populated by JavaScript -->
+                            <div id="regions-list" class="w-full">
+                                <!-- Populated by JavaScript with modern card design -->
                             </div>
                         </div>
 

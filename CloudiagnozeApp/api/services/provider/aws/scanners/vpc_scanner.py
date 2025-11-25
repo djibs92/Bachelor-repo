@@ -42,13 +42,13 @@ class VPCScanner:
         """
         logger.info("🌐 Démarrage du scan VPC")
         
-        # Créer un ScanRun
+        # Créer un ScanRun avec status='running'
         scan_run = ScanRun(
             client_id=self.client_id,
             service_type='vpc',
             scan_timestamp=datetime.now(),
             total_resources=0,
-            status='success',
+            status='running',  # ✅ Démarrer avec 'running'
             user_id=user_id
         )
         db.add(scan_run)

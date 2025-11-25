@@ -66,18 +66,19 @@ async def get_latest_scan_session(
                 }
 
         # Fenêtre de temps : uniquement les scans lancés dans la même session utilisateur
-        # On prend uniquement les scans dans les 2 minutes AVANT et APRÈS le scan de référence
-        # Cela permet de grouper les scans multi-services lancés ensemble (même si certains prennent du temps)
+        # On prend uniquement les scans dans les 30 secondes AVANT et APRÈS le scan de référence
+        # Cela permet de grouper les scans multi-services lancés ensemble
         from datetime import timedelta
-        session_window = timedelta(seconds=120)  # 2 minutes pour capturer tous les scans multi-services
+        session_window = timedelta(seconds=30)  # 30 secondes pour capturer tous les scans multi-services
         session_start = reference_scan.scan_timestamp - session_window
         session_end = reference_scan.scan_timestamp + session_window
 
-        # Récupérer tous les scans dans cette fenêtre étroite
+        # Récupérer tous les scans terminés dans cette fenêtre étroite
         session_scans = db.query(ScanRun).filter(
             ScanRun.user_id == current_user.id,
             ScanRun.scan_timestamp >= session_start,
-            ScanRun.scan_timestamp <= session_end
+            ScanRun.scan_timestamp <= session_end,
+            ScanRun.status.in_(['success', 'partial', 'failed'])  # ✅ Uniquement les scans terminés
         ).order_by(ScanRun.scan_timestamp.desc()).all()
 
         # Extraire les services uniques

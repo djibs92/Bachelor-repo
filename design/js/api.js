@@ -72,6 +72,14 @@ class CloudDiagnozeAPI {
     }
 
     /**
+     * Vérifie le statut d'un scan en cours
+     */
+    async getScanStatus(services) {
+        const servicesParam = Array.isArray(services) ? services.join(',') : services;
+        return await this.request(`${API_CONFIG.ENDPOINTS.SCAN_STATUS}?services=${servicesParam}`);
+    }
+
+    /**
      * Alias pour getScansHistory (pour compatibilité)
      */
     async getScanRuns(params = {}) {

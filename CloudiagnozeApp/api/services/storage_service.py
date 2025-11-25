@@ -245,13 +245,21 @@ def save_s3_scan(client_id: str, buckets_data: List[dict], user_id: int = None) 
         # ========================================
         # ÉTAPE 3 : Commit de la transaction
         # ========================================
+        # ✅ Marquer le scan comme terminé avec succès
+        scan_run.status = 'success'
         db.commit()
         logger.success(f"✅ {len(buckets_data)} buckets S3 sauvegardés avec succès !")
         return True
-        
+
     except Exception as e:
         db.rollback()
         logger.error(f"❌ Erreur lors de la sauvegarde S3 : {e}")
+        # Marquer le scan comme échoué
+        try:
+            scan_run.status = 'failed'
+            db.commit()
+        except:
+            pass
         return False
         
     finally:

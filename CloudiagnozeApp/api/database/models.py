@@ -73,7 +73,7 @@ class ScanRun(Base):
     service_type = Column(String(20), nullable=False, comment="Type de service scanné (ec2, s3, vpc, rds, etc.)")
     scan_timestamp = Column(DateTime, nullable=False, default=datetime.now, comment="Date et heure du scan")
     total_resources = Column(Integer, default=0, comment="Nombre total de ressources trouvées")
-    status = Column(Enum('success', 'partial', 'failed'), default='success', comment="Statut du scan")
+    status = Column(Enum('running', 'success', 'partial', 'failed'), default='running', comment="Statut du scan")
     user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=True, comment="ID de l'utilisateur qui a lancé le scan")
 
     # Relations (liens avec les autres tables)

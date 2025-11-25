@@ -10,6 +10,7 @@ const API_CONFIG = {
     ENDPOINTS: {
         LATEST_SCAN_SESSION: '/scans/latest-session',
         SCANS_HISTORY: '/scans/history',
+        SCAN_STATUS: '/scans/status',
         EC2_INSTANCES: '/ec2/instances',
         EC2_INSTANCE_BY_ID: '/ec2/instances',
         S3_BUCKETS: '/s3/buckets',

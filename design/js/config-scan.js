@@ -5,24 +5,23 @@ class ConfigScan {
     constructor() {
         this.selectedServices = []; // Services sélectionnés par défaut (vide au départ)
         this.selectedRegions = []; // Régions sélectionnées
+        this.regionGroups = {
+            'US East': ['us-east-1', 'us-east-2'],
+            'US West': ['us-west-1', 'us-west-2'],
+            'Europe': ['eu-west-1', 'eu-west-2', 'eu-west-3', 'eu-central-1'],
+            'Asia Pacific': ['ap-southeast-1', 'ap-southeast-2', 'ap-northeast-1', 'ap-northeast-2'],
+            'Other': ['sa-east-1', 'ca-central-1']
+        };
         this.allRegions = [
-            'us-east-1',
-            'us-east-2',
-            'us-west-1',
-            'us-west-2',
-            'eu-west-1',
-            'eu-west-2',
-            'eu-west-3',
-            'eu-central-1',
-            'ap-southeast-1',
-            'ap-southeast-2',
-            'ap-northeast-1',
-            'ap-northeast-2',
-            'sa-east-1',
-            'ca-central-1'
+            'us-east-1', 'us-east-2', 'us-west-1', 'us-west-2',
+            'eu-west-1', 'eu-west-2', 'eu-west-3', 'eu-central-1',
+            'ap-southeast-1', 'ap-southeast-2', 'ap-northeast-1', 'ap-northeast-2',
+            'sa-east-1', 'ca-central-1'
         ];
         this.currentScanId = null;
         this.scanInterval = null;
+        this.pollingInterval = null;
+        this.scannedServices = [];
     }
 
     /**
@@ -41,7 +40,7 @@ class ConfigScan {
     }
 
     /**
-     * Affiche la liste des régions AWS
+     * Affiche la liste des régions AWS groupées par zone géographique
      */
     renderRegionsList() {
         const container = document.getElementById('regions-list');
@@ -49,19 +48,80 @@ class ConfigScan {
 
         container.innerHTML = '';
 
-        this.allRegions.forEach(region => {
-            const div = document.createElement('div');
-            div.className = 'flex items-center gap-2';
-            div.innerHTML = `
-                <input type="checkbox" 
-                       id="region-${region}" 
-                       class="toggle-checkbox w-4 h-4 rounded" 
-                       value="${region}"
-                       onchange="configScan.toggleRegion('${region}', this.checked)"/>
-                <label for="region-${region}" class="text-slate-300 text-sm cursor-pointer">${region}</label>
+        // Créer une grille de cartes pour chaque groupe
+        const mainGrid = document.createElement('div');
+        mainGrid.className = 'grid grid-cols-1 md:grid-cols-2 gap-4';
+
+        // Pour chaque groupe de régions
+        Object.entries(this.regionGroups).forEach(([groupName, regions]) => {
+            // Créer la carte du groupe
+            const groupCard = document.createElement('div');
+            groupCard.className = 'bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50 hover:border-primary/30 transition-all duration-300';
+
+            // En-tête du groupe avec icône
+            const header = document.createElement('div');
+            header.className = 'flex items-center justify-between mb-3 pb-2 border-b border-slate-700/50';
+
+            const titleSection = document.createElement('div');
+            titleSection.className = 'flex items-center gap-2';
+
+            // Icône selon la région
+            let icon = 'public';
+            if (groupName.includes('US')) icon = 'flag';
+            else if (groupName.includes('Europe')) icon = 'euro';
+            else if (groupName.includes('Asia')) icon = 'language';
+            else icon = 'travel_explore';
+
+            titleSection.innerHTML = `
+                <span class="material-symbols-outlined text-primary text-lg">${icon}</span>
+                <span class="text-slate-100 font-semibold text-sm">${groupName}</span>
+                <span class="text-slate-500 text-xs">(${regions.length})</span>
             `;
-            container.appendChild(div);
+
+            // Bouton "Tout sélectionner" pour ce groupe
+            const selectAllBtn = document.createElement('button');
+            selectAllBtn.className = 'text-xs text-primary hover:text-primary-light transition-colors';
+            selectAllBtn.textContent = 'Tout';
+            selectAllBtn.onclick = (e) => {
+                e.preventDefault();
+                const checkboxes = groupCard.querySelectorAll('input[type="checkbox"]');
+                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                checkboxes.forEach(cb => {
+                    cb.checked = !allChecked;
+                    this.toggleRegion(cb.value, cb.checked);
+                });
+            };
+
+            header.appendChild(titleSection);
+            header.appendChild(selectAllBtn);
+            groupCard.appendChild(header);
+
+            // Liste des régions
+            const regionsList = document.createElement('div');
+            regionsList.className = 'space-y-2';
+
+            regions.forEach(region => {
+                const regionItem = document.createElement('label');
+                regionItem.className = 'flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/30 cursor-pointer transition-all group';
+
+                regionItem.innerHTML = `
+                    <input type="checkbox"
+                           id="region-${region}"
+                           class="w-4 h-4 rounded border-slate-600 text-primary focus:ring-2 focus:ring-primary/50 focus:ring-offset-0 cursor-pointer"
+                           value="${region}"
+                           onchange="configScan.toggleRegion('${region}', this.checked)"/>
+                    <span class="text-slate-300 text-sm group-hover:text-slate-100 transition-colors flex-1">${region}</span>
+                    <span class="material-symbols-outlined text-slate-600 text-sm group-hover:text-primary transition-colors">location_on</span>
+                `;
+
+                regionsList.appendChild(regionItem);
+            });
+
+            groupCard.appendChild(regionsList);
+            mainGrid.appendChild(groupCard);
         });
+
+        container.appendChild(mainGrid);
     }
 
     /**
@@ -184,38 +244,18 @@ class ConfigScan {
                 this.showServiceProgress(service);
             });
 
-            // ✅ LANCER UN SEUL SCAN AVEC TOUS LES SERVICES (au lieu de plusieurs scans séparés)
-            // Cela garantit que tous les services auront le même timestamp et seront groupés dans la même session
+            // ✅ LANCER UN SEUL SCAN AVEC TOUS LES SERVICES
+            // Le polling gérera automatiquement la progression et la redirection
             await this.scanAllServices(this.selectedServices);
 
-            // Marquer tous les services comme complétés
-            this.selectedServices.forEach(service => {
-                this.completeServiceProgress(service);
-            });
-
-            // Attendre 2 secondes pour montrer le succès
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            // Cacher les barres de progression
-            this.selectedServices.forEach(service => {
-                this.hideServiceProgress(service);
-            });
-
-            // Recharger l'historique
-            await this.loadScanHistory();
-
-            // Réactiver le bouton
-            if (scanButton) {
-                scanButton.disabled = false;
-                scanButton.classList.remove('opacity-50', 'cursor-not-allowed');
-            }
-
-            // Notification avec redirection vers dashboard
-            this.showSuccessNotificationWithRedirect();
+            // Le reste est géré par le polling (startScanPolling)
 
         } catch (error) {
             console.error('❌ Erreur lors du scan:', error);
             this.showNotification('Erreur lors du scan: ' + error.message, 'error');
+
+            // Arrêter le polling
+            this.stopScanPolling();
 
             // Marquer les services en erreur
             this.selectedServices.forEach(service => {
@@ -251,11 +291,6 @@ class ConfigScan {
         };
 
         try {
-            // Démarrer la simulation de progression pour tous les services
-            const progressPromises = services.map(service =>
-                this.simulateServiceProgress(service)
-            );
-
             // Appeler l'API avec le token JWT
             const response = await fetch(`${API_CONFIG.BASE_URL}/scans`, {
                 method: 'POST',
@@ -274,13 +309,101 @@ class ConfigScan {
             const data = await response.json();
             console.log(`✅ Scan multi-services lancé:`, data);
 
-            // Attendre que toutes les progressions soient terminées
-            await Promise.all(progressPromises);
+            // Sauvegarder les services scannés pour le polling
+            this.scannedServices = services;
+
+            // ✅ Démarrer le polling IMMÉDIATEMENT (pas d'attente)
+            this.startScanPolling(services);
 
         } catch (error) {
             console.error(`❌ Erreur scan multi-services:`, error);
             throw error;
         }
+    }
+
+    /**
+     * Démarre le polling pour vérifier l'état du scan
+     * ✅ OPTIMISÉ : Polling plus rapide (500ms) pour une progression fluide
+     */
+    startScanPolling(services) {
+        console.log('🔄 Démarrage du polling pour vérifier l\'état du scan...');
+
+        let pollCount = 0;
+        const maxPolls = 240; // Maximum 2 minutes (240 * 500ms)
+        const progressPerService = {}; // Suivre la progression de chaque service
+
+        // Initialiser la progression à 10% pour chaque service (pour montrer que ça démarre)
+        services.forEach(service => {
+            progressPerService[service] = 10;
+            this.updateServiceProgress(service, 10, 0);
+            console.log(`🎯 Initialisation progression ${service.toUpperCase()}: 10%`);
+        });
+
+        // Nettoyer l'ancien polling s'il existe
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+        }
+
+        this.pollingInterval = setInterval(async () => {
+            pollCount++;
+            console.log(`🔄 Poll #${pollCount} - Vérification du statut...`);
+
+            try {
+                const status = await api.getScanStatus(services);
+                console.log(`📊 Statut du scan (poll #${pollCount}):`, status);
+
+                // Mettre à jour les barres de progression avec les vraies données
+                Object.entries(status.services_status).forEach(([service, serviceStatus]) => {
+                    if (serviceStatus.completed) {
+                        // Service terminé : 100%
+                        console.log(`✅ ${service.toUpperCase()} terminé: ${serviceStatus.total_resources} ressources`);
+                        progressPerService[service] = 100;
+                        this.updateServiceProgress(service, 100, serviceStatus.total_resources);
+                        this.completeServiceProgress(service);
+                    } else {
+                        // Service en cours : progression graduelle jusqu'à 85%
+                        // Augmenter de 5% à chaque poll (plus fluide), max 85%
+                        const oldProgress = progressPerService[service];
+                        progressPerService[service] = Math.min(85, progressPerService[service] + 5);
+                        console.log(`⏳ ${service.toUpperCase()} en cours: ${oldProgress}% → ${progressPerService[service]}%`);
+                        this.updateServiceProgress(service, progressPerService[service], 0);
+                    }
+                });
+
+                // Si tous les services sont terminés
+                if (status.completed) {
+                    console.log('✅ Tous les services ont terminé leur scan !');
+                    clearInterval(this.pollingInterval);
+                    this.pollingInterval = null;
+
+                    // Marquer tous les services comme complétés
+                    services.forEach(service => {
+                        const serviceStatus = status.services_status[service];
+                        this.updateServiceProgress(service, 100, serviceStatus.total_resources);
+                        this.completeServiceProgress(service);
+                    });
+
+                    // Afficher notification de succès
+                    this.showNotification('Scan terminé avec succès ! Redirection vers le dashboard...', 'success');
+
+                    // Attendre 2 secondes puis rediriger
+                    setTimeout(() => {
+                        window.location.href = 'dashbord.html';
+                    }, 2000);
+                }
+
+                // Timeout après 2 minutes
+                if (pollCount >= maxPolls) {
+                    console.warn('⚠️ Timeout du polling après 2 minutes');
+                    clearInterval(this.pollingInterval);
+                    this.pollingInterval = null;
+                    this.showNotification('Le scan prend plus de temps que prévu. Vérifiez le dashboard.', 'warning');
+                }
+
+            } catch (error) {
+                console.error('❌ Erreur lors du polling:', error);
+            }
+        }, 500); // ✅ Vérifier toutes les 500ms (au lieu de 2 secondes) pour une progression fluide
     }
 
     /**
@@ -295,17 +418,32 @@ class ConfigScan {
      * Affiche la barre de progression pour un service
      */
     showServiceProgress(service) {
-        const progressDiv = document.querySelector(`[data-service-progress="${service}"]`);
         const serviceCard = document.querySelector(`[data-service="${service}"]`);
-
-        if (progressDiv) {
-            progressDiv.classList.remove('hidden');
-            // Réinitialiser la progression
-            this.updateServiceProgress(service, 0, 0);
-        }
+        const progressOverlay = document.querySelector(`[data-progress-overlay="${service}"]`);
+        const progressBadge = document.querySelector(`[data-progress-badge="${service}"]`);
 
         if (serviceCard) {
             serviceCard.classList.add('scanning');
+            console.log(`🎯 Carte ${service.toUpperCase()} en mode scanning`);
+        }
+
+        // Réinitialiser l'overlay et le badge
+        if (progressOverlay) {
+            progressOverlay.style.width = '0%';
+        }
+        if (progressBadge) {
+            progressBadge.textContent = '0%';
+        }
+    }
+
+    /**
+     * Nettoie le polling en cours
+     */
+    stopScanPolling() {
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
+            console.log('🛑 Polling arrêté');
         }
     }
 
@@ -313,130 +451,89 @@ class ConfigScan {
      * Cache la barre de progression pour un service
      */
     hideServiceProgress(service) {
-        const progressDiv = document.querySelector(`[data-service-progress="${service}"]`);
         const serviceCard = document.querySelector(`[data-service="${service}"]`);
-
-        if (progressDiv) {
-            progressDiv.classList.add('hidden');
-        }
+        const progressOverlay = document.querySelector(`[data-progress-overlay="${service}"]`);
+        const progressBadge = document.querySelector(`[data-progress-badge="${service}"]`);
 
         if (serviceCard) {
             serviceCard.classList.remove('scanning');
         }
+
+        if (progressOverlay) {
+            progressOverlay.style.width = '0%';
+        }
+
+        if (progressBadge) {
+            progressBadge.textContent = '0%';
+        }
     }
 
     /**
-     * Met à jour la progression d'un service
+     * Met à jour la progression d'un service (NOUVEAU DESIGN)
      */
     updateServiceProgress(service, percentage, resourcesCount) {
-        const progressDiv = document.querySelector(`[data-service-progress="${service}"]`);
-        if (!progressDiv) return;
+        const progressOverlay = document.querySelector(`[data-progress-overlay="${service}"]`);
+        const progressBadge = document.querySelector(`[data-progress-badge="${service}"]`);
 
-        const progressBar = progressDiv.querySelector('.scan-progress-bar');
-        const percentageText = progressDiv.querySelector('.scan-percentage');
-        const resourcesText = progressDiv.querySelector('.scan-resources-count');
+        if (!progressOverlay || !progressBadge) {
+            console.warn(`⚠️ Impossible de trouver les éléments de progression pour ${service}`);
+            return;
+        }
 
-        if (progressBar) {
-            progressBar.style.width = `${percentage}%`;
-        }
-        if (percentageText) {
-            percentageText.textContent = `${percentage}%`;
-        }
-        if (resourcesText) {
-            resourcesText.textContent = `${resourcesCount} ressource${resourcesCount > 1 ? 's' : ''} trouvée${resourcesCount > 1 ? 's' : ''}`;
-        }
+        // Mettre à jour l'overlay (remplissage de gauche à droite)
+        progressOverlay.style.width = `${percentage}%`;
+
+        // Mettre à jour le badge de pourcentage
+        progressBadge.textContent = `${Math.round(percentage)}%`;
+
+        console.log(`📊 ${service.toUpperCase()}: ${Math.round(percentage)}% (${resourcesCount} ressources)`);
     }
 
     /**
-     * Marque un service comme complété
+     * Marque un service comme complété (NOUVEAU DESIGN)
      */
     completeServiceProgress(service) {
-        const progressDiv = document.querySelector(`[data-service-progress="${service}"]`);
         const serviceCard = document.querySelector(`[data-service="${service}"]`);
-
-        if (!progressDiv) return;
-
-        const statusText = progressDiv.querySelector('.scan-status-text');
-        const spinner = progressDiv.querySelector('.material-symbols-outlined');
-        const resourcesText = progressDiv.querySelector('.scan-resources-count');
-
-        // Extraire le nombre de ressources actuel
-        const currentText = resourcesText ? resourcesText.textContent : '0 ressources trouvées';
-        const currentResources = parseInt(currentText.match(/\d+/)?.[0] || '0');
+        const progressOverlay = document.querySelector(`[data-progress-overlay="${service}"]`);
+        const progressBadge = document.querySelector(`[data-progress-badge="${service}"]`);
 
         // Mettre à jour à 100%
-        this.updateServiceProgress(service, 100, currentResources);
-
-        if (statusText) {
-            statusText.textContent = '✓ Scan terminé';
-            statusText.classList.add('text-green-400');
+        if (progressOverlay) {
+            progressOverlay.style.width = '100%';
         }
-        if (spinner) {
-            spinner.classList.remove('animate-spin');
-            spinner.textContent = 'check_circle';
-            spinner.classList.add('text-green-400');
+        if (progressBadge) {
+            progressBadge.textContent = '100%';
         }
 
-        // Retirer l'animation de scanning
+        // Retirer l'animation de scanning et ajouter la classe completed
         if (serviceCard) {
             serviceCard.classList.remove('scanning');
+            serviceCard.classList.add('completed');
         }
+
+        console.log(`✅ ${service.toUpperCase()} terminé !`);
     }
 
     /**
-     * Marque un service en erreur
+     * Marque un service en erreur (NOUVEAU DESIGN)
      */
     errorServiceProgress(service) {
-        const progressDiv = document.querySelector(`[data-service-progress="${service}"]`);
-        if (!progressDiv) return;
+        const serviceCard = document.querySelector(`[data-service="${service}"]`);
+        const progressOverlay = document.querySelector(`[data-progress-overlay="${service}"]`);
 
-        const statusText = progressDiv.querySelector('.scan-status-text');
-        const spinner = progressDiv.querySelector('.material-symbols-outlined');
-        const progressBar = progressDiv.querySelector('.scan-progress-bar');
+        if (serviceCard) {
+            serviceCard.classList.remove('scanning');
+            serviceCard.classList.add('border-red-500');
+        }
 
-        if (statusText) {
-            statusText.textContent = '✗ Erreur';
-            statusText.classList.add('text-red-400');
+        if (progressOverlay) {
+            progressOverlay.style.background = 'linear-gradient(90deg, rgba(239, 68, 68, 0.3) 0%, rgba(239, 68, 68, 0.15) 100%)';
         }
-        if (spinner) {
-            spinner.classList.remove('animate-spin');
-            spinner.textContent = 'error';
-            spinner.classList.add('text-red-400');
-        }
-        if (progressBar) {
-            progressBar.classList.remove('from-blue-500', 'to-blue-400', 'from-green-500', 'to-green-400', 'from-orange-500', 'to-orange-400', 'from-cyan-500', 'to-cyan-400');
-            progressBar.classList.add('from-red-500', 'to-red-400');
-        }
+
+        console.error(`❌ ${service.toUpperCase()} en erreur`);
     }
 
-    /**
-     * Simule la progression du scan pour un service spécifique
-     */
-    async simulateServiceProgress(service) {
-        return new Promise((resolve) => {
-            let progress = 0;
-            let resources = 0;
 
-            const interval = setInterval(() => {
-                // Augmenter la progression de manière aléatoire
-                progress += Math.floor(Math.random() * 15) + 5;
-                if (progress > 95) progress = 95; // Ne pas atteindre 100% avant la fin
-
-                // Augmenter le nombre de ressources
-                resources += Math.floor(Math.random() * 3) + 1;
-
-                // Mettre à jour l'affichage
-                this.updateServiceProgress(service, progress, resources);
-            }, 400);
-
-            // Terminer après 3-5 secondes (aléatoire pour chaque service)
-            const duration = 3000 + Math.random() * 2000;
-            setTimeout(() => {
-                clearInterval(interval);
-                resolve();
-            }, duration);
-        });
-    }
 
     /**
      * Affiche le statut du scan
@@ -647,17 +744,18 @@ class ConfigScan {
      */
     showNotification(message, type = 'info') {
         const colors = {
-            success: 'bg-green-500/10 border-green-500 text-green-500',
-            error: 'bg-red-500/10 border-red-500 text-red-500',
-            info: 'bg-blue-500/10 border-blue-500 text-blue-500'
+            success: 'bg-green-500 text-white',  // ✅ Fond vert avec texte blanc
+            error: 'bg-red-500 text-white',
+            warning: 'bg-orange-500 text-white',
+            info: 'bg-blue-500 text-white'
         };
 
         const notification = document.createElement('div');
-        notification.className = `fixed top-4 right-4 ${colors[type]} border px-6 py-4 rounded-lg backdrop-blur-sm z-50 animate-fade-in`;
+        notification.className = `fixed top-4 right-4 ${colors[type]} px-6 py-4 rounded-lg shadow-lg z-50 animate-fade-in`;
         notification.innerHTML = `
             <div class="flex items-center gap-3">
                 <span class="material-symbols-outlined">${type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'info'}</span>
-                <span>${message}</span>
+                <span class="font-medium">${message}</span>
             </div>
         `;
 

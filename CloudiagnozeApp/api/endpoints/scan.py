@@ -105,6 +105,73 @@ async def create_scan(
     )
 
 
+@router.get("/scans/status")
+async def get_scan_status(
+    services: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Vérifie si tous les services demandés ont terminé leur scan.
+
+    Args:
+        services: Liste des services séparés par des virgules (ex: "ec2,s3,vpc,rds")
+
+    Returns:
+        {
+            "completed": true/false,
+            "services_status": {
+                "ec2": {"completed": true, "total_resources": 10},
+                "s3": {"completed": false, "total_resources": 0}
+            }
+        }
+    """
+    from api.database import ScanRun
+    from datetime import datetime, timedelta
+
+    try:
+        services_list = services.split(',')
+
+        # Vérifier les scans des 2 dernières minutes pour chaque service
+        time_threshold = datetime.now() - timedelta(minutes=2)
+
+        services_status = {}
+        all_completed = True
+
+        for service in services_list:
+            # Chercher le dernier scan de ce service
+            latest_scan = db.query(ScanRun).filter(
+                ScanRun.service_type == service,
+                ScanRun.user_id == current_user.id,
+                ScanRun.scan_timestamp >= time_threshold
+            ).order_by(ScanRun.scan_timestamp.desc()).first()
+
+            if latest_scan and latest_scan.status in ['success', 'partial', 'failed']:
+                # Scan terminé (succès, partiel ou échec)
+                services_status[service] = {
+                    "completed": True,
+                    "total_resources": latest_scan.total_resources,
+                    "status": latest_scan.status,
+                    "scan_id": latest_scan.id
+                }
+            else:
+                # Pas de scan ou scan en cours
+                services_status[service] = {
+                    "completed": False,
+                    "total_resources": latest_scan.total_resources if latest_scan else 0,
+                    "status": latest_scan.status if latest_scan else "pending"
+                }
+                all_completed = False
+
+        return {
+            "completed": all_completed,
+            "services_status": services_status
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la vérification du statut: {str(e)}")
+
+
 @router.get("/scans/{scan_session_id}/export")
 async def export_scan_session(
     scan_session_id: str,
