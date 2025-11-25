@@ -7,6 +7,11 @@ python-multipart==0.0.6
 pytz
 pytest
 pytest-asyncio
+pytest-mock
+pytest-cov
+moto[ec2,s3,cloudwatch,sts]==5.0.0
+faker
+freezegun
 matplotlib
 
 # Base de données
