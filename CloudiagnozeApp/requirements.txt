@@ -12,6 +12,7 @@ pytest-cov
 moto[ec2,s3,cloudwatch,sts]==5.0.0
 faker
 freezegun
+httpx<0.28  # Pour TestClient FastAPI (compatible avec starlette 0.27)
 matplotlib
 
 # Base de données
