@@ -323,7 +323,7 @@ class ConfigScan {
 
     /**
      * Démarre le polling pour vérifier l'état du scan
-     * ✅ OPTIMISÉ : Polling plus rapide (500ms) pour une progression fluide
+     * ✅ OPTIMISÉ : Progression artificielle fluide + vérification backend
      */
     startScanPolling(services) {
         console.log('🔄 Démarrage du polling pour vérifier l\'état du scan...');
@@ -331,12 +331,27 @@ class ConfigScan {
         let pollCount = 0;
         const maxPolls = 240; // Maximum 2 minutes (240 * 500ms)
         const progressPerService = {}; // Suivre la progression de chaque service
+        const artificialProgressIntervals = {}; // Intervalles pour la progression artificielle
 
-        // Initialiser la progression à 10% pour chaque service (pour montrer que ça démarre)
+        // Initialiser la progression à 10% pour chaque service
         services.forEach(service => {
             progressPerService[service] = 10;
             this.updateServiceProgress(service, 10, 0);
             console.log(`🎯 Initialisation progression ${service.toUpperCase()}: 10%`);
+
+            // ✨ PROGRESSION ARTIFICIELLE : Monter graduellement de 10% à 70% sur 4 secondes
+            let artificialProgress = 10;
+            artificialProgressIntervals[service] = setInterval(() => {
+                // Si le service n'est pas encore terminé et qu'on est en dessous de 70%
+                if (progressPerService[service] < 70 && progressPerService[service] < 100) {
+                    artificialProgress += 3; // +3% toutes les 200ms = 70% en ~4 secondes
+                    if (artificialProgress <= 70) {
+                        progressPerService[service] = artificialProgress;
+                        this.updateServiceProgress(service, artificialProgress, 0);
+                        console.log(`🎨 Progression artificielle ${service.toUpperCase()}: ${artificialProgress}%`);
+                    }
+                }
+            }, 200); // Toutes les 200ms pour une animation fluide
         });
 
         // Nettoyer l'ancien polling s'il existe
@@ -355,33 +370,53 @@ class ConfigScan {
                 // Mettre à jour les barres de progression avec les vraies données
                 Object.entries(status.services_status).forEach(([service, serviceStatus]) => {
                     if (serviceStatus.completed) {
-                        // Service terminé : 100%
+                        // ✅ Service terminé : Arrêter la progression artificielle et passer à 100%
+                        if (artificialProgressIntervals[service]) {
+                            clearInterval(artificialProgressIntervals[service]);
+                            delete artificialProgressIntervals[service];
+                        }
+
                         console.log(`✅ ${service.toUpperCase()} terminé: ${serviceStatus.total_resources} ressources`);
-                        progressPerService[service] = 100;
-                        this.updateServiceProgress(service, 100, serviceStatus.total_resources);
-                        this.completeServiceProgress(service);
+
+                        // Progression finale : 70% → 100% en douceur
+                        const currentProgress = progressPerService[service];
+                        if (currentProgress < 100) {
+                            // Animation de 70% à 100% sur 500ms
+                            let step = currentProgress;
+                            const increment = (100 - currentProgress) / 5; // 5 étapes
+                            const finalAnimation = setInterval(() => {
+                                step += increment;
+                                if (step >= 100) {
+                                    step = 100;
+                                    clearInterval(finalAnimation);
+                                    this.completeServiceProgress(service);
+                                }
+                                progressPerService[service] = step;
+                                this.updateServiceProgress(service, step, serviceStatus.total_resources);
+                            }, 100); // Toutes les 100ms
+                        } else {
+                            progressPerService[service] = 100;
+                            this.updateServiceProgress(service, 100, serviceStatus.total_resources);
+                            this.completeServiceProgress(service);
+                        }
                     } else {
-                        // Service en cours : progression graduelle jusqu'à 85%
-                        // Augmenter de 5% à chaque poll (plus fluide), max 85%
-                        const oldProgress = progressPerService[service];
-                        progressPerService[service] = Math.min(85, progressPerService[service] + 5);
-                        console.log(`⏳ ${service.toUpperCase()} en cours: ${oldProgress}% → ${progressPerService[service]}%`);
-                        this.updateServiceProgress(service, progressPerService[service], 0);
+                        // Service en cours : Laisser la progression artificielle faire son travail
+                        // Mais si on dépasse 70%, on peut continuer à monter lentement jusqu'à 85%
+                        if (progressPerService[service] >= 70 && progressPerService[service] < 85) {
+                            progressPerService[service] = Math.min(85, progressPerService[service] + 2);
+                            this.updateServiceProgress(service, progressPerService[service], 0);
+                        }
                     }
                 });
 
                 // Si tous les services sont terminés
                 if (status.completed) {
                     console.log('✅ Tous les services ont terminé leur scan !');
+
+                    // Nettoyer tous les intervalles
                     clearInterval(this.pollingInterval);
                     this.pollingInterval = null;
-
-                    // Marquer tous les services comme complétés
-                    services.forEach(service => {
-                        const serviceStatus = status.services_status[service];
-                        this.updateServiceProgress(service, 100, serviceStatus.total_resources);
-                        this.completeServiceProgress(service);
-                    });
+                    Object.values(artificialProgressIntervals).forEach(interval => clearInterval(interval));
 
                     // Afficher notification de succès
                     this.showNotification('Scan terminé avec succès ! Redirection vers le dashboard...', 'success');
@@ -397,13 +432,14 @@ class ConfigScan {
                     console.warn('⚠️ Timeout du polling après 2 minutes');
                     clearInterval(this.pollingInterval);
                     this.pollingInterval = null;
+                    Object.values(artificialProgressIntervals).forEach(interval => clearInterval(interval));
                     this.showNotification('Le scan prend plus de temps que prévu. Vérifiez le dashboard.', 'warning');
                 }
 
             } catch (error) {
                 console.error('❌ Erreur lors du polling:', error);
             }
-        }, 500); // ✅ Vérifier toutes les 500ms (au lieu de 2 secondes) pour une progression fluide
+        }, 500); // Vérifier toutes les 500ms
     }
 
     /**
