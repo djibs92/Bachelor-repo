@@ -1,0 +1,246 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 1200" width="1100" height="1200" style="font-family: Arial, sans-serif;">
+
+    <defs>
+        <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.2"/>
+        </filter>
+        <linearGradient id="headerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#4a90e2;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#357abd;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="abstractGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#95a5a6;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#7f8c8d;stop-opacity:1" />
+        </linearGradient>
+
+        <marker id="arrow-inherit" markerWidth="12" markerHeight="12" refX="11" refY="6" orient="auto">
+            <polygon points="0 0, 12 6, 0 12" fill="none" stroke="#555" stroke-width="1.5" />
+        </marker>
+        <marker id="arrow-dependency" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+            <polygon points="0 0, 10 5, 0 10" fill="#888" />
+        </marker>
+    </defs>
+
+    <!-- Titre du diagramme -->
+    <text x="550" y="40" text-anchor="middle" font-size="26" font-weight="bold" fill="#2c3e50">
+        Diagramme de Classes UML - CloudDiagnoze
+    </text>
+    <text x="550" y="68" text-anchor="middle" font-size="14" fill="#7f8c8d">
+        Architecture agnostique au provider - Extensible Azure, GCP, AWS
+    </text>
+
+    <!-- ========================================== -->
+    <!-- COUCHE 1: FACTORIES (Design Pattern) -->
+    <!-- ========================================== -->
+
+    <!-- ScannerFactory -->
+    <g transform="translate(150, 120)" filter="url(#shadow)">
+        <rect x="0" y="0" width="280" height="140" rx="8" ry="8" fill="#fff" stroke="#e74c3c" stroke-width="2"/>
+        <path d="M 0 8 A 8 8 0 0 1 8 0 L 272 0 A 8 8 0 0 1 280 8 L 280 35 L 0 35 Z" fill="#e74c3c"/>
+        <text x="140" y="24" text-anchor="middle" fill="white" font-weight="bold" font-size="16">«Factory»</text>
+        <text x="140" y="50" text-anchor="middle" fill="#2c3e50" font-weight="bold" font-size="15">ScannerFactory</text>
+
+        <line x1="0" y1="60" x2="280" y2="60" stroke="#e74c3c" stroke-width="1"/>
+        <text x="10" y="80" fill="#555" font-size="12">+ create_scanner()</text>
+        <text x="20" y="96" fill="#777" font-size="11">provider: str</text>
+        <text x="20" y="110" fill="#777" font-size="11">service: str</text>
+        <text x="10" y="128" fill="#555" font-size="12">→ CloudScanner</text>
+    </g>
+
+    <!-- ConnectionFactory -->
+    <g transform="translate(500, 120)" filter="url(#shadow)">
+        <rect x="0" y="0" width="280" height="140" rx="8" ry="8" fill="#fff" stroke="#e74c3c" stroke-width="2"/>
+        <path d="M 0 8 A 8 8 0 0 1 8 0 L 272 0 A 8 8 0 0 1 280 8 L 280 35 L 0 35 Z" fill="#e74c3c"/>
+        <text x="140" y="24" text-anchor="middle" fill="white" font-weight="bold" font-size="16">«Factory»</text>
+        <text x="140" y="50" text-anchor="middle" fill="#2c3e50" font-weight="bold" font-size="15">ConnectionFactory</text>
+
+        <line x1="0" y1="60" x2="280" y2="60" stroke="#e74c3c" stroke-width="1"/>
+        <text x="10" y="80" fill="#555" font-size="12">+ create_connection()</text>
+        <text x="20" y="96" fill="#777" font-size="11">provider: str</text>
+        <text x="20" y="110" fill="#777" font-size="11">auth_mode: dict</text>
+        <text x="10" y="128" fill="#555" font-size="12">→ CloudConnection</text>
+    </g>
+
+    <!-- ========================================== -->
+    <!-- COUCHE 2: CLASSES ABSTRAITES -->
+    <!-- ========================================== -->
+
+    <!-- CloudScanner (Abstract) -->
+    <g transform="translate(150, 320)" filter="url(#shadow)">
+        <rect x="0" y="0" width="280" height="180" rx="8" ry="8" fill="#fff" stroke="#95a5a6" stroke-width="2" stroke-dasharray="5,5"/>
+        <path d="M 0 8 A 8 8 0 0 1 8 0 L 272 0 A 8 8 0 0 1 280 8 L 280 35 L 0 35 Z" fill="url(#abstractGrad)"/>
+        <text x="140" y="24" text-anchor="middle" fill="white" font-weight="bold" font-size="16" font-style="italic">«Abstract»</text>
+        <text x="140" y="50" text-anchor="middle" fill="#2c3e50" font-weight="bold" font-size="15" font-style="italic">CloudScanner</text>
+
+        <line x1="0" y1="60" x2="280" y2="60" stroke="#95a5a6" stroke-width="1"/>
+        <text x="10" y="80" fill="#555" font-size="12">+ client_id : str</text>
+        <text x="10" y="98" fill="#555" font-size="12">+ regions : List[str]</text>
+
+        <line x1="0" y1="110" x2="280" y2="110" stroke="#95a5a6" stroke-width="1"/>
+        <text x="10" y="130" fill="#555" font-size="12" font-style="italic">+ scan() : abstract</text>
+        <text x="10" y="148" fill="#555" font-size="12">+ get_resources()</text>
+        <text x="10" y="166" fill="#555" font-size="12">+ save_to_db()</text>
+    </g>
+
+    <!-- CloudConnection (Abstract) -->
+    <g transform="translate(500, 320)" filter="url(#shadow)">
+        <rect x="0" y="0" width="280" height="180" rx="8" ry="8" fill="#fff" stroke="#95a5a6" stroke-width="2" stroke-dasharray="5,5"/>
+        <path d="M 0 8 A 8 8 0 0 1 8 0 L 272 0 A 8 8 0 0 1 280 8 L 280 35 L 0 35 Z" fill="url(#abstractGrad)"/>
+        <text x="140" y="24" text-anchor="middle" fill="white" font-weight="bold" font-size="16" font-style="italic">«Abstract»</text>
+        <text x="140" y="50" text-anchor="middle" fill="#2c3e50" font-weight="bold" font-size="15" font-style="italic">CloudConnection</text>
+
+        <line x1="0" y1="60" x2="280" y2="60" stroke="#95a5a6" stroke-width="1"/>
+        <text x="10" y="80" fill="#555" font-size="12">+ auth_mode : dict</text>
+        <text x="10" y="98" fill="#555" font-size="12">+ session : Any</text>
+
+        <line x1="0" y1="110" x2="280" y2="110" stroke="#95a5a6" stroke-width="1"/>
+        <text x="10" y="130" fill="#555" font-size="12" font-style="italic">+ connect() : abstract</text>
+        <text x="10" y="148" fill="#555" font-size="12">+ get_client()</text>
+        <text x="10" y="166" fill="#555" font-size="12">+ get_regions()</text>
+    </g>
+
+    <!-- ========================================== -->
+    <!-- COUCHE 3: IMPLÉMENTATIONS AWS -->
+    <!-- ========================================== -->
+
+    <!-- AWSConnection -->
+    <g transform="translate(500, 560)" filter="url(#shadow)">
+        <rect x="0" y="0" width="280" height="140" rx="8" ry="8" fill="#fff" stroke="#3498db" stroke-width="2"/>
+        <path d="M 0 8 A 8 8 0 0 1 8 0 L 272 0 A 8 8 0 0 1 280 8 L 280 35 L 0 35 Z" fill="url(#headerGrad)"/>
+        <text x="140" y="24" text-anchor="middle" fill="white" font-weight="bold" font-size="15">AWSConnection</text>
+
+        <line x1="0" y1="35" x2="280" y2="35" stroke="#3498db" stroke-width="1"/>
+        <text x="10" y="55" fill="#555" font-size="12">+ boto3_session : Session</text>
+
+        <line x1="0" y1="68" x2="280" y2="68" stroke="#3498db" stroke-width="1"/>
+        <text x="10" y="88" fill="#555" font-size="12">+ connect()</text>
+        <text x="10" y="106" fill="#555" font-size="12">+ assume_role()</text>
+        <text x="10" y="124" fill="#555" font-size="12">+ get_client(service)</text>
+    </g>
+
+    <!-- EC2Scanner -->
+    <g transform="translate(50, 780)" filter="url(#shadow)">
+        <rect x="0" y="0" width="230" height="140" rx="8" ry="8" fill="#fff" stroke="#27ae60" stroke-width="2"/>
+        <path d="M 0 8 A 8 8 0 0 1 8 0 L 222 0 A 8 8 0 0 1 230 8 L 230 35 L 0 35 Z" fill="url(#headerGrad)"/>
+        <text x="115" y="24" text-anchor="middle" fill="white" font-weight="bold" font-size="14">EC2Scanner</text>
+
+        <line x1="0" y1="35" x2="230" y2="35" stroke="#27ae60" stroke-width="1"/>
+        <text x="10" y="55" fill="#555" font-size="11">+ ec2_client : boto3</text>
+        <text x="10" y="72" fill="#555" font-size="11">+ cloudwatch : boto3</text>
+
+        <line x1="0" y1="85" x2="230" y2="85" stroke="#27ae60" stroke-width="1"/>
+        <text x="10" y="105" fill="#555" font-size="11">+ scan()</text>
+        <text x="10" y="122" fill="#555" font-size="11">+ get_metrics()</text>
+    </g>
+
+    <!-- S3Scanner -->
+    <g transform="translate(310, 780)" filter="url(#shadow)">
+        <rect x="0" y="0" width="230" height="140" rx="8" ry="8" fill="#fff" stroke="#f39c12" stroke-width="2"/>
+        <path d="M 0 8 A 8 8 0 0 1 8 0 L 222 0 A 8 8 0 0 1 230 8 L 230 35 L 0 35 Z" fill="url(#headerGrad)"/>
+        <text x="115" y="24" text-anchor="middle" fill="white" font-weight="bold" font-size="14">S3Scanner</text>
+
+        <line x1="0" y1="35" x2="230" y2="35" stroke="#f39c12" stroke-width="1"/>
+        <text x="10" y="55" fill="#555" font-size="11">+ s3_client : boto3</text>
+        <text x="10" y="72" fill="#555" font-size="11">+ cloudwatch : boto3</text>
+
+        <line x1="0" y1="85" x2="230" y2="85" stroke="#f39c12" stroke-width="1"/>
+        <text x="10" y="105" fill="#555" font-size="11">+ scan()</text>
+        <text x="10" y="122" fill="#555" font-size="11">+ check_security()</text>
+    </g>
+
+    <!-- VPCScanner -->
+    <g transform="translate(570, 780)" filter="url(#shadow)">
+        <rect x="0" y="0" width="230" height="140" rx="8" ry="8" fill="#fff" stroke="#9b59b6" stroke-width="2"/>
+        <path d="M 0 8 A 8 8 0 0 1 8 0 L 222 0 A 8 8 0 0 1 230 8 L 230 35 L 0 35 Z" fill="url(#headerGrad)"/>
+        <text x="115" y="24" text-anchor="middle" fill="white" font-weight="bold" font-size="14">VPCScanner</text>
+
+        <line x1="0" y1="35" x2="230" y2="35" stroke="#9b59b6" stroke-width="1"/>
+        <text x="10" y="55" fill="#555" font-size="11">+ ec2_client : boto3</text>
+        <text x="10" y="72" fill="#555" font-size="11">+ cloudwatch : boto3</text>
+
+        <line x1="0" y1="85" x2="230" y2="85" stroke="#9b59b6" stroke-width="1"/>
+        <text x="10" y="105" fill="#555" font-size="11">+ scan()</text>
+        <text x="10" y="122" fill="#555" font-size="11">+ analyze_network()</text>
+    </g>
+
+    <!-- RDSScanner -->
+    <g transform="translate(830, 780)" filter="url(#shadow)">
+        <rect x="0" y="0" width="230" height="140" rx="8" ry="8" fill="#fff" stroke="#e67e22" stroke-width="2"/>
+        <path d="M 0 8 A 8 8 0 0 1 8 0 L 222 0 A 8 8 0 0 1 230 8 L 230 35 L 0 35 Z" fill="url(#headerGrad)"/>
+        <text x="115" y="24" text-anchor="middle" fill="white" font-weight="bold" font-size="14">RDSScanner</text>
+
+        <line x1="0" y1="35" x2="230" y2="35" stroke="#e67e22" stroke-width="1"/>
+        <text x="10" y="55" fill="#555" font-size="11">+ rds_client : boto3</text>
+        <text x="10" y="72" fill="#555" font-size="11">+ cloudwatch : boto3</text>
+
+        <line x1="0" y1="85" x2="230" y2="85" stroke="#e67e22" stroke-width="1"/>
+        <text x="10" y="105" fill="#555" font-size="11">+ scan()</text>
+        <text x="10" y="122" fill="#555" font-size="11">+ check_backup()</text>
+    </g>
+
+    <!-- ========================================== -->
+    <!-- RELATIONS (Flèches) -->
+    <!-- ========================================== -->
+
+    <!-- Factory vers Abstract (dependency) -->
+    <line x1="290" y1="260" x2="290" y2="320" stroke="#888" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow-dependency)"/>
+    <line x1="640" y1="260" x2="640" y2="320" stroke="#888" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow-dependency)"/>
+
+    <!-- Abstract vers Concrete (inheritance) -->
+    <line x1="165" y1="500" x2="165" y2="780" stroke="#555" stroke-width="2" marker-end="url(#arrow-inherit)"/>
+    <line x1="425" y1="500" x2="425" y2="780" stroke="#555" stroke-width="2" marker-end="url(#arrow-inherit)"/>
+    <line x1="685" y1="500" x2="685" y2="780" stroke="#555" stroke-width="2" marker-end="url(#arrow-inherit)"/>
+    <line x1="945" y1="500" x2="945" y2="780" stroke="#555" stroke-width="2" marker-end="url(#arrow-inherit)"/>
+
+    <!-- CloudConnection vers AWSConnection (inheritance) -->
+    <line x1="640" y1="500" x2="640" y2="560" stroke="#555" stroke-width="2" marker-end="url(#arrow-inherit)"/>
+
+    <!-- ========================================== -->
+    <!-- ZONES ET LÉGENDES -->
+    <!-- ========================================== -->
+
+    <!-- Zone extensible -->
+    <rect x="30" y="960" width="1040" height="150" rx="8" ry="8" fill="#e8f5e9" stroke="#4caf50" stroke-width="2" stroke-dasharray="10,5"/>
+    <text x="550" y="990" text-anchor="middle" fill="#2e7d32" font-size="16" font-weight="bold">🌍 Zone Extensible - Prêt pour Azure / GCP</text>
+    <text x="550" y="1015" text-anchor="middle" fill="#388e3c" font-size="13">Pour ajouter Azure : créer AzureConnection + AzureScanner (VM, BlobStorage, VNet, SQL)</text>
+    <text x="550" y="1040" text-anchor="middle" fill="#388e3c" font-size="13">Pour ajouter GCP : créer GCPConnection + GCPScanner (Compute, Storage, VPC, CloudSQL)</text>
+    <text x="550" y="1065" text-anchor="middle" fill="#388e3c" font-size="13" font-style="italic">➜ Aucune modification du code existant nécessaire (principe Ouvert/Fermé)</text>
+
+    <text x="40" y="1095" fill="#1b5e20" font-size="12" font-weight="bold">Exemple implémentation future :</text>
+    <text x="50" y="1110" fill="#2e7d32" font-size="11" font-family="monospace">class AzureScanner(CloudScanner): ...</text>
+
+    <!-- Légende -->
+    <g transform="translate(30, 1125)">
+        <rect x="0" y="0" width="340" height="45" rx="6" ry="6" fill="#ecf0f1" stroke="#95a5a6" stroke-width="1"/>
+        <text x="10" y="20" fill="#2c3e50" font-size="13" font-weight="bold">📖 Légende UML</text>
+
+        <line x1="10" y1="32" x2="40" y2="32" stroke="#555" stroke-width="2" marker-end="url(#arrow-inherit)"/>
+        <text x="45" y="37" fill="#555" font-size="10">Héritage</text>
+
+        <line x1="110" y1="32" x2="140" y2="32" stroke="#888" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow-dependency)"/>
+        <text x="145" y="37" fill="#555" font-size="10">Dépendance</text>
+
+        <rect x="220" y="27" width="30" height="12" fill="none" stroke="#95a5a6" stroke-width="1.5" stroke-dasharray="5,5"/>
+        <text x="255" y="37" fill="#555" font-size="10">Abstrait</text>
+    </g>
+
+    <!-- Design Patterns -->
+    <g transform="translate(390, 1125)">
+        <rect x="0" y="0" width="340" height="45" rx="6" ry="6" fill="#fff3cd" stroke="#ffc107" stroke-width="1"/>
+        <text x="10" y="20" fill="#856404" font-size="13" font-weight="bold">🏗️ Design Patterns</text>
+        <text x="10" y="38" fill="#856404" font-size="10">Factory • Strategy • Template Method</text>
+    </g>
+
+    <!-- Architecture Note -->
+    <g transform="translate(750, 1125)">
+        <rect x="0" y="0" width="320" height="45" rx="6" ry="6" fill="#d1ecf1" stroke="#17a2b8" stroke-width="1"/>
+        <text x="10" y="20" fill="#0c5460" font-size="13" font-weight="bold">💡 Avantages</text>
+        <text x="10" y="38" fill="#0c5460" font-size="10">Extensible • Testable • SOLID • Multi-cloud</text>
+    </g>
+
+    <!-- Signature -->
+    <text x="550" y="1195" text-anchor="middle" fill="#95a5a6" font-size="11">
+        CloudDiagnoze - Architecture OOP agnostique au provider
+    </text>
+
+</svg>

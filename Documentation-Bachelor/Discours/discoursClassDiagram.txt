@@ -1,0 +1,263 @@
+════════════════════════════════════════════════════════════════════════════════
+                    PITCH PRÉSENTATION - DIAGRAMME DE CLASSES UML
+                           CloudDiagnoze - Architecture Logicielle
+════════════════════════════════════════════════════════════════════════════════
+
+📌 CONTEXTE (15 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"Avant de vous montrer le diagramme, laissez-moi vous poser une question simple :
+
+Imaginons que demain, un client me demande de scanner Azure au lieu d'AWS.
+Ou Google Cloud. Ou les trois en même temps.
+
+Est-ce que je dois réécrire toute mon application ?
+Non ! Et c'est justement ce que ce diagramme illustre."
+
+
+🎯 VUE D'ENSEMBLE (30 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Montrer le diagramme complet]
+
+"Ce diagramme montre l'architecture logicielle de CloudDiagnoze.
+
+Vous voyez 3 niveaux, comme un immeuble à 3 étages :
+
+1️⃣  EN HAUT (rouge) : Les Factories - les 'créateurs d'objets'
+2️⃣  AU MILIEU (gris pointillé) : Les classes abstraites - le 'contrat' que tout le monde doit respecter
+3️⃣  EN BAS (coloré) : Les implémentations concrètes - le code qui fait vraiment le travail
+
+Et tout en bas, la zone verte : c'est là où on pourra ajouter Azure ou Google Cloud
+sans toucher au code existant."
+
+
+🏗️ ÉTAGE 1 : LES FACTORIES (45 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Pointer les deux boîtes rouges en haut]
+
+"Commençons par le haut : les Factories.
+
+Imaginez que vous êtes dans un restaurant. Vous ne rentrez pas en cuisine pour
+cuisiner vous-même, non ? Vous passez commande et la cuisine vous prépare le plat.
+
+C'est exactement le rôle des Factories :
+
+🔹 ScannerFactory :
+   'Je veux scanner EC2 sur AWS' → Elle vous crée le bon scanner
+   'Je veux scanner des VMs sur Azure' → Elle vous créerait le bon scanner Azure
+
+🔹 ConnectionFactory :
+   'Je veux me connecter à AWS avec ce rôle IAM' → Elle crée la connexion AWS
+   'Je veux me connecter à Azure avec ce token' → Elle créerait la connexion Azure
+
+👉 L'avantage ? Le reste de mon code n'a pas besoin de savoir comment créer ces objets.
+   Il demande juste ce dont il a besoin."
+
+
+🧩 ÉTAGE 2 : LES CLASSES ABSTRAITES (1 minute)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Pointer les deux boîtes grises avec bordures pointillées]
+
+"Maintenant, le niveau du milieu : les classes abstraites.
+
+Pensez à ça comme un CONTRAT ou une NORME.
+
+📋 CloudScanner dit :
+   'Peu importe qui tu es (AWS, Azure, Google Cloud), si tu veux être un scanner
+    dans mon application, tu DOIS avoir une méthode scan(), une méthode get_resources(),
+    et une méthode save_to_db()'
+
+🔌 CloudConnection dit :
+   'Peu importe le cloud, si tu veux être une connexion dans mon application,
+    tu DOIS savoir te connecter avec connect(), récupérer un client avec get_client(),
+    et lister les régions disponibles'
+
+👉 Pourquoi c'est puissant ?
+
+   Parce que le reste de mon application travaille uniquement avec ces contrats.
+   Mon code ne dit jamais 'Connecte-toi à AWS'.
+   Il dit 'Connecte-toi à un cloud' - et ça peut être n'importe lequel !
+
+   C'est le principe d'ABSTRACTION : on cache les détails techniques derrière
+   une interface simple et uniforme."
+
+
+⚙️ ÉTAGE 3 : LES IMPLÉMENTATIONS AWS (1 minute)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Pointer les 5 boîtes colorées en bas]
+
+"Et maintenant, le code qui fait vraiment le boulot : les implémentations concrètes.
+
+Regardez AWSConnection (en bleu) :
+   → Elle respecte le contrat CloudConnection
+   → Mais elle utilise boto3, le SDK d'AWS
+   → Elle sait faire assume_role() pour assumer un rôle IAM AWS
+
+Et les 4 scanners colorés :
+
+🟢 EC2Scanner (vert) :
+   Scanne les machines virtuelles EC2, récupère leurs métriques CPU/RAM
+
+🟡 S3Scanner (jaune) :
+   Scanne les buckets S3, vérifie s'ils sont chiffrés ou publics
+
+🟣 VPCScanner (violet) :
+   Scanne les réseaux VPC, analyse leur configuration réseau
+
+🟠 RDSScanner (orange) :
+   Scanne les bases de données RDS, vérifie les backups
+
+👉 Ces 4 scanners héritent TOUS de CloudScanner (regardez les flèches).
+   Donc ils respectent tous le même contrat, mais chacun fait son job spécifique.
+
+   C'est le pattern STRATEGY : plusieurs façons de faire la même chose (scanner),
+   mais chacune adaptée à un service différent."
+
+
+🌍 LA ZONE VERTE : EXTENSIBILITÉ (45 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Montrer la grande zone verte en bas]
+
+"Et maintenant, la magie de cette architecture.
+
+Regardez cette zone verte : 'Zone Extensible - Prêt pour Azure / GCP'
+
+Si demain je veux ajouter Azure, voilà ce que je fais :
+
+1️⃣  Je crée AzureConnection qui hérite de CloudConnection
+    → Dedans, j'utilise le SDK Azure au lieu de boto3
+
+2️⃣  Je crée AzureVMScanner qui hérite de CloudScanner
+    → Il scanne les VMs Azure au lieu des EC2
+
+3️⃣  Je les enregistre dans mes Factories
+    → ScannerFactory sait maintenant créer des scanners Azure
+
+Et c'est tout !
+
+❌ Je ne touche PAS à EC2Scanner
+❌ Je ne touche PAS à S3Scanner
+❌ Je ne touche PAS à mon API
+❌ Je ne touche PAS à ma base de données
+
+C'est le principe Ouvert/Fermé en action :
+   Ouvert à l'extension (ajouter Azure)
+   Fermé à la modification (ne pas toucher l'existant)"
+
+
+💡 LES DESIGN PATTERNS UTILISÉS (30 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Pointer la légende en bas à gauche]
+
+"Cette architecture utilise 3 design patterns classiques :
+
+🏭 Factory Pattern :
+   Pour créer les bons objets sans que le code appelant ait besoin de connaître
+   les détails de construction
+
+🎯 Strategy Pattern :
+   Plusieurs scanners qui font le même job (scanner) mais de manière différente
+   selon le service (EC2, S3, VPC, RDS)
+
+📝 Template Method :
+   CloudScanner définit la structure générale (scan, get_resources, save_to_db)
+   et chaque scanner concret implémente les détails
+
+Ces patterns sont documentés, éprouvés, et reconnus dans l'industrie."
+
+
+🎬 CONCLUSION (30 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"En résumé, cette architecture me donne 4 avantages concrets :
+
+✅ EXTENSIBILITÉ : Ajouter Azure ou GCP sans réécrire l'existant
+✅ MAINTENABILITÉ : Chaque scanner est indépendant, facile à tester
+✅ TESTABILITÉ : Je peux mocker CloudScanner pour mes tests
+✅ SCALABILITÉ : Ajouter de nouveaux services AWS est trivial
+
+C'est une architecture qui pense au FUTUR, pas juste au présent.
+
+Parce qu'en production, on ne sait jamais ce que le client demandera demain."
+
+
+════════════════════════════════════════════════════════════════════════════════
+                                CONSEILS PRÉSENTATION
+════════════════════════════════════════════════════════════════════════════════
+
+💬 LANGAGE CORPOREL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+→ POINTER les boîtes dont tu parles avec ton doigt/stylo
+→ TRACER les flèches d'héritage avec ta main pour montrer la relation
+→ FAIRE des GESTES pour illustrer les 3 étages (haut/milieu/bas)
+→ Sourire quand tu dis "Et c'est tout !" (ça montre que c'est simple)
+
+
+📊 SLIDES / SUPPORT VISUEL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+→ Slide 1 : Diagramme complet
+→ Slide 2 : Zoomer sur les Factories (haut)
+→ Slide 3 : Zoomer sur les classes abstraites (milieu)
+→ Slide 4 : Zoomer sur les implémentations (bas)
+→ Slide 5 : Montrer la zone verte d'extensibilité
+→ Slide 6 : Schéma comparatif AVANT/APRÈS (si tu veux montrer la valeur ajoutée)
+
+
+🎤 TRANSITIONS FLUIDES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Entre chaque partie, utilise des phrases de transition :
+
+"Maintenant que vous voyez comment les objets sont créés, voyons le contrat qu'ils doivent respecter..."
+"Une fois qu'on a défini le contrat, passons au code qui fait vraiment le travail..."
+"Et c'est là que ça devient intéressant..."
+
+
+❓ ANTICIPER LES QUESTIONS DU JURY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Q: "Pourquoi pas juste faire des if/else sur le provider ?"
+R: "Parce qu'à chaque nouveau provider, je devrais modifier plein de fichiers.
+    Là, j'ajoute juste une nouvelle classe. Principe Ouvert/Fermé."
+
+Q: "C'est pas trop complexe pour un projet de Bachelor ?"
+R: "C'est justement un des critères de notation : montrer qu'on maîtrise les
+    design patterns et qu'on pense à l'évolutivité. Et ça simplifie les tests."
+
+Q: "Vous avez vraiment implémenté Azure ?"
+R: "Non, pas encore. Mais l'architecture est prête. C'est une question de
+    business, pas de technique. La porte est ouverte."
+
+Q: "Comment vous testez cette architecture ?"
+R: "Je peux mocker CloudScanner et CloudConnection facilement. Mes tests ne
+    dépendent pas d'AWS. J'utilise moto pour simuler AWS en local."
+
+
+⏱️ TIMING (AJUSTE SELON TON TEMPS TOTAL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Version courte (3 min) : Contexte + Vue d'ensemble + Étages 1-2-3 rapide + Conclusion
+Version moyenne (5 min) : Tout sauf "Conseils"
+Version longue (7 min) : Tout + Questions/Réponses
+
+
+🔥 PHRASES CLÉS À RETENIR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"Le code ne dit jamais 'Connecte-toi à AWS', il dit 'Connecte-toi à un cloud'"
+"Si demain on me demande Azure, j'ajoute des classes, je ne modifie pas l'existant"
+"C'est une architecture qui pense au futur, pas juste au présent"
+"Patterns documentés et éprouvés dans l'industrie"
+
+
+════════════════════════════════════════════════════════════════════════════════
+                                    BON COURAGE ! 🚀
+════════════════════════════════════════════════════════════════════════════════

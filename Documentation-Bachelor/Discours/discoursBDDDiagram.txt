@@ -1,0 +1,473 @@
+════════════════════════════════════════════════════════════════════════════════
+                    PITCH PRÉSENTATION - DIAGRAMME DE BASE DE DONNÉES
+                              CloudDiagnoze - Modèle de Données
+════════════════════════════════════════════════════════════════════════════════
+
+📌 CONTEXTE (15 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"Maintenant, parlons de la base de données.
+
+Si le diagramme de classes montre COMMENT le code est organisé,
+le diagramme de base de données montre OÙ les données sont stockées.
+
+C'est la mémoire de CloudDiagnoze : tout ce qu'on scanne doit être persisté
+quelque part pour qu'on puisse le consulter, l'analyser, et l'exporter plus tard."
+
+
+🎯 VUE D'ENSEMBLE (30 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Montrer le diagramme complet]
+
+"Ce diagramme montre 11 tables organisées en 3 zones logiques :
+
+🔵 ZONE BLEUE (gauche) : La gestion des utilisateurs
+   → users : qui utilise l'application
+
+🟢 ZONE VERTE (centre) : Le moteur de scan
+   → scan_runs : les scans effectués (comme des 'tickets de caisse')
+
+🟠 ZONE ORANGE (droite) : Le stockage des ressources
+   → 4 tables de ressources (EC2, S3, VPC, RDS)
+   → 4 tables de performance (métriques techniques)
+
+Et tout est relié par des flèches : les clés étrangères qui garantissent
+l'intégrité des données."
+
+
+👤 ZONE 1 : LA TABLE USERS (30 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Pointer la table users en haut à gauche]
+
+"Commençons simple : la table users.
+
+C'est la table des comptes utilisateurs qui se connectent à CloudDiagnoze.
+
+Champs importants :
+
+📧 email : l'identifiant unique (pas de doublons possibles)
+🔒 password_hash : le mot de passe chiffré avec bcrypt (jamais en clair !)
+🏢 company_name : l'entreprise de l'utilisateur
+🔑 role_arn : le rôle AWS que l'utilisateur utilise pour scanner ses ressources
+
+👉 Pourquoi c'est important ?
+
+   CloudDiagnoze est multi-tenant. Ça veut dire que si 50 entreprises utilisent
+   l'application, chacune voit uniquement SES données.
+
+   Comment ? Grâce à user_id : toutes les autres tables ont une colonne user_id
+   qui fait référence à cette table.
+
+   Résultat : isolation totale. Impossible qu'une entreprise voie les données
+   d'une autre."
+
+
+🎫 ZONE 2 : LA TABLE SCAN_RUNS (1 minute)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Pointer la table scan_runs au centre]
+
+"Maintenant, la table centrale : scan_runs.
+
+Pensez à elle comme un TICKET DE CAISSE dans un supermarché.
+
+Quand vous scannez des ressources AWS, vous créez un 'scan run' qui enregistre :
+
+🆔 id : un numéro unique pour ce scan
+👤 user_id : qui a lancé ce scan ? (clé étrangère vers users)
+📦 service_type : qu'est-ce qu'on a scanné ? EC2, S3, VPC ou RDS
+📅 scan_timestamp : quand le scan a été fait
+✅ status : success, error, ou in_progress
+📊 total_resources : combien de ressources ont été trouvées
+
+👉 Exemple concret :
+
+   Je lance un scan EC2 le 15 novembre 2024 à 10h30.
+
+   Un scan_run est créé :
+   - id: 42
+   - user_id: 5 (moi)
+   - service_type: 'ec2'
+   - scan_timestamp: 2024-11-15 10:30:00
+   - status: 'success'
+   - total_resources: 12
+
+   Et les 12 instances EC2 trouvées vont pointer vers ce scan_run (scan_run_id: 42).
+
+C'est comme ça qu'on peut dire : 'Montre-moi toutes les ressources trouvées
+lors du scan #42 le 15 novembre'."
+
+
+📦 ZONE 3 : LES TABLES DE RESSOURCES (1 minute 30)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Pointer les 4 tables orange à droite : ec2_instances, s3_buckets, vpc_instances, rds_instances]
+
+"Maintenant, les vraies données : les ressources scannées.
+
+On a 4 tables, une par service AWS :
+
+🟢 ec2_instances (machines virtuelles)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Pour chaque instance EC2, on stocke :
+   - instance_id : l'ID AWS (i-0123456789abc)
+   - instance_type : le type de machine (t2.micro, t3.large...)
+   - state : running, stopped, terminated
+   - region : eu-west-1, us-east-1...
+   - public_ip / private_ip : ses adresses réseau
+   - tags : les tags AWS (format JSON pour être flexible)
+
+👉 Pourquoi JSON pour tags ?
+   Parce que chaque instance peut avoir 0, 5 ou 20 tags différents.
+   Plutôt que de créer 20 colonnes, on stocke ça en JSON. Flexible et efficace.
+
+
+🟡 s3_buckets (stockage de fichiers)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Pour chaque bucket S3 :
+   - bucket_name : le nom unique du bucket
+   - region : où il est hébergé
+   - is_public : CRITIQUE - est-il accessible publiquement ? (risque sécurité)
+   - is_encrypted : les données sont-elles chiffrées ?
+   - versioning_enabled : est-ce qu'on garde l'historique des fichiers ?
+   - total_size_gb : combien d'espace il occupe (pour estimer les coûts)
+
+👉 Cas d'usage réel :
+   Le client peut dire : "Montre-moi tous mes buckets publics non chiffrés"
+   → Alerte sécurité !
+
+
+🟣 vpc_instances (réseaux virtuels)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Pour chaque VPC :
+   - vpc_id : l'ID du réseau
+   - cidr_block : la plage d'adresses IP (ex: 10.0.0.0/16)
+   - is_default : est-ce le VPC par défaut AWS ?
+   - subnet_count : combien de sous-réseaux ?
+
+
+🟠 rds_instances (bases de données)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Pour chaque base de données RDS :
+   - db_identifier : le nom de l'instance
+   - engine : PostgreSQL, MySQL, MariaDB...
+   - engine_version : la version (ex: PostgreSQL 14.2)
+   - storage_gb : combien d'espace disque
+   - is_public : accessible depuis internet ? (risque sécurité)
+   - backup_retention_days : combien de jours de backup
+
+
+👉 Point commun de ces 4 tables :
+
+   Elles ont TOUTES :
+   - scan_run_id : vers quel scan elles appartiennent
+   - client_id : l'ID de l'entreprise cliente
+   - scan_timestamp : quand elles ont été scannées
+
+   Ça permet de tracer l'historique : 'Cette instance EC2 a été vue pour la
+   première fois le 1er novembre, puis rescannée le 15 novembre'."
+
+
+📊 LES TABLES DE PERFORMANCE (45 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Pointer les 4 tables de performance : ec2_performance, s3_performance, vpc_performance, rds_performance]
+
+"Ces tables stockent les MÉTRIQUES de performance.
+
+Pourquoi séparées ? Parce qu'une ressource a des infos statiques (son ID, son type)
+et des métriques dynamiques qui changent tout le temps.
+
+Exemple avec EC2 :
+
+📈 ec2_performance stocke :
+   - cpu_utilization : 23.5% (le CPU utilisé)
+   - network_in : 1024000 bytes (trafic réseau entrant)
+   - network_out : 512000 bytes (trafic réseau sortant)
+   - timestamp : quand la métrique a été prise
+
+👉 Relation : ec2_performance.ec2_instance_id → ec2_instances.id
+
+   Résultat : pour chaque instance EC2, je peux avoir 10, 100 ou 1000 points
+   de performance dans le temps.
+
+   Ça permet de faire des GRAPHIQUES d'évolution :
+   'Montre-moi l'utilisation CPU de cette instance sur les 7 derniers jours'
+
+Idem pour S3 (nombre de requêtes), VPC (trafic réseau), RDS (connexions actives)."
+
+
+🔗 LES RELATIONS ET CLÉS ÉTRANGÈRES (45 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Pointer les flèches entre les tables]
+
+"Regardez les flèches : ce sont les FOREIGN KEYS (clés étrangères).
+
+Elles garantissent l'intégrité des données.
+
+Exemple :
+
+users (1) ──→ (N) scan_runs
+   Un utilisateur peut avoir plusieurs scans
+
+scan_runs (1) ──→ (N) ec2_instances
+   Un scan peut trouver plusieurs instances EC2
+
+ec2_instances (1) ──→ (N) ec2_performance
+   Une instance EC2 peut avoir plusieurs points de performance
+
+
+👉 Et la magie : CASCADE DELETE
+
+   Si je supprime un scan_run, TOUTES les ressources liées sont supprimées aussi.
+
+   Pourquoi ? Pour éviter les 'orphelins' dans la base :
+
+   ❌ SANS cascade : Je supprime le scan #42, mais les 12 instances EC2 restent
+                     et pointent vers un scan qui n'existe plus → incohérence
+
+   ✅ AVEC cascade : Je supprime le scan #42, et les 12 instances EC2 sont
+                     automatiquement supprimées → base propre
+
+C'est une règle de qualité dans la conception de bases de données."
+
+
+🏗️ NORMALISATION ET BONNES PRATIQUES (45 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"Cette base de données respecte la 3ème Forme Normale (3NF).
+
+En français, ça veut dire :
+
+✅ Pas de redondance : chaque info n'est stockée qu'une seule fois
+✅ Pas de dépendances transitives : chaque colonne dépend uniquement de la clé primaire
+✅ Intégrité référentielle : les clés étrangères garantissent la cohérence
+
+Exemples de bonnes pratiques appliquées :
+
+🔹 Clés primaires auto-incrémentées (id) sur toutes les tables
+🔹 Index sur les colonnes fréquemment recherchées (user_id, scan_run_id)
+🔹 Contraintes NOT NULL sur les champs critiques (email, instance_id)
+🔹 Types de données appropriés (DECIMAL pour les métriques, JSON pour les tags)
+🔹 Timestamps partout pour tracer l'historique
+
+👉 Résultat : une base performante, maintenable et évolutive."
+
+
+💾 TECHNOLOGIE ET JUSTIFICATION (30 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"J'ai choisi MariaDB 11.2 pour ce projet.
+
+Pourquoi MariaDB et pas PostgreSQL ou MySQL ?
+
+✅ Open source et gratuit
+✅ Compatible MySQL (énorme communauté et documentation)
+✅ Performances excellentes pour les lectures/écritures intensives
+✅ Support natif du JSON (pratique pour les tags et métadatas)
+✅ Outils de réplication et backup matures
+
+Et surtout : c'est ce que j'ai utilisé en entreprise, donc je maîtrise.
+
+👉 En production, on pourrait migrer vers PostgreSQL si besoin (pour les
+   fonctionnalités avancées comme les JSONB ou les index GIN), mais MariaDB
+   est largement suffisant pour les besoins actuels."
+
+
+🔐 SÉCURITÉ ET ISOLATION (45 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"Parlons SÉCURITÉ, parce que c'est critique quand on manipule des données cloud.
+
+🔒 Isolation multi-tenant :
+   → Chaque requête SQL filtre par user_id
+   → Impossible qu'un utilisateur voie les données d'un autre
+
+   Exemple de requête :
+   SELECT * FROM ec2_instances
+   WHERE scan_run_id IN (SELECT id FROM scan_runs WHERE user_id = {current_user})
+
+🔒 Mots de passe :
+   → Jamais stockés en clair
+   → Hashés avec bcrypt (algorithme industriel)
+   → Salés automatiquement (chaque hash est unique)
+
+🔒 Accès à la base :
+   → Credentials dans des variables d'environnement (.env)
+   → Pas de hardcoding dans le code
+   → Connexions via ORM (SQLAlchemy) = protection contre les injections SQL
+
+🔒 Backup :
+   → Stratégie de backup à définir selon l'environnement
+   → En dev : volume Docker persistant
+   → En prod : backup quotidien + réplication sur 2 AZ minimum"
+
+
+📈 VOLUMÉTRIE ET SCALABILITÉ (30 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"Question importante : est-ce que cette base peut tenir la charge ?
+
+Scénario réaliste :
+
+👤 100 entreprises clientes
+🔄 Chacune scanne 4 services (EC2, S3, VPC, RDS) une fois par jour
+📦 En moyenne 50 ressources par service
+
+Calcul :
+   100 clients × 4 services × 50 ressources × 365 jours = 7,3 millions de lignes/an
+
+👉 MariaDB gère facilement des tables de plusieurs dizaines de millions de lignes
+   avec des index bien placés.
+
+Et si ça devient trop gros ? On peut :
+   - Partitionner les tables par date (garder 6 mois en ligne, archiver le reste)
+   - Passer sur un cluster MariaDB répliqué
+   - Migrer vers une base orientée time-series (TimescaleDB) pour les perfs"
+
+
+🎬 CONCLUSION (30 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"En résumé, cette base de données est conçue pour :
+
+✅ ISOLER les données entre clients (multi-tenant)
+✅ TRACER l'historique des scans dans le temps
+✅ SÉPARER les données statiques (ressources) des métriques (performance)
+✅ GARANTIR l'intégrité avec les clés étrangères et CASCADE DELETE
+✅ SCALER sans problème jusqu'à plusieurs millions de lignes
+
+C'est une base NORMALISÉE, SÉCURISÉE, et ÉVOLUTIVE.
+
+Et surtout : elle s'intègre parfaitement avec le diagramme de classes qu'on a vu
+avant. L'ORM SQLAlchemy fait le pont entre les deux."
+
+
+════════════════════════════════════════════════════════════════════════════════
+                                CONSEILS PRÉSENTATION
+════════════════════════════════════════════════════════════════════════════════
+
+💬 LANGAGE CORPOREL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+→ POINTER les tables dont tu parles
+→ TRACER les flèches (relations) avec ton doigt pour montrer le flux
+→ Faire des CERCLES autour des zones logiques (users, scan_runs, ressources)
+→ Utiliser une FEUILLE pour masquer certaines parties et révéler progressivement
+
+
+📊 SLIDES / SUPPORT VISUEL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+→ Slide 1 : Diagramme complet avec les 3 zones colorées
+→ Slide 2 : Zoom sur users (zone bleue)
+→ Slide 3 : Zoom sur scan_runs (zone verte)
+→ Slide 4 : Zoom sur les 4 tables de ressources (zone orange)
+→ Slide 5 : Zoom sur les relations (flèches) et CASCADE DELETE
+→ Slide 6 : Tableau récapitulatif des volumes (optionnel)
+
+
+🎤 TRANSITIONS FLUIDES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"Maintenant qu'on a vu qui utilise l'application, voyons comment on enregistre les scans..."
+"Une fois qu'un scan est créé, où vont les ressources trouvées ? C'est là que..."
+"Et pour garantir la cohérence, regardez ces relations..."
+
+
+❓ ANTICIPER LES QUESTIONS DU JURY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Q: "Pourquoi séparer les ressources et les performances ?"
+R: "Parce qu'une ressource change rarement (instance_type, région), mais ses
+    métriques changent toutes les 5 minutes. Séparer évite la redondance et
+    optimise les requêtes."
+
+Q: "Comment vous gérez la suppression de données ?"
+R: "Avec CASCADE DELETE sur les clés étrangères. Ça garantit qu'on ne laisse
+    jamais d'orphelins dans la base. Et côté application, avant de supprimer
+    un utilisateur, on vérifie qu'il n'a pas de scans actifs."
+
+Q: "Pourquoi MariaDB et pas PostgreSQL ?"
+R: "MariaDB est plus que suffisant pour les besoins actuels et j'ai une bonne
+    expérience dessus. Mais l'architecture est indépendante grâce à SQLAlchemy :
+    on pourrait migrer vers PostgreSQL en changeant juste la connection string."
+
+Q: "Comment vous gérez la croissance de la base ?"
+R: "3 leviers : partitionnement par date (archiver l'ancien), index sur les
+    colonnes fréquemment requêtées, et réplication en lecture si besoin."
+
+Q: "Est-ce vraiment multi-tenant sécurisé ?"
+R: "Oui. Chaque requête filtre par user_id, et l'ORM SQLAlchemy protège contre
+    les injections SQL. Les tests d'intégration vérifient l'isolation."
+
+
+⏱️ TIMING (AJUSTE SELON TON TEMPS TOTAL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Version courte (3 min) : Vue d'ensemble + users + scan_runs + ressources (rapide) + Conclusion
+Version moyenne (5 min) : Tout sauf "Volumétrie" et "Technologie"
+Version longue (7 min) : Tout + Questions/Réponses
+
+
+🔥 PHRASES CLÉS À RETENIR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"scan_runs, c'est comme un ticket de caisse : il enregistre ce qui a été fait"
+"CASCADE DELETE garantit qu'on ne laisse jamais d'orphelins dans la base"
+"Multi-tenant : impossible qu'une entreprise voie les données d'une autre"
+"Normalisée 3NF : chaque info n'est stockée qu'une seule fois"
+"L'ORM SQLAlchemy fait le pont entre le diagramme de classes et la base"
+
+
+💡 ASTUCE PRO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Si le jury est technique, insiste sur :
+   → La normalisation 3NF
+   → Les index et optimisations
+   → La gestion des transactions
+   → Les tests d'intégrité
+
+Si le jury est moins technique, insiste sur :
+   → La sécurité multi-tenant
+   → L'historique des scans
+   → La scalabilité
+   → La facilité de maintenance
+
+
+════════════════════════════════════════════════════════════════════════════════
+                    LIEN AVEC LE DIAGRAMME DE CLASSES
+════════════════════════════════════════════════════════════════════════════════
+
+"Un dernier point important : ce diagramme de base de données et le diagramme
+de classes qu'on a vu avant sont COMPLÉMENTAIRES.
+
+Le diagramme de classes montre COMMENT le code est organisé (Factory, Abstract, AWS).
+Le diagramme BDD montre OÙ les données sont stockées.
+
+Et entre les deux ? L'ORM SQLAlchemy.
+
+CloudScanner.save_to_db() → INSERT dans ec2_instances
+ScanRun.get_resources() → SELECT avec JOIN
+
+C'est une architecture en COUCHES :
+   Couche 1 : API (FastAPI)
+   Couche 2 : Business Logic (Scanners, Factories)
+   Couche 3 : ORM (SQLAlchemy)
+   Couche 4 : Base de données (MariaDB)
+
+Chaque couche a sa responsabilité. Aucune ne fait le job d'une autre.
+C'est le principe de Séparation des Responsabilités."
+
+
+════════════════════════════════════════════════════════════════════════════════
+                                    BON COURAGE ! 🚀
+════════════════════════════════════════════════════════════════════════════════

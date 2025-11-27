@@ -1,0 +1,262 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1400" width="1600" height="1400" style="font-family: Arial, sans-serif;">
+
+    <defs>
+        <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.2"/>
+        </filter>
+
+        <linearGradient id="actorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+        </linearGradient>
+
+        <linearGradient id="systemGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#4facfe;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#00f2fe;stop-opacity:1" />
+        </linearGradient>
+
+        <marker id="arrow-sync" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+            <polygon points="0 0, 10 5, 0 10" fill="#2c3e50" />
+        </marker>
+
+        <marker id="arrow-return" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+            <polygon points="0 0, 10 5, 0 10" fill="#7f8c8d" />
+        </marker>
+    </defs>
+
+    <!-- Titre principal -->
+    <text x="800" y="50" text-anchor="middle" font-size="32" font-weight="bold" fill="#2c3e50">
+        Diagramme de Séquence - Scan EC2
+    </text>
+    <text x="800" y="80" text-anchor="middle" font-size="16" fill="#7f8c8d">
+        Flux temporel d'un scan de ressources AWS EC2
+    </text>
+
+    <!-- ========================================== -->
+    <!-- ACTEURS ET COMPOSANTS (En-têtes) -->
+    <!-- ========================================== -->
+
+    <!-- Utilisateur -->
+    <g filter="url(#shadow)">
+        <rect x="50" y="120" width="140" height="80" rx="40" ry="40" fill="url(#actorGrad)" stroke="#5a67d8" stroke-width="2"/>
+        <text x="120" y="155" text-anchor="middle" font-size="16" font-weight="bold" fill="white">👤 Utilisateur</text>
+        <text x="120" y="178" text-anchor="middle" font-size="12" fill="white">Client</text>
+    </g>
+
+    <!-- Frontend -->
+    <g filter="url(#shadow)">
+        <rect x="240" y="120" width="140" height="80" rx="8" ry="8" fill="url(#systemGrad)" stroke="#3498db" stroke-width="2"/>
+        <text x="310" y="155" text-anchor="middle" font-size="16" font-weight="bold" fill="white">Frontend</text>
+        <text x="310" y="178" text-anchor="middle" font-size="12" fill="white">JavaScript</text>
+    </g>
+
+    <!-- API FastAPI -->
+    <g filter="url(#shadow)">
+        <rect x="430" y="120" width="140" height="80" rx="8" ry="8" fill="url(#systemGrad)" stroke="#3498db" stroke-width="2"/>
+        <text x="500" y="155" text-anchor="middle" font-size="16" font-weight="bold" fill="white">API</text>
+        <text x="500" y="178" text-anchor="middle" font-size="12" fill="white">FastAPI</text>
+    </g>
+
+    <!-- ScanEngine -->
+    <g filter="url(#shadow)">
+        <rect x="620" y="120" width="140" height="80" rx="8" ry="8" fill="url(#systemGrad)" stroke="#3498db" stroke-width="2"/>
+        <text x="690" y="155" text-anchor="middle" font-size="16" font-weight="bold" fill="white">ScanEngine</text>
+        <text x="690" y="178" text-anchor="middle" font-size="12" fill="white">Orchestrator</text>
+    </g>
+
+    <!-- ScannerFactory -->
+    <g filter="url(#shadow)">
+        <rect x="810" y="120" width="160" height="80" rx="8" ry="8" fill="url(#systemGrad)" stroke="#3498db" stroke-width="2"/>
+        <text x="890" y="155" text-anchor="middle" font-size="16" font-weight="bold" fill="white">ScannerFactory</text>
+        <text x="890" y="178" text-anchor="middle" font-size="12" fill="white">Factory Pattern</text>
+    </g>
+
+    <!-- EC2Scanner -->
+    <g filter="url(#shadow)">
+        <rect x="1020" y="120" width="140" height="80" rx="8" ry="8" fill="url(#systemGrad)" stroke="#3498db" stroke-width="2"/>
+        <text x="1090" y="155" text-anchor="middle" font-size="16" font-weight="bold" fill="white">EC2Scanner</text>
+        <text x="1090" y="178" text-anchor="middle" font-size="12" fill="white">AWS Scanner</text>
+    </g>
+
+    <!-- AWS (boto3) -->
+    <g filter="url(#shadow)">
+        <rect x="1210" y="120" width="140" height="80" rx="8" ry="8" fill="#FF9900" stroke="#232F3E" stroke-width="2"/>
+        <text x="1280" y="155" text-anchor="middle" font-size="16" font-weight="bold" fill="white">AWS</text>
+        <text x="1280" y="178" text-anchor="middle" font-size="12" fill="white">boto3 SDK</text>
+    </g>
+
+    <!-- Database -->
+    <g filter="url(#shadow)">
+        <rect x="1400" y="120" width="140" height="80" rx="8" ry="8" fill="#fa709a" stroke="#e67e22" stroke-width="2"/>
+        <text x="1470" y="155" text-anchor="middle" font-size="16" font-weight="bold" fill="white">Database</text>
+        <text x="1470" y="178" text-anchor="middle" font-size="12" fill="white">MariaDB</text>
+    </g>
+
+    <!-- ========================================== -->
+    <!-- LIGNES DE VIE (Lifelines) -->
+    <!-- ========================================== -->
+
+    <line x1="120" y1="200" x2="120" y2="1300" stroke="#95a5a6" stroke-width="2" stroke-dasharray="5,5"/>
+    <line x1="310" y1="200" x2="310" y2="1300" stroke="#95a5a6" stroke-width="2" stroke-dasharray="5,5"/>
+    <line x1="500" y1="200" x2="500" y2="1300" stroke="#95a5a6" stroke-width="2" stroke-dasharray="5,5"/>
+    <line x1="690" y1="200" x2="690" y2="1300" stroke="#95a5a6" stroke-width="2" stroke-dasharray="5,5"/>
+    <line x1="890" y1="200" x2="890" y2="1300" stroke="#95a5a6" stroke-width="2" stroke-dasharray="5,5"/>
+    <line x1="1090" y1="200" x2="1090" y2="1300" stroke="#95a5a6" stroke-width="2" stroke-dasharray="5,5"/>
+    <line x1="1280" y1="200" x2="1280" y2="1300" stroke="#95a5a6" stroke-width="2" stroke-dasharray="5,5"/>
+    <line x1="1470" y1="200" x2="1470" y2="1300" stroke="#95a5a6" stroke-width="2" stroke-dasharray="5,5"/>
+
+    <!-- ========================================== -->
+    <!-- INTERACTIONS (Messages) -->
+    <!-- ========================================== -->
+
+    <!-- 1. Utilisateur clique "Lancer scan EC2" -->
+    <line x1="120" y1="250" x2="310" y2="250" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrow-sync)"/>
+    <text x="140" y="245" font-size="13" fill="#2c3e50" font-weight="bold">1. Clic "Lancer scan EC2"</text>
+    <rect x="105" y="250" width="30" height="60" fill="#667eea" opacity="0.3"/>
+
+    <!-- 2. Frontend envoie POST /api/v1/scans -->
+    <line x1="310" y1="280" x2="500" y2="280" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrow-sync)"/>
+    <text x="330" y="275" font-size="13" fill="#2c3e50" font-weight="bold">2. POST /api/v1/scans</text>
+    <text x="330" y="295" font-size="11" fill="#7f8c8d">{"provider": "aws", "services": ["ec2"]}</text>
+    <rect x="295" y="280" width="30" height="80" fill="#4facfe" opacity="0.3"/>
+
+    <!-- 3. API valide JWT et payload -->
+    <rect x="480" y="310" width="180" height="40" rx="5" fill="#fff3cd" stroke="#ffc107" stroke-width="1.5"/>
+    <text x="570" y="335" text-anchor="middle" font-size="12" fill="#856404" font-weight="bold">✓ Validation JWT + Payload</text>
+    <rect x="485" y="280" width="30" height="100" fill="#4facfe" opacity="0.3"/>
+
+    <!-- 4. API appelle ScanEngine -->
+    <line x1="500" y1="360" x2="690" y2="360" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrow-sync)"/>
+    <text x="520" y="355" font-size="13" fill="#2c3e50" font-weight="bold">3. scan_list_service()</text>
+    <text x="520" y="375" font-size="11" fill="#7f8c8d">provider="aws", services=["ec2"]</text>
+    <rect x="675" y="360" width="30" height="480" fill="#4facfe" opacity="0.3"/>
+
+    <!-- 5. ScanEngine crée ScanRun en DB -->
+    <line x1="690" y1="400" x2="1470" y2="400" stroke="#e74c3c" stroke-width="2" marker-end="url(#arrow-sync)"/>
+    <text x="900" y="395" font-size="13" fill="#e74c3c" font-weight="bold">4. Créer ScanRun</text>
+    <text x="900" y="415" font-size="11" fill="#c0392b">INSERT INTO scan_runs (user_id, service_type, status='queued')</text>
+    <rect x="1455" y="400" width="30" height="60" fill="#fa709a" opacity="0.3"/>
+
+    <!-- 6. DB retourne scan_run_id -->
+    <line x1="1470" y1="460" x2="690" y2="460" stroke="#7f8c8d" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arrow-return)"/>
+    <text x="900" y="455" font-size="12" fill="#7f8c8d">scan_run_id = 42</text>
+
+    <!-- 7. ScanEngine demande scanner à Factory -->
+    <line x1="690" y1="500" x2="890" y2="500" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrow-sync)"/>
+    <text x="710" y="495" font-size="13" fill="#2c3e50" font-weight="bold">5. create_scanner()</text>
+    <text x="710" y="515" font-size="11" fill="#7f8c8d">provider="aws", service="ec2"</text>
+    <rect x="875" y="500" width="30" height="100" fill="#4facfe" opacity="0.3"/>
+
+    <!-- 8. Factory crée EC2Scanner -->
+    <line x1="890" y1="540" x2="1090" y2="540" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrow-sync)"/>
+    <text x="910" y="535" font-size="13" fill="#2c3e50" font-weight="bold">6. new EC2Scanner()</text>
+    <rect x="1075" y="540" width="30" height="220" fill="#27ae60" opacity="0.3"/>
+
+    <!-- 9. Factory retourne scanner -->
+    <line x1="1090" y1="600" x2="690" y2="600" stroke="#7f8c8d" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arrow-return)"/>
+    <text x="800" y="595" font-size="12" fill="#7f8c8d">return ec2_scanner</text>
+
+    <!-- 10. ScanEngine lance le scan -->
+    <line x1="690" y1="640" x2="1090" y2="640" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrow-sync)"/>
+    <text x="710" y="635" font-size="13" fill="#2c3e50" font-weight="bold">7. scan()</text>
+    <text x="710" y="655" font-size="11" fill="#7f8c8d">regions=["eu-west-1"]</text>
+
+    <!-- 11. EC2Scanner appelle AWS -->
+    <line x1="1090" y1="680" x2="1280" y2="680" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrow-sync)"/>
+    <text x="1110" y="675" font-size="13" fill="#2c3e50" font-weight="bold">8. describe_instances()</text>
+    <text x="1110" y="695" font-size="11" fill="#7f8c8d">boto3.client('ec2')</text>
+    <rect x="1265" y="680" width="30" height="60" fill="#FF9900" opacity="0.3"/>
+
+    <!-- 12. AWS retourne instances -->
+    <line x1="1280" y1="740" x2="1090" y2="740" stroke="#7f8c8d" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arrow-return)"/>
+    <text x="1110" y="735" font-size="12" fill="#7f8c8d">instances_data (12 instances)</text>
+
+    <!-- 13. EC2Scanner sauvegarde en DB -->
+    <line x1="1090" y1="780" x2="1470" y2="780" stroke="#e74c3c" stroke-width="2" marker-end="url(#arrow-sync)"/>
+    <text x="1110" y="775" font-size="13" fill="#e74c3c" font-weight="bold">9. save_to_db()</text>
+    <text x="1110" y="795" font-size="11" fill="#c0392b">INSERT INTO ec2_instances (scan_run_id, instance_id, ...)</text>
+    <rect x="1455" y="780" width="30" height="60" fill="#fa709a" opacity="0.3"/>
+
+    <!-- 14. DB confirme -->
+    <line x1="1470" y1="840" x2="1090" y2="840" stroke="#7f8c8d" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arrow-return)"/>
+    <text x="1200" y="835" font-size="12" fill="#7f8c8d">✓ 12 rows inserted</text>
+
+    <!-- 15. EC2Scanner retourne résultats -->
+    <line x1="1090" y1="880" x2="690" y2="880" stroke="#7f8c8d" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arrow-return)"/>
+    <text x="780" y="875" font-size="12" fill="#7f8c8d">scan_result (12 instances)</text>
+
+    <!-- 16. ScanEngine met à jour ScanRun -->
+    <line x1="690" y1="920" x2="1470" y2="920" stroke="#e74c3c" stroke-width="2" marker-end="url(#arrow-sync)"/>
+    <text x="900" y="915" font-size="13" fill="#e74c3c" font-weight="bold">10. Mettre à jour ScanRun</text>
+    <text x="900" y="935" font-size="11" fill="#c0392b">UPDATE scan_runs SET status='success', total_resources=12</text>
+    <rect x="1455" y="920" width="30" height="60" fill="#fa709a" opacity="0.3"/>
+
+    <!-- 17. DB confirme -->
+    <line x1="1470" y1="980" x2="690" y2="980" stroke="#7f8c8d" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arrow-return)"/>
+    <text x="900" y="975" font-size="12" fill="#7f8c8d">✓ Updated</text>
+
+    <!-- 18. ScanEngine retourne à API -->
+    <line x1="690" y1="1020" x2="500" y2="1020" stroke="#7f8c8d" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arrow-return)"/>
+    <text x="550" y="1015" font-size="12" fill="#7f8c8d">scan_run_id = 42, status = "success"</text>
+
+    <!-- 19. API retourne réponse HTTP -->
+    <line x1="500" y1="1060" x2="310" y2="1060" stroke="#7f8c8d" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arrow-return)"/>
+    <text x="340" y="1055" font-size="12" fill="#7f8c8d">HTTP 202 Accepted</text>
+    <text x="340" y="1075" font-size="11" fill="#95a5a6">{"scan_id": 42, "status": "success", "total_resources": 12}</text>
+
+    <!-- 20. Frontend affiche succès -->
+    <line x1="310" y1="1100" x2="120" y2="1100" stroke="#7f8c8d" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arrow-return)"/>
+    <text x="140" y="1095" font-size="12" fill="#7f8c8d">Afficher "Scan terminé : 12 instances trouvées"</text>
+
+    <!-- ========================================== -->
+    <!-- NOTES ET LÉGENDES -->
+    <!-- ========================================== -->
+
+    <!-- Zone de notes en bas -->
+    <rect x="50" y="1160" width="1490" height="130" rx="10" ry="10" fill="#ecf0f1" stroke="#95a5a6" stroke-width="2"/>
+
+    <text x="70" y="1190" font-size="16" font-weight="bold" fill="#2c3e50">
+        📝 Légende et Notes
+    </text>
+
+    <line x1="70" y1="1210" x2="170" y2="1210" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrow-sync)"/>
+    <text x="180" y="1215" font-size="12" fill="#555">Appel synchrone (attente de réponse)</text>
+
+    <line x1="70" y1="1235" x2="170" y2="1235" stroke="#7f8c8d" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arrow-return)"/>
+    <text x="180" y="1240" font-size="12" fill="#555">Retour de valeur</text>
+
+    <line x1="70" y1="1260" x2="170" y2="1260" stroke="#e74c3c" stroke-width="2" marker-end="url(#arrow-sync)"/>
+    <text x="180" y="1265" font-size="12" fill="#555">Opération base de données (SQL)</text>
+
+    <text x="600" y="1190" font-size="14" font-weight="bold" fill="#2c3e50">
+        ⏱️ Durée estimée du flux
+    </text>
+    <text x="600" y="1215" font-size="12" fill="#555">
+        • Validation + Authentification : ~50ms
+    </text>
+    <text x="600" y="1238" font-size="12" fill="#555">
+        • Appel AWS (describe_instances) : ~800ms
+    </text>
+    <text x="600" y="1261" font-size="12" fill="#555">
+        • Sauvegarde en base : ~200ms
+    </text>
+
+    <text x="1050" y="1190" font-size="14" font-weight="bold" fill="#2c3e50">
+        🔐 Sécurité
+    </text>
+    <text x="1050" y="1215" font-size="12" fill="#555">
+        • JWT vérifié à l'entrée (étape 3)
+    </text>
+    <text x="1050" y="1238" font-size="12" fill="#555">
+        • Isolation multi-tenant (user_id)
+    </text>
+    <text x="1050" y="1261" font-size="12" fill="#555">
+        • Credentials AWS via AssumeRole
+    </text>
+
+    <!-- Signature -->
+    <text x="800" y="1350" text-anchor="middle" fill="#95a5a6" font-size="12">
+        CloudDiagnoze - Diagramme de séquence détaillé
+    </text>
+
+</svg>

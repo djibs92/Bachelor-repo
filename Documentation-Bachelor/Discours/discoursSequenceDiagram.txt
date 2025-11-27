@@ -1,0 +1,287 @@
+════════════════════════════════════════════════════════════════════════════════
+                    PITCH PRÉSENTATION - DIAGRAMME DE SÉQUENCE
+                         CloudDiagnoze - Flux d'un scan EC2
+════════════════════════════════════════════════════════════════════════════════
+
+📌 CONTEXTE (10 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"Les diagrammes précédents montraient l'architecture STATIQUE du système :
+comment le code est organisé, comment les données sont stockées.
+
+Maintenant, voyons l'architecture DYNAMIQUE : que se passe-t-il concrètement
+quand un utilisateur lance un scan EC2 ?
+
+C'est ce que montre ce diagramme de séquence."
+
+
+🎯 VUE D'ENSEMBLE (20 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Montrer le diagramme complet]
+
+"Un diagramme de séquence montre les INTERACTIONS entre les composants dans le TEMPS.
+
+Le temps descend verticalement : on lit de haut en bas.
+
+En haut, vous voyez les 8 acteurs de ce scénario :
+   👤 Utilisateur → Frontend → API → ScanEngine → Factory → Scanner → AWS → Database
+
+Les flèches représentent les messages échangés.
+
+Ce diagramme raconte une histoire : 'L'utilisateur lance un scan, et voilà tout
+ce qui se passe en coulisses'."
+
+
+📖 LE FLUX EN 3 PHASES (2 minutes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Pointer les parties du diagramme au fur et à mesure]
+
+🔹 PHASE 1 : Réception de la demande (étapes 1-3)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"L'utilisateur clique sur 'Lancer un scan EC2' dans l'interface.
+
+Le Frontend envoie une requête HTTP à l'API :
+   POST /api/v1/scans
+   Avec les données : provider = AWS, services = EC2
+
+L'API reçoit la requête et fait 2 choses :
+   ✓ Vérifier le token JWT (est-ce que l'utilisateur est authentifié ?)
+   ✓ Valider le payload (est-ce que les données sont correctes ?)
+
+👉 Regardez ce rectangle jaune : c'est la validation. Ça prend ~50 millisecondes.
+
+Si tout est bon, on passe à la phase 2."
+
+
+🔹 PHASE 2 : Orchestration du scan (étapes 4-7)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"L'API appelle le ScanEngine, qui est le chef d'orchestre.
+
+Le ScanEngine fait 3 actions :
+
+1️⃣  Il crée un 'ticket de scan' dans la base de données (ScanRun).
+    → INSERT INTO scan_runs
+    → Status = 'queued', service = 'ec2'
+    → La base retourne un ID : scan_run_id = 42
+
+2️⃣  Il demande à la ScannerFactory de créer le bon scanner.
+    → 'Je veux un scanner AWS pour EC2'
+    → La Factory crée un EC2Scanner et le retourne
+
+3️⃣  Il lance le scan en appelant scanner.scan()
+
+👉 C'est ici qu'on voit le Factory Pattern en action : le ScanEngine ne crée
+    pas lui-même le scanner, il le demande à la Factory."
+
+
+🔹 PHASE 3 : Exécution et sauvegarde (étapes 8-10)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"Maintenant, le EC2Scanner fait le vrai travail :
+
+1️⃣  Il appelle AWS via boto3 :
+    → describe_instances() pour la région eu-west-1
+    → AWS retourne la liste des instances (disons 12 instances)
+    → Ça prend ~800 millisecondes (c'est le plus long)
+
+2️⃣  Il sauvegarde les 12 instances dans la base de données :
+    → INSERT INTO ec2_instances (scan_run_id=42, instance_id, instance_type, ...)
+    → 12 lignes insérées
+    → Ça prend ~200 millisecondes
+
+3️⃣  Il met à jour le ticket de scan :
+    → UPDATE scan_runs SET status='success', total_resources=12
+    → Le scan est terminé !
+
+Ensuite, la réponse remonte en sens inverse :
+   Scanner → ScanEngine → API → Frontend → Utilisateur
+
+L'utilisateur voit s'afficher : 'Scan terminé : 12 instances trouvées'
+
+👉 Regardez les flèches en pointillés : ce sont les retours de valeur.
+    Elles remontent vers le composant qui a fait l'appel."
+
+
+⏱️ PERFORMANCE ET TIMING (30 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Pointer la zone de notes en bas]
+
+"Regardez en bas : j'ai indiqué les durées réelles.
+
+Total du flux : environ 1 seconde
+
+   • Validation + Auth : 50ms (rapide)
+   • Appel AWS : 800ms (le plus lent, dépend du réseau)
+   • Sauvegarde DB : 200ms (raisonnable)
+
+👉 Si on voulait optimiser, on pourrait :
+   - Mettre en cache les données AWS (reduce API calls)
+   - Paralléliser les scans sur plusieurs régions
+   - Utiliser des tâches asynchrones (Celery) pour les gros scans
+
+Mais pour 12 instances, 1 seconde c'est tout à fait acceptable."
+
+
+🔐 SÉCURITÉ DANS LE FLUX (30 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"Trois points de sécurité critiques dans ce flux :
+
+1️⃣  JWT vérifié à l'entrée (étape 3)
+    → Si le token est invalide ou expiré, le flux s'arrête là
+    → HTTP 401 Unauthorized
+
+2️⃣  Isolation multi-tenant
+    → Quand on crée le ScanRun, on attache user_id
+    → Quand on sauvegarde les instances, elles sont liées au scan
+    → Résultat : impossible de voir les ressources d'un autre utilisateur
+
+3️⃣  Credentials AWS sécurisés
+    → Pas de clés AWS en dur dans le code
+    → Utilisation de AssumeRole (STS)
+    → Le rôle AWS est stocké dans users.role_arn
+
+👉 À chaque étape, on vérifie les permissions et on filtre par user_id."
+
+
+📊 TYPES DE FLÈCHES (15 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Pointer la légende]
+
+"Regardez la légende en bas à gauche.
+
+Trois types de flèches :
+
+   → Flèche noire pleine : Appel synchrone
+     (j'envoie un message et j'attends la réponse)
+
+   → Flèche grise pointillée : Retour de valeur
+     (je renvoie le résultat à celui qui a appelé)
+
+   → Flèche rouge pleine : Opération SQL
+     (j'écris ou je lis dans la base de données)
+
+C'est une convention UML standard."
+
+
+🎬 CONCLUSION (20 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"En résumé, ce diagramme montre :
+
+✅ Comment les 8 composants collaborent dans le temps
+✅ Le rôle du Factory Pattern pour créer les scanners
+✅ Les 3 interactions avec la base de données (create, insert, update)
+✅ L'appel externe à AWS qui prend le plus de temps
+✅ Les points de validation et sécurité
+
+Ce flux représente le cœur de CloudDiagnoze : scanner des ressources AWS
+et les persister dans notre base.
+
+Même logique pour S3, VPC et RDS, seul le scanner change."
+
+
+════════════════════════════════════════════════════════════════════════════════
+                                CONSEILS PRÉSENTATION
+════════════════════════════════════════════════════════════════════════════════
+
+💬 LANGAGE CORPOREL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+→ DESCENDRE avec ton doigt le long du diagramme pour montrer le temps qui passe
+→ POINTER chaque acteur quand tu le mentionnes
+→ TRACER les flèches importantes avec ton doigt
+→ Utiliser ta MAIN pour séparer les 3 phases (réception / orchestration / exécution)
+
+
+📊 SLIDES / SUPPORT VISUEL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+→ Slide 1 : Diagramme complet
+→ Slide 2 : Zoom sur Phase 1 (validation)
+→ Slide 3 : Zoom sur Phase 2 (orchestration + Factory)
+→ Slide 4 : Zoom sur Phase 3 (AWS + DB)
+→ Slide 5 : Tableau récapitulatif des timings (optionnel)
+
+
+🎤 TRANSITIONS FLUIDES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"Une fois la requête validée, le ScanEngine prend le relais..."
+"Maintenant que le scanner est créé, il va faire le vrai travail..."
+"Les données arrivent d'AWS, il faut les sauvegarder..."
+
+
+❓ ANTICIPER LES QUESTIONS DU JURY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Q: "Que se passe-t-il si AWS ne répond pas ?"
+R: "Timeout après 30 secondes. Le ScanEngine met à jour le ScanRun avec
+    status='error' et enregistre l'erreur. L'utilisateur voit 'Scan échoué'."
+
+Q: "Est-ce que c'est bloquant pour l'utilisateur ?"
+R: "Non, c'est asynchrone. L'API retourne immédiatement 'HTTP 202 Accepted'
+    avec le scan_id. L'utilisateur peut consulter le statut via GET /scans/{id}."
+
+Q: "Pourquoi passer par une Factory au lieu de créer directement le scanner ?"
+R: "Pour respecter le principe Ouvert/Fermé. Si demain j'ajoute Azure, je
+    modifie juste la Factory, pas le ScanEngine. Séparation des responsabilités."
+
+Q: "Comment vous testez ce flux ?"
+R: "Avec des tests d'intégration qui mockent boto3 (via moto). Je simule AWS
+    sans vraiment l'appeler. Ça me permet de tester tout le flux en local."
+
+
+⏱️ TIMING (AJUSTE SELON TON TEMPS TOTAL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Version courte (2 min) : Vue d'ensemble + Les 3 phases (rapide) + Conclusion
+Version moyenne (3-4 min) : Tout sauf "Performance" et "Types de flèches"
+Version longue (5 min) : Tout + Questions/Réponses
+
+
+🔥 PHRASES CLÉS À RETENIR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"Ce diagramme raconte une histoire : de l'utilisateur jusqu'à AWS et retour"
+"Le temps descend : on lit de haut en bas"
+"Le Factory Pattern en action : délégation de la création"
+"3 interactions DB : create ticket, insert resources, update status"
+"1 seconde pour scanner 12 instances, c'est acceptable"
+
+
+💡 ASTUCE PRO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Si le jury est technique :
+   → Insiste sur les patterns (Factory, Repository)
+   → Mentionne la gestion des erreurs et timeouts
+   → Parle d'optimisations possibles (async, cache)
+
+Si le jury est moins technique :
+   → Focus sur le parcours utilisateur
+   → Utilise l'analogie du "ticket de caisse" pour ScanRun
+   → Simplifie : "On demande à AWS, il répond, on sauvegarde"
+
+
+🔗 LIEN AVEC LES AUTRES DIAGRAMMES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"Ce diagramme de séquence utilise les composants qu'on a vus dans :
+
+➡️  Le diagramme de classes : ScannerFactory, EC2Scanner
+➡️  Le diagramme BDD : tables scan_runs, ec2_instances
+➡️  Le diagramme d'architecture : les 5 couches traversées
+
+Tout est cohérent. Les diagrammes se complètent."
+
+
+════════════════════════════════════════════════════════════════════════════════
+                                    BON COURAGE ! 🚀
+════════════════════════════════════════════════════════════════════════════════
