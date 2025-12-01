@@ -1,0 +1,27 @@
+{
+  "name": "clouddiagnoze-frontend",
+  "version": "1.0.0",
+  "description": "Frontend tests for CloudDiagnoze",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "roots": ["<rootDir>/tests"],
+    "testMatch": ["**/*.test.js"],
+    "moduleFileExtensions": ["js"],
+    "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"],
+    "verbose": true,
+    "collectCoverageFrom": [
+      "js/**/*.js",
+      "!js/config.env.js"
+    ]
+  }
+}
+
