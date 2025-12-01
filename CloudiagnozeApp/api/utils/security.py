@@ -7,7 +7,7 @@ Ce module fournit des fonctions pour :
 - Générer des tokens de réinitialisation de mot de passe
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 import secrets
 import os
@@ -99,9 +99,9 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     
     # Définir la date d'expiration
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     
     to_encode.update({"exp": expire})
     
@@ -203,7 +203,7 @@ def create_reset_token_expiry(hours: int = 24) -> datetime:
         >>> print(expiry)
         2024-11-05 16:30:00
     """
-    return datetime.utcnow() + timedelta(hours=hours)
+    return datetime.now(timezone.utc) + timedelta(hours=hours)
 
 
 def is_reset_token_valid(expiry: datetime) -> bool:
@@ -224,7 +224,12 @@ def is_reset_token_valid(expiry: datetime) -> bool:
         >>> is_reset_token_valid(expiry)
         False
     """
-    return datetime.utcnow() < expiry
+    # Assurer que expiry est timezone-aware pour la comparaison
+    now = datetime.now(timezone.utc)
+    # Si expiry n'a pas de timezone, on assume UTC
+    if expiry.tzinfo is None:
+        expiry = expiry.replace(tzinfo=timezone.utc)
+    return now < expiry
 
 
 # ========================================

@@ -68,6 +68,13 @@ def client(test_db_setup):
 
     app.dependency_overrides[get_db] = override_get_db
 
+    # Reset le rate limiter pour éviter les blocages entre tests
+    from api.utils.limiter import limiter
+    if hasattr(limiter, '_storage') and limiter._storage:
+        limiter._storage.reset()
+    elif hasattr(limiter, 'storage') and limiter.storage:
+        limiter.storage.reset()
+
     test_client = TestClient(app)
     yield test_client
 

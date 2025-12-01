@@ -189,7 +189,7 @@ async def export_scan_session(
     """
     from api.database import ScanRun, EC2Instance, S3Bucket, VPCInstance, RDSInstance
     from sqlalchemy.orm import joinedload
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
 
     # Récupérer le scan de référence
     reference_scan = db.query(ScanRun).filter(
@@ -223,7 +223,7 @@ async def export_scan_session(
     export_data = {
         "export_info": {
             "scan_session_id": scan_session_id,
-            "export_date": datetime.utcnow().isoformat(),
+            "export_date": datetime.now(timezone.utc).isoformat(),
             "user_id": current_user.id,
             "user_email": current_user.email,
             "user_name": current_user.full_name,

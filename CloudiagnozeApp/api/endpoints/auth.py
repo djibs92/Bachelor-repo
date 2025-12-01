@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException, Depends, Header, Request
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from loguru import logger
 
 from api.utils.limiter import limiter
@@ -251,7 +251,7 @@ async def login(
         raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
 
     # 4. Mettre à jour la date de dernière connexion
-    user.last_login = datetime.utcnow()
+    user.last_login = datetime.now(timezone.utc)
     db.commit()
 
     # 5. Créer le token JWT
