@@ -10,6 +10,7 @@ Ce module fournit des fonctions pour :
 from datetime import datetime, timedelta
 from typing import Optional
 import secrets
+import os
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from loguru import logger
@@ -22,10 +23,14 @@ from loguru import logger
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Configuration JWT
-# ⚠️ EN PRODUCTION : Utiliser une clé secrète forte et la stocker dans les variables d'environnement
-SECRET_KEY = "clouddiagnoze-secret-key-change-this-in-production-2024"  # À changer en production !
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 jours
+# ✅ SÉCURITÉ : Lecture de la clé secrète depuis les variables d'environnement
+SECRET_KEY = os.getenv("SECRET_KEY", "clouddiagnoze-secret-key-change-this-in-production-2024")
+ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", str(60 * 24 * 7)))  # 7 jours par défaut
+
+# ⚠️ Avertissement si la clé par défaut est utilisée
+if SECRET_KEY == "clouddiagnoze-secret-key-change-this-in-production-2024":
+    logger.warning("⚠️ SÉCURITÉ : Utilisation de la clé JWT par défaut ! Définissez SECRET_KEY dans .env")
 
 # ========================================
 # FONCTIONS DE HASHING DE MOT DE PASSE

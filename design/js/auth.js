@@ -1,6 +1,6 @@
 /**
  * Module d'authentification pour CloudDiagnoze
- * 
+ *
  * Gère :
  * - Inscription (signup)
  * - Connexion (login)
@@ -10,8 +10,9 @@
  * - Protection des pages
  */
 
-// Configuration de l'API
-const AUTH_API_BASE_URL = 'http://localhost:8000/api/v1/auth';
+// ✅ SÉCURITÉ : Configuration de l'API depuis config.env.js
+// L'URL est maintenant définie dans config.env.js et varie selon l'environnement
+const AUTH_API_BASE_URL = window.AUTH_API_BASE_URL || 'http://localhost:8000/api/v1/auth';
 
 // Clés de stockage localStorage
 const STORAGE_KEYS = {

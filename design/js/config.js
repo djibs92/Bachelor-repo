@@ -2,9 +2,10 @@
  * Configuration de l'API CloudDiagnoze
  */
 
+// ✅ SÉCURITÉ : URL de base depuis config.env.js (varie selon l'environnement)
 const API_CONFIG = {
-    // URL de base de l'API
-    BASE_URL: 'http://localhost:8000/api/v1',
+    // URL de base de l'API (définie dans config.env.js)
+    BASE_URL: window.API_BASE_URL || 'http://localhost:8000/api/v1',
     
     // Endpoints disponibles
     ENDPOINTS: {
