@@ -1,0 +1,2 @@
+# Azure Provider module (placeholder)
+
