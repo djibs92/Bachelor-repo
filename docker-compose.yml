@@ -1,5 +1,26 @@
+# ========================================
+# DOCKER COMPOSE - CLOUDDIAGNOZE
+# ========================================
+# Déploiement complet de l'application :
+# - MariaDB (base de données)
+# - Backend FastAPI (API Python)
+# - Frontend Nginx (interface utilisateur)
+#
+# USAGE :
+#   1. Copier .env.example vers .env et configurer les variables
+#   2. Lancer : docker-compose up -d --build
+#   3. Accéder à : http://localhost (frontend) ou http://localhost/docs (API)
+#
+# ARRÊT :
+#   docker-compose down
+#
+# RESET COMPLET (supprime les données) :
+#   docker-compose down -v
+
 services:
-  # Service MariaDB pour CloudDiagnoze
+  # ========================================
+  # SERVICE : BASE DE DONNÉES MARIADB
+  # ========================================
   mariadb:
     image: mariadb:11.2
     container_name: clouddiagnoze-db
@@ -24,11 +45,81 @@ services:
     networks:
       - clouddiagnoze-network
 
+  # ========================================
+  # SERVICE : BACKEND FASTAPI
+  # ========================================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: clouddiagnoze-backend
+    restart: always
+    environment:
+      # Base de données (le host est le nom du service Docker)
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      # JWT
+      SECRET_KEY: ${SECRET_KEY}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-10080}
+      # AWS Credentials pour les scans
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-eu-west-1}
+      # CORS (autorise le frontend)
+      CORS_ORIGINS: "http://localhost,http://localhost:80,http://127.0.0.1"
+      # Environnement
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+    ports:
+      - "8000:8000"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3
+    networks:
+      - clouddiagnoze-network
+
+  # ========================================
+  # SERVICE : FRONTEND NGINX
+  # ========================================
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: clouddiagnoze-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      start_period: 5s
+      retries: 3
+    networks:
+      - clouddiagnoze-network
+
+# ========================================
+# VOLUMES PERSISTANTS
+# ========================================
 volumes:
   mariadb_data:
     driver: local
 
+# ========================================
+# RÉSEAU INTERNE
+# ========================================
 networks:
   clouddiagnoze-network:
     driver: bridge
-

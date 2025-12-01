@@ -1,0 +1,55 @@
+# ========================================
+# DOCKERFILE BACKEND - CLOUDDIAGNOZE
+# ========================================
+# Image Python pour l'API FastAPI
+#
+# Construction :
+#   docker build -f Dockerfile.backend -t clouddiagnoze-backend .
+#
+# Exécution (standalone) :
+#   docker run -p 8000:8000 --env-file .env clouddiagnoze-backend
+
+FROM python:3.11-slim
+
+# Métadonnées
+LABEL maintainer="Gebril Kadid <gebril.kadid@spitzkop.io>"
+LABEL description="CloudDiagnoze Backend API - Scanner d'infrastructure AWS"
+LABEL version="1.0.0"
+
+# Variables d'environnement Python
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Définir le répertoire de travail
+WORKDIR /app
+
+# Installer les dépendances système nécessaires
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libmariadb-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copier les requirements et installer les dépendances Python
+COPY CloudiagnozeApp/requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copier le code source du backend
+COPY CloudiagnozeApp/ .
+
+# Copier le fichier .env.example comme référence (le vrai .env sera monté en volume ou via env_file)
+COPY CloudiagnozeApp/.env.example .env.example
+
+# Exposer le port de l'API
+EXPOSE 8000
+
+# Healthcheck pour vérifier que l'API répond
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+
+# Commande de démarrage
+# --host 0.0.0.0 : Écoute sur toutes les interfaces (nécessaire dans Docker)
+# --port 8000 : Port de l'API
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
