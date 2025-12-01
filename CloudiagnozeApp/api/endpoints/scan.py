@@ -12,20 +12,56 @@ from api.endpoints.auth import get_current_user
 router = APIRouter()
 
 class AuthMode(BaseModel):
-    type: str
-    role_arn: str = Field(..., description="ARN du rôle AWS à assumer")
+    """Mode d'authentification AWS via STS AssumeRole"""
+    type: str = Field(..., description="Type d'authentification", example="sts")
+    role_arn: str = Field(..., description="ARN du rôle AWS à assumer", example="arn:aws:iam::123456789012:role/CloudDiagnozeRole")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "type": "sts",
+                "role_arn": "arn:aws:iam::123456789012:role/CloudDiagnozeRole"
+            }
+        }
+
 
 class ScanRequest(BaseModel):
-    provider: str
-    services: List[str]
-    auth_mode: AuthMode
-    client_id: str = Field(..., description="Identifiant du client")
-    regions: List[str] = Field(default=None,description="Régions spécifiques à scanner (optionnel)")
+    """Requête pour lancer un scan d'infrastructure AWS"""
+    provider: str = Field(..., description="Fournisseur cloud (actuellement uniquement 'aws')", example="aws")
+    services: List[str] = Field(..., description="Liste des services à scanner", example=["ec2", "s3"])
+    auth_mode: AuthMode = Field(..., description="Mode d'authentification AWS")
+    client_id: str = Field(..., description="Identifiant du client/projet", example="MonProjet-Production")
+    regions: List[str] = Field(default=None, description="Régions AWS à scanner (toutes si non spécifié)", example=["eu-west-1", "eu-west-3"])
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "provider": "aws",
+                "services": ["ec2", "s3", "vpc"],
+                "auth_mode": {
+                    "type": "sts",
+                    "role_arn": "arn:aws:iam::123456789012:role/CloudDiagnozeRole"
+                },
+                "client_id": "MonProjet-Production",
+                "regions": ["eu-west-1", "eu-west-3"]
+            }
+        }
+
 
 class ScanResponse(BaseModel):
-    scan_id: str
-    status: str
-    message: str
+    """Réponse après le lancement d'un scan"""
+    scan_id: str = Field(..., description="Identifiant unique du scan", example="a1b2c3d4-e5f6-7890-abcd-ef1234567890")
+    status: str = Field(..., description="Statut du scan", example="QUEUED")
+    message: str = Field(..., description="Message descriptif", example="Scan EC2, S3 démarré en arrière-plan")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "scan_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                "status": "QUEUED",
+                "message": "Scan EC2, S3 démarré en arrière-plan"
+            }
+        }
 
 @router.post("/scans", response_model=ScanResponse, status_code=202)
 async def create_scan(

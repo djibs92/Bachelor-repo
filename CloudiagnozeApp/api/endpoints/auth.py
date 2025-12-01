@@ -38,40 +38,72 @@ router = APIRouter()
 
 
 class SignupRequest(BaseModel):
-    """Schéma pour l'inscription"""
+    """Schéma pour l'inscription d'un nouvel utilisateur"""
 
-    email: EmailStr = Field(..., description="Email de l'utilisateur")
+    email: EmailStr = Field(..., description="Email de l'utilisateur", example="user@example.com")
     password: str = Field(
-        ..., min_length=8, description="Mot de passe (min 8 caractères)"
+        ..., min_length=8, description="Mot de passe (min 8 caractères, 1 majuscule, 1 chiffre)", example="SecurePass123"
     )
-    full_name: Optional[str] = Field(None, description="Nom complet")
-    company_name: Optional[str] = Field(None, description="Nom de l'entreprise")
-    role_arn: Optional[str] = Field(None, description="Role ARN AWS (optionnel)")
+    full_name: Optional[str] = Field(None, description="Nom complet", example="Jean Dupont")
+    company_name: Optional[str] = Field(None, description="Nom de l'entreprise", example="Ma Startup SAS")
+    role_arn: Optional[str] = Field(None, description="Role ARN AWS pour les scans", example="arn:aws:iam::123456789012:role/CloudDiagnozeRole")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "email": "user@example.com",
+                "password": "SecurePass123",
+                "full_name": "Jean Dupont",
+                "company_name": "Ma Startup SAS"
+            }
+        }
 
 
 class LoginRequest(BaseModel):
-    """Schéma pour la connexion"""
+    """Schéma pour la connexion utilisateur"""
 
-    email: EmailStr = Field(..., description="Email de l'utilisateur")
-    password: str = Field(..., description="Mot de passe")
+    email: EmailStr = Field(..., description="Email de l'utilisateur", example="user@example.com")
+    password: str = Field(..., description="Mot de passe", example="SecurePass123")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "email": "user@example.com",
+                "password": "SecurePass123"
+            }
+        }
 
 
 class LoginResponse(BaseModel):
-    """Schéma pour la réponse de connexion"""
+    """Schéma pour la réponse de connexion avec token JWT"""
 
-    access_token: str = Field(..., description="Token JWT")
-    token_type: str = Field(default="bearer", description="Type de token")
-    user: dict = Field(..., description="Informations utilisateur")
+    access_token: str = Field(..., description="Token JWT à utiliser dans le header Authorization", example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
+    token_type: str = Field(default="bearer", description="Type de token", example="bearer")
+    user: dict = Field(..., description="Informations de l'utilisateur connecté")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyQGV4YW1wbGUuY29tIiwiZXhwIjoxNzA0MDY3MjAwfQ.abc123",
+                "token_type": "bearer",
+                "user": {
+                    "id": 1,
+                    "email": "user@example.com",
+                    "full_name": "Jean Dupont",
+                    "company_name": "Ma Startup SAS"
+                }
+            }
+        }
 
 
 class UserResponse(BaseModel):
-    """Schéma pour les informations utilisateur"""
+    """Schéma pour les informations utilisateur complètes"""
 
-    id: int
-    email: str
-    full_name: Optional[str]
-    company_name: Optional[str]
-    role_arn: Optional[str]
+    id: int = Field(..., example=1)
+    email: str = Field(..., example="user@example.com")
+    full_name: Optional[str] = Field(None, example="Jean Dupont")
+    company_name: Optional[str] = Field(None, example="Ma Startup SAS")
+    role_arn: Optional[str] = Field(None, example="arn:aws:iam::123456789012:role/CloudDiagnozeRole")
     created_at: datetime
     last_login: Optional[datetime]
 
@@ -79,14 +111,14 @@ class UserResponse(BaseModel):
 class ForgotPasswordRequest(BaseModel):
     """Schéma pour la demande de réinitialisation de mot de passe"""
 
-    email: EmailStr = Field(..., description="Email de l'utilisateur")
+    email: EmailStr = Field(..., description="Email de l'utilisateur", example="user@example.com")
 
 
 class ResetPasswordRequest(BaseModel):
-    """Schéma pour la réinitialisation de mot de passe"""
+    """Schéma pour la réinitialisation de mot de passe avec token"""
 
-    token: str = Field(..., description="Token de réinitialisation")
-    new_password: str = Field(..., min_length=8, description="Nouveau mot de passe")
+    token: str = Field(..., description="Token de réinitialisation reçu par email", example="abc123def456...")
+    new_password: str = Field(..., min_length=8, description="Nouveau mot de passe", example="NewSecurePass456")
 
 
 class MessageResponse(BaseModel):

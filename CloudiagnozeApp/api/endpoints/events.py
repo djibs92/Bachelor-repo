@@ -12,7 +12,7 @@ router = APIRouter()
 # ENDPOINTS DE RÉCUPÉRATION (Base de données)
 # ========================================
 
-@router.get("/scans/latest-session")
+@router.get("/scans/latest-session", tags=["🔍 Scans"])
 async def get_latest_scan_session(
     scan_id: Optional[int] = None,
     current_user: User = Depends(get_current_user),
@@ -105,7 +105,7 @@ async def get_latest_scan_session(
         raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération de la session: {str(e)}")
 
 
-@router.get("/scans/history")
+@router.get("/scans/history", tags=["🔍 Scans"])
 async def get_scans_history(
     client_id: Optional[str] = None,
     service_type: Optional[str] = None,
@@ -161,7 +161,7 @@ async def get_scans_history(
         raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération des scans: {str(e)}")
 
 
-@router.get("/ec2/instances")
+@router.get("/ec2/instances", tags=["💻 EC2"])
 async def get_ec2_instances(
     client_id: Optional[str] = None,
     region: Optional[str] = None,
@@ -282,7 +282,7 @@ async def get_ec2_instances(
         raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération des instances EC2: {str(e)}")
 
 
-@router.get("/ec2/instances/{instance_id}")
+@router.get("/ec2/instances/{instance_id}", tags=["💻 EC2"])
 async def get_ec2_instance_by_id(
     instance_id: str,
     db: Session = Depends(get_db)
@@ -338,7 +338,7 @@ async def get_ec2_instance_by_id(
         raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération de l'instance: {str(e)}")
 
 
-@router.get("/s3/buckets")
+@router.get("/s3/buckets", tags=["🪣 S3"])
 async def get_s3_buckets(
     client_id: Optional[str] = None,
     region: Optional[str] = None,
@@ -461,7 +461,7 @@ async def get_s3_buckets(
         raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération des buckets S3: {str(e)}")
 
 
-@router.get("/s3/buckets/{bucket_name}")
+@router.get("/s3/buckets/{bucket_name}", tags=["🪣 S3"])
 async def get_s3_bucket_by_name(
     bucket_name: str,
     db: Session = Depends(get_db)
@@ -517,7 +517,7 @@ async def get_s3_bucket_by_name(
         raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération du bucket: {str(e)}")
 
 
-@router.get("/vpc/instances")
+@router.get("/vpc/instances", tags=["🌐 VPC"])
 async def get_vpc_instances(
     client_id: Optional[str] = None,
     region: Optional[str] = None,
@@ -647,7 +647,7 @@ async def get_vpc_instances(
         raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération des VPCs: {str(e)}")
 
 
-@router.get("/rds/instances")
+@router.get("/rds/instances", tags=["🗄️ RDS"])
 async def get_rds_instances(
     client_id: Optional[str] = None,
     region: Optional[str] = None,
@@ -800,7 +800,7 @@ async def get_rds_instances(
 # ENDPOINTS D'ADMINISTRATION
 # ========================================
 
-@router.delete("/admin/clear-database")
+@router.delete("/admin/clear-database", tags=["⚙️ Admin"])
 async def clear_database(
     confirm: bool = False,
     db: Session = Depends(get_db)
@@ -896,7 +896,7 @@ async def clear_database(
         )
 
 
-@router.delete("/admin/clear-user-data")
+@router.delete("/admin/clear-user-data", tags=["⚙️ Admin"])
 async def clear_user_data(
     confirm: bool = False,
     current_user: User = Depends(get_current_user),
