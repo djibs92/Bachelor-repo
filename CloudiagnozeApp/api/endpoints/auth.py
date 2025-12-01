@@ -497,3 +497,100 @@ async def change_password(
     logger.success(f"✅ Mot de passe changé pour {current_user.email}")
 
     return MessageResponse(message="Mot de passe changé avec succès")
+
+
+# ========================================
+# ENDPOINT : SUPPRESSION DU COMPTE UTILISATEUR
+# ========================================
+
+
+@router.delete("/me", response_model=MessageResponse)
+async def delete_account(
+    confirm: bool = False,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    🗑️ Supprime définitivement le compte de l'utilisateur connecté.
+
+    ⚠️ ATTENTION : Cette action est IRRÉVERSIBLE !
+
+    Supprime :
+    - Le compte utilisateur
+    - Tous les scans associés
+    - Toutes les données d'infrastructure (EC2, S3, VPC, RDS)
+
+    Args:
+        confirm: Doit être True pour confirmer la suppression
+        current_user: Utilisateur connecté (via token JWT)
+        db: Session de base de données
+
+    Returns:
+        Message de confirmation
+
+    Exemple:
+        DELETE /api/v1/auth/me?confirm=true
+        Headers: Authorization: Bearer <token>
+    """
+    if not confirm:
+        raise HTTPException(
+            status_code=400,
+            detail="⚠️ Vous devez confirmer la suppression avec ?confirm=true"
+        )
+
+    user_email = current_user.email
+    user_id = current_user.id
+
+    logger.warning(f"🗑️ Suppression du compte demandée pour {user_email} (ID: {user_id})")
+
+    try:
+        # 1. Importer les modèles nécessaires
+        from api.database import ScanRun, EC2Instance, EC2Performance, S3Bucket, S3Performance
+        from api.database import VPCInstance, VPCPerformance, RDSInstance, RDSPerformance
+
+        # 2. Récupérer les IDs des scans de l'utilisateur
+        scan_ids = [s.id for s in db.query(ScanRun).filter(ScanRun.user_id == user_id).all()]
+
+        if scan_ids:
+            # Récupérer les IDs des ressources
+            ec2_ids = [e.id for e in db.query(EC2Instance).filter(EC2Instance.scan_run_id.in_(scan_ids)).all()]
+            s3_ids = [s.id for s in db.query(S3Bucket).filter(S3Bucket.scan_run_id.in_(scan_ids)).all()]
+            vpc_ids = [v.id for v in db.query(VPCInstance).filter(VPCInstance.scan_run_id.in_(scan_ids)).all()]
+            rds_ids = [r.id for r in db.query(RDSInstance).filter(RDSInstance.scan_run_id.in_(scan_ids)).all()]
+
+            # Supprimer les métriques
+            if ec2_ids:
+                db.query(EC2Performance).filter(EC2Performance.ec2_instance_id.in_(ec2_ids)).delete(synchronize_session=False)
+            if s3_ids:
+                db.query(S3Performance).filter(S3Performance.s3_bucket_id.in_(s3_ids)).delete(synchronize_session=False)
+            if vpc_ids:
+                db.query(VPCPerformance).filter(VPCPerformance.vpc_instance_id.in_(vpc_ids)).delete(synchronize_session=False)
+            if rds_ids:
+                db.query(RDSPerformance).filter(RDSPerformance.rds_instance_id.in_(rds_ids)).delete(synchronize_session=False)
+
+            # Supprimer les ressources
+            db.query(EC2Instance).filter(EC2Instance.scan_run_id.in_(scan_ids)).delete(synchronize_session=False)
+            db.query(S3Bucket).filter(S3Bucket.scan_run_id.in_(scan_ids)).delete(synchronize_session=False)
+            db.query(VPCInstance).filter(VPCInstance.scan_run_id.in_(scan_ids)).delete(synchronize_session=False)
+            db.query(RDSInstance).filter(RDSInstance.scan_run_id.in_(scan_ids)).delete(synchronize_session=False)
+
+            # Supprimer les scans
+            db.query(ScanRun).filter(ScanRun.user_id == user_id).delete(synchronize_session=False)
+
+        # 3. Supprimer l'utilisateur
+        db.delete(current_user)
+        db.commit()
+
+        logger.success(f"✅ Compte {user_email} supprimé définitivement")
+
+        return MessageResponse(
+            message=f"Compte {user_email} et toutes les données associées ont été supprimés définitivement"
+        )
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Erreur lors de la suppression du compte: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur lors de la suppression du compte: {str(e)}"
+        )
