@@ -8,12 +8,14 @@ Ce module fournit les endpoints pour :
 - Réinitialisation de mot de passe (forgot-password, reset-password)
 """
 
-from fastapi import APIRouter, HTTPException, Depends, Header
+from fastapi import APIRouter, HTTPException, Depends, Header, Request
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime
 from loguru import logger
+
+from api.utils.limiter import limiter
 
 from api.database import get_db, User
 from api.utils import (
@@ -34,10 +36,14 @@ router = APIRouter()
 # MODÈLES PYDANTIC (SCHÉMAS)
 # ========================================
 
+
 class SignupRequest(BaseModel):
     """Schéma pour l'inscription"""
+
     email: EmailStr = Field(..., description="Email de l'utilisateur")
-    password: str = Field(..., min_length=8, description="Mot de passe (min 8 caractères)")
+    password: str = Field(
+        ..., min_length=8, description="Mot de passe (min 8 caractères)"
+    )
     full_name: Optional[str] = Field(None, description="Nom complet")
     company_name: Optional[str] = Field(None, description="Nom de l'entreprise")
     role_arn: Optional[str] = Field(None, description="Role ARN AWS (optionnel)")
@@ -45,12 +51,14 @@ class SignupRequest(BaseModel):
 
 class LoginRequest(BaseModel):
     """Schéma pour la connexion"""
+
     email: EmailStr = Field(..., description="Email de l'utilisateur")
     password: str = Field(..., description="Mot de passe")
 
 
 class LoginResponse(BaseModel):
     """Schéma pour la réponse de connexion"""
+
     access_token: str = Field(..., description="Token JWT")
     token_type: str = Field(default="bearer", description="Type de token")
     user: dict = Field(..., description="Informations utilisateur")
@@ -58,6 +66,7 @@ class LoginResponse(BaseModel):
 
 class UserResponse(BaseModel):
     """Schéma pour les informations utilisateur"""
+
     id: int
     email: str
     full_name: Optional[str]
@@ -69,17 +78,20 @@ class UserResponse(BaseModel):
 
 class ForgotPasswordRequest(BaseModel):
     """Schéma pour la demande de réinitialisation de mot de passe"""
+
     email: EmailStr = Field(..., description="Email de l'utilisateur")
 
 
 class ResetPasswordRequest(BaseModel):
     """Schéma pour la réinitialisation de mot de passe"""
+
     token: str = Field(..., description="Token de réinitialisation")
     new_password: str = Field(..., min_length=8, description="Nouveau mot de passe")
 
 
 class MessageResponse(BaseModel):
     """Schéma pour les réponses simples"""
+
     message: str
 
 
@@ -87,46 +99,53 @@ class MessageResponse(BaseModel):
 # FONCTIONS UTILITAIRES
 # ========================================
 
-def get_current_user(authorization: Optional[str] = Header(None), db: Session = Depends(get_db)) -> User:
+
+def get_current_user(
+    authorization: Optional[str] = Header(None), db: Session = Depends(get_db)
+) -> User:
     """
     Récupère l'utilisateur actuel à partir du token JWT.
-    
+
     Args:
         authorization: Header Authorization (format: "Bearer <token>")
         db: Session de base de données
-        
+
     Returns:
         Utilisateur connecté
-        
+
     Raises:
         HTTPException: Si le token est invalide ou l'utilisateur n'existe pas
     """
     if not authorization:
         raise HTTPException(status_code=401, detail="Token manquant")
-    
+
     # Extraire le token du header "Bearer <token>"
     try:
         scheme, token = authorization.split()
         if scheme.lower() != "bearer":
-            raise HTTPException(status_code=401, detail="Schéma d'authentification invalide")
+            raise HTTPException(
+                status_code=401, detail="Schéma d'authentification invalide"
+            )
     except ValueError:
-        raise HTTPException(status_code=401, detail="Format du header Authorization invalide")
-    
+        raise HTTPException(
+            status_code=401, detail="Format du header Authorization invalide"
+        )
+
     # Vérifier le token
     payload = verify_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Token invalide ou expiré")
-    
+
     # Récupérer l'utilisateur
     user_id = payload.get("user_id")
     user = db.query(User).filter(User.id == user_id).first()
-    
+
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
-    
+
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Compte désactivé")
-    
+
     return user
 
 
@@ -134,106 +153,112 @@ def get_current_user(authorization: Optional[str] = Header(None), db: Session = 
 # ENDPOINTS
 # ========================================
 
+
 @router.post("/signup", response_model=MessageResponse, status_code=201)
-async def signup(request: SignupRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+async def signup(
+    request: Request, signup_data: SignupRequest, db: Session = Depends(get_db)
+):
     """
     Inscription d'un nouvel utilisateur.
-    
+
     Args:
-        request: Données d'inscription
+        request: Requête HTTP (pour rate limiting)
+        signup_data: Données d'inscription
         db: Session de base de données
-        
+
     Returns:
         Message de confirmation
-        
+
     Raises:
         HTTPException: Si l'email existe déjà ou si les données sont invalides
     """
-    logger.info(f"📝 Tentative d'inscription pour {request.email}")
-    
+    logger.info(f"📝 Tentative d'inscription pour {signup_data.email}")
+
     # 1. Valider l'email
-    if not validate_email(request.email):
+    if not validate_email(signup_data.email):
         raise HTTPException(status_code=400, detail="Format d'email invalide")
-    
+
     # 2. Vérifier que l'email n'existe pas déjà
-    existing_user = db.query(User).filter(User.email == request.email).first()
+    existing_user = db.query(User).filter(User.email == signup_data.email).first()
     if existing_user:
-        logger.warning(f"⚠️ Email déjà utilisé : {request.email}")
+        logger.warning(f"⚠️ Email déjà utilisé : {signup_data.email}")
         raise HTTPException(status_code=400, detail="Cet email est déjà utilisé")
-    
+
     # 3. Valider la force du mot de passe
-    is_valid, error_message = validate_password_strength(request.password)
+    is_valid, error_message = validate_password_strength(signup_data.password)
     if not is_valid:
         raise HTTPException(status_code=400, detail=error_message)
-    
+
     # 4. Hasher le mot de passe
-    password_hash = hash_password(request.password)
-    
+    password_hash = hash_password(signup_data.password)
+
     # 5. Créer l'utilisateur
     new_user = User(
-        email=request.email,
+        email=signup_data.email,
         password_hash=password_hash,
-        full_name=request.full_name,
-        company_name=request.company_name,
-        role_arn=request.role_arn,
-        is_active=True
+        full_name=signup_data.full_name,
+        company_name=signup_data.company_name,
+        role_arn=signup_data.role_arn,
+        is_active=True,
     )
-    
+
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    
+
     logger.success(f"✅ Utilisateur créé : {new_user.email} (ID: {new_user.id})")
-    
+
     return MessageResponse(message="Compte créé avec succès")
 
 
 @router.post("/login", response_model=LoginResponse)
-async def login(request: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+async def login(
+    request: Request, login_data: LoginRequest, db: Session = Depends(get_db)
+):
     """
     Connexion d'un utilisateur.
-    
+
     Args:
-        request: Données de connexion
+        request: Requête HTTP (pour rate limiting)
+        login_data: Données de connexion
         db: Session de base de données
-        
+
     Returns:
         Token JWT et informations utilisateur
-        
+
     Raises:
         HTTPException: Si l'email ou le mot de passe est incorrect
     """
-    logger.info(f"🔐 Tentative de connexion pour {request.email}")
-    
+    logger.info(f"🔐 Tentative de connexion pour {login_data.email}")
+
     # 1. Récupérer l'utilisateur
-    user = db.query(User).filter(User.email == request.email).first()
-    
+    user = db.query(User).filter(User.email == login_data.email).first()
+
     if not user:
-        logger.warning(f"⚠️ Utilisateur non trouvé : {request.email}")
+        logger.warning(f"⚠️ Utilisateur non trouvé : {login_data.email}")
         raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
-    
+
     # 2. Vérifier que le compte est actif
     if not user.is_active:
-        logger.warning(f"⚠️ Compte désactivé : {request.email}")
+        logger.warning(f"⚠️ Compte désactivé : {login_data.email}")
         raise HTTPException(status_code=403, detail="Compte désactivé")
-    
+
     # 3. Vérifier le mot de passe
-    if not verify_password(request.password, user.password_hash):
-        logger.warning(f"⚠️ Mot de passe incorrect pour {request.email}")
+    if not verify_password(login_data.password, user.password_hash):
+        logger.warning(f"⚠️ Mot de passe incorrect pour {login_data.email}")
         raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
-    
+
     # 4. Mettre à jour la date de dernière connexion
     user.last_login = datetime.utcnow()
     db.commit()
-    
+
     # 5. Créer le token JWT
-    access_token = create_access_token({
-        "sub": user.email,
-        "user_id": user.id
-    })
-    
+    access_token = create_access_token({"sub": user.email, "user_id": user.id})
+
     logger.success(f"✅ Connexion réussie pour {user.email}")
-    
+
     # 6. Retourner le token et les infos utilisateur
     return LoginResponse(
         access_token=access_token,
@@ -244,7 +269,7 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
             "full_name": user.full_name,
             "company_name": user.company_name,
             "role_arn": user.role_arn,
-        }
+        },
     )
 
 
@@ -252,15 +277,15 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
 async def get_me(current_user: User = Depends(get_current_user)):
     """
     Récupère les informations de l'utilisateur connecté.
-    
+
     Args:
         current_user: Utilisateur connecté (injecté par get_current_user)
-        
+
     Returns:
         Informations utilisateur
     """
     logger.info(f"👤 Récupération des infos pour {current_user.email}")
-    
+
     return UserResponse(
         id=current_user.id,
         email=current_user.email,
@@ -268,50 +293,56 @@ async def get_me(current_user: User = Depends(get_current_user)):
         company_name=current_user.company_name,
         role_arn=current_user.role_arn,
         created_at=current_user.created_at,
-        last_login=current_user.last_login
+        last_login=current_user.last_login,
     )
 
 
 @router.post("/forgot-password", response_model=MessageResponse)
-async def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
+@limiter.limit("3/minute")
+async def forgot_password(
+    request: Request, forgot_data: ForgotPasswordRequest, db: Session = Depends(get_db)
+):
     """
     Demande de réinitialisation de mot de passe.
-    
+
     Args:
-        request: Email de l'utilisateur
+        request: Requête HTTP (pour rate limiting)
+        forgot_data: Email de l'utilisateur
         db: Session de base de données
-        
+
     Returns:
         Message de confirmation
-        
+
     Note:
         Pour des raisons de sécurité, on retourne toujours le même message,
         même si l'email n'existe pas.
     """
-    logger.info(f"🔑 Demande de réinitialisation de mot de passe pour {request.email}")
-    
+    logger.info(
+        f"🔑 Demande de réinitialisation de mot de passe pour {forgot_data.email}"
+    )
+
     # Récupérer l'utilisateur
-    user = db.query(User).filter(User.email == request.email).first()
-    
+    user = db.query(User).filter(User.email == forgot_data.email).first()
+
     if user:
         # Générer un token de réinitialisation
         reset_token = generate_reset_token()
         reset_expiry = create_reset_token_expiry(24)  # Valide 24h
-        
+
         # Stocker le token dans la base de données
         user.reset_token = reset_token
         user.reset_token_expiry = reset_expiry
         db.commit()
-        
+
         logger.success(f"✅ Token de réinitialisation généré pour {user.email}")
-        
+
         # TODO: Envoyer un email avec le lien de réinitialisation
         # send_email(user.email, f"Reset link: https://clouddiagnoze.com/reset?token={reset_token}")
         logger.info(f"📧 Email de réinitialisation à envoyer à {user.email}")
         logger.info(f"🔗 Token: {reset_token}")
     else:
-        logger.warning(f"⚠️ Email non trouvé : {request.email}")
-    
+        logger.warning(f"⚠️ Email non trouvé : {forgot_data.email}")
+
     # Toujours retourner le même message (sécurité)
     return MessageResponse(
         message="Si cet email existe, un lien de réinitialisation a été envoyé"
@@ -319,48 +350,52 @@ async def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(
 
 
 @router.post("/reset-password", response_model=MessageResponse)
-async def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
+@limiter.limit("3/minute")
+async def reset_password(
+    request: Request, reset_data: ResetPasswordRequest, db: Session = Depends(get_db)
+):
     """
     Réinitialise le mot de passe avec un token.
-    
+
     Args:
-        request: Token et nouveau mot de passe
+        request: Requête HTTP (pour rate limiting)
+        reset_data: Token et nouveau mot de passe
         db: Session de base de données
-        
+
     Returns:
         Message de confirmation
-        
+
     Raises:
         HTTPException: Si le token est invalide ou expiré
     """
     logger.info(f"🔄 Tentative de réinitialisation de mot de passe")
-    
+
     # 1. Récupérer l'utilisateur avec ce token
-    user = db.query(User).filter(User.reset_token == request.token).first()
-    
+    user = db.query(User).filter(User.reset_token == reset_data.token).first()
+
     if not user:
         logger.warning(f"⚠️ Token de réinitialisation invalide")
         raise HTTPException(status_code=400, detail="Token invalide")
-    
+
     # 2. Vérifier que le token n'est pas expiré
     if not is_reset_token_valid(user.reset_token_expiry):
         logger.warning(f"⚠️ Token de réinitialisation expiré pour {user.email}")
         raise HTTPException(status_code=400, detail="Token expiré")
-    
+
     # 3. Valider le nouveau mot de passe
-    is_valid, error_message = validate_password_strength(request.new_password)
+    is_valid, error_message = validate_password_strength(reset_data.new_password)
     if not is_valid:
         raise HTTPException(status_code=400, detail=error_message)
-    
+
     # 4. Hasher le nouveau mot de passe
-    new_password_hash = hash_password(request.new_password)
-    
+    new_password_hash = hash_password(reset_data.new_password)
+
     # 5. Mettre à jour le mot de passe et supprimer le token
     user.password_hash = new_password_hash
     user.reset_token = None
     user.reset_token_expiry = None
     db.commit()
-    
+
     logger.success(f"✅ Mot de passe réinitialisé pour {user.email}")
 
     return MessageResponse(message="Mot de passe réinitialisé avec succès")
@@ -370,8 +405,10 @@ async def reset_password(request: ResetPasswordRequest, db: Session = Depends(ge
 # ENDPOINT : MISE À JOUR DES INFORMATIONS UTILISATEUR
 # ========================================
 
+
 class UpdateUserRequest(BaseModel):
     """Schéma pour la mise à jour des informations utilisateur"""
+
     full_name: Optional[str] = Field(None, description="Nom complet")
     company_name: Optional[str] = Field(None, description="Nom de l'entreprise")
     role_arn: Optional[str] = Field(None, description="Role ARN AWS")
@@ -381,7 +418,7 @@ class UpdateUserRequest(BaseModel):
 async def update_user_info(
     request: UpdateUserRequest,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Met à jour les informations de l'utilisateur connecté.
@@ -416,8 +453,10 @@ async def update_user_info(
 # ENDPOINT : CHANGEMENT DE MOT DE PASSE
 # ========================================
 
+
 class ChangePasswordRequest(BaseModel):
     """Schéma pour le changement de mot de passe"""
+
     current_password: str = Field(..., description="Mot de passe actuel")
     new_password: str = Field(..., min_length=8, description="Nouveau mot de passe")
 
@@ -426,7 +465,7 @@ class ChangePasswordRequest(BaseModel):
 async def change_password(
     request: ChangePasswordRequest,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Change le mot de passe de l'utilisateur connecté.
@@ -458,4 +497,3 @@ async def change_password(
     logger.success(f"✅ Mot de passe changé pour {current_user.email}")
 
     return MessageResponse(message="Mot de passe changé avec succès")
-
