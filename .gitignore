@@ -53,8 +53,8 @@ logs/
 
 # AWS Credentials (ne jamais commiter !)
 .aws/
-credentials
-config
+.aws/credentials
+.aws/config
 
 # Pytest
 .pytest_cache/
