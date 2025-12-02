@@ -1,0 +1,343 @@
+/* ========================================
+   CLOUDDIAGNOZE - DASHBOARD MODERN CSS
+   ======================================== */
+
+/* Sidebar */
+.sidebar {
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(20px);
+    border-right: 1px solid rgba(19, 127, 236, 0.2);
+    position: relative;
+    z-index: 10;
+    width: 16rem;
+    min-width: 16rem;
+}
+
+.sidebar-logo {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 1.25rem;
+    color: #ffffff;
+    text-shadow: 
+        0 0 20px rgba(19, 127, 236, 0.4),
+        0 0 40px rgba(19, 127, 236, 0.2);
+}
+
+.sidebar-subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    color: rgba(19, 127, 236, 0.7);
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+/* Navigation Links */
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    transition: all 0.3s;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.nav-link:hover {
+    background: rgba(19, 127, 236, 0.1);
+    color: #137FEC;
+}
+
+.nav-link.active {
+    background: rgba(19, 127, 236, 0.2);
+    color: #137FEC;
+    border: 1px solid rgba(19, 127, 236, 0.3);
+}
+
+/* Header */
+.header {
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(19, 127, 236, 0.2);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.header-title {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: #ffffff;
+}
+
+/* Logo Container */
+.logo-container {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    flex-shrink: 0;
+    margin: 0 auto;
+}
+
+.logo-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 18px;
+    padding: 8px;
+    background:
+        radial-gradient(circle at 30% 30%, rgba(0, 212, 255, 0.15) 0%, transparent 60%),
+        linear-gradient(135deg, rgba(19, 127, 236, 0.1) 0%, rgba(0, 212, 255, 0.08) 100%);
+    box-shadow:
+        0 0 30px rgba(19, 127, 236, 0.5),
+        0 0 60px rgba(0, 212, 255, 0.3),
+        inset 0 0 25px rgba(19, 127, 236, 0.12);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    animation: logo-pulse 4s ease-in-out infinite;
+}
+
+@keyframes logo-pulse {
+    0%, 100% {
+        box-shadow:
+            0 0 30px rgba(19, 127, 236, 0.5),
+            0 0 60px rgba(0, 212, 255, 0.3),
+            inset 0 0 25px rgba(19, 127, 236, 0.12);
+    }
+    50% {
+        box-shadow:
+            0 0 45px rgba(19, 127, 236, 0.7),
+            0 0 90px rgba(0, 212, 255, 0.5),
+            inset 0 0 35px rgba(19, 127, 236, 0.18);
+    }
+}
+
+.logo-image:hover {
+    transform: scale(1.08) rotate(3deg);
+    box-shadow:
+        0 0 50px rgba(19, 127, 236, 0.8),
+        0 0 100px rgba(0, 212, 255, 0.6),
+        inset 0 0 40px rgba(19, 127, 236, 0.25);
+}
+
+/* Binary rain effect */
+.binary-rain {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    border-radius: 14px;
+    opacity: 1;
+    transition: opacity 0.4s;
+}
+
+.binary-digit {
+    position: absolute;
+    color: rgba(0, 212, 255, 0.8);
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    font-weight: bold;
+    animation: binary-fall linear infinite;
+    text-shadow: 0 0 5px rgba(0, 212, 255, 0.8);
+}
+
+@keyframes binary-fall {
+    0% { transform: translateY(-20px); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(100px); opacity: 0; }
+}
+
+/* Glass Card Effect */
+.glass-card {
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(19, 127, 236, 0.2);
+    border-radius: 16px;
+    box-shadow:
+        0 0 60px rgba(19, 127, 236, 0.1),
+        inset 0 0 60px rgba(19, 127, 236, 0.05);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.glass-card:hover {
+    border-color: rgba(19, 127, 236, 0.4);
+    box-shadow:
+        0 0 80px rgba(19, 127, 236, 0.15),
+        inset 0 0 60px rgba(19, 127, 236, 0.08);
+}
+
+/* Stats Cards */
+.stat-card {
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(19, 127, 236, 0.2);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(19, 127, 236, 0.2);
+    border-color: #137FEC;
+}
+
+/* Main Content */
+.main-content {
+    position: relative;
+    z-index: 10;
+    background: #0a0e1a;
+}
+
+/* Background */
+body {
+    font-family: 'Rajdhani', sans-serif;
+    background: #0a0e1a;
+    overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+*::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.3);
+    border-radius: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(19, 127, 236, 0.6), rgba(19, 127, 236, 0.4));
+    border-radius: 10px;
+    border: 2px solid rgba(15, 23, 42, 0.3);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(19, 127, 236, 0.8), rgba(19, 127, 236, 0.6));
+}
+
+/* Firefox scrollbar */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(19, 127, 236, 0.5) rgba(15, 23, 42, 0.3);
+}
+
+/* User Menu Styles */
+.user-menu-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    background: rgba(19, 127, 236, 0.1);
+    border: 1px solid rgba(19, 127, 236, 0.2);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.user-menu-button:hover {
+    background: rgba(19, 127, 236, 0.2);
+    border-color: rgba(19, 127, 236, 0.4);
+}
+
+/* Input Fields - Dark Theme */
+.input-field {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(19, 127, 236, 0.3);
+    border-radius: 10px;
+    color: #ffffff;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.input-field:focus {
+    border-color: #137FEC;
+    box-shadow: 0 0 15px rgba(19, 127, 236, 0.3);
+    background: rgba(15, 23, 42, 0.95);
+}
+
+.input-field:hover {
+    border-color: rgba(19, 127, 236, 0.5);
+}
+
+.input-field::placeholder {
+    color: rgba(148, 163, 184, 0.6);
+}
+
+/* Select dropdown styling */
+.input-field option {
+    background: #0f172a;
+    color: #ffffff;
+    padding: 0.5rem;
+}
+
+/* For webkit browsers (Chrome, Safari) */
+select.input-field {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23137FEC' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+    cursor: pointer;
+}
+
+/* Action Buttons */
+.btn-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid rgba(19, 127, 236, 0.3);
+    background: rgba(19, 127, 236, 0.1);
+    color: #137FEC;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-icon:hover {
+    background: rgba(19, 127, 236, 0.2);
+    border-color: #137FEC;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(19, 127, 236, 0.3);
+}
+
+.btn-icon.btn-primary {
+    background: rgba(19, 127, 236, 0.15);
+    border-color: rgba(19, 127, 236, 0.4);
+    color: #137FEC;
+}
+
+.btn-icon.btn-primary:hover {
+    background: rgba(19, 127, 236, 0.3);
+    border-color: #137FEC;
+}
+
+.btn-icon.btn-success {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: rgba(34, 197, 94, 0.4);
+    color: #22c55e;
+}
+
+.btn-icon.btn-success:hover {
+    background: rgba(34, 197, 94, 0.3);
+    border-color: #22c55e;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+

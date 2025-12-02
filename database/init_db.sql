@@ -3,8 +3,7 @@
 -- ========================================
 -- Ce script est exécuté automatiquement au premier démarrage de MariaDB
 -- Il crée toutes les tables nécessaires pour stocker les résultats des scans
-
-USE clouddiagnoze;
+-- Note: Le script s'exécute automatiquement dans la base définie par MYSQL_DATABASE
 
 -- ========================================
 -- TABLE : users
