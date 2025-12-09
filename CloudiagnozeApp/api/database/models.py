@@ -69,6 +69,7 @@ class ScanRun(Base):
 
     # Colonnes
     id = Column(Integer, primary_key=True, autoincrement=True, comment="ID unique du scan")
+    session_id = Column(String(50), nullable=True, index=True, comment="ID de session pour grouper les scans multi-services (ex: scan-abc123)")
     client_id = Column(String(100), nullable=False, comment="Identifiant du client (ex: ASM-Enterprise)")
     service_type = Column(String(20), nullable=False, comment="Type de service scanné (ec2, s3, vpc, rds, etc.)")
     scan_timestamp = Column(DateTime, nullable=False, default=datetime.now, comment="Date et heure du scan")

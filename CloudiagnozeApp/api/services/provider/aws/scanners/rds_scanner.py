@@ -1,24 +1,21 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from loguru import logger
 import boto3
 from datetime import datetime, timedelta
-from sqlalchemy.orm import Session
-
-from api.database import ScanRun, RDSInstance, RDSPerformance
 
 
 class RDSScanner:
     """
     Scanner pour les instances RDS (Relational Database Service).
-    
-    Scanne toutes les instances RDS dans les régions spécifiées et stocke
-    les données directement en base de données.
+
+    Scanne toutes les instances RDS dans les régions spécifiées et retourne les données.
+    La sauvegarde en BDD est déléguée au storage_service (même pattern que EC2/S3).
     """
-    
+
     def __init__(self, session: boto3.Session, client_id: str, regions: List[str] = None):
         """
         Initialise le scanner RDS.
-        
+
         Args:
             session: Session boto3 authentifiée
             client_id: Identifiant du client
@@ -27,7 +24,7 @@ class RDSScanner:
         self.session = session
         self.client_id = client_id
         self.requested_regions = regions
-    
+
     def _get_available_regions(self) -> List[str]:
         """Récupère la liste des régions AWS disponibles pour RDS"""
         try:
@@ -39,32 +36,16 @@ class RDSScanner:
         except Exception as e:
             logger.error(f"❌ Erreur récupération des régions: {e}")
             return ['eu-west-3']  # Région par défaut
-    
-    def scan(self, db: Session, user_id: int = None) -> Dict[str, Any]:
+
+    async def scan(self) -> List[dict]:
         """
         Lance le scan des instances RDS.
-        
-        Args:
-            db: Session de base de données
-            user_id: ID de l'utilisateur qui lance le scan
-            
+
         Returns:
-            Dictionnaire avec les résultats du scan
+            Liste de dictionnaires contenant les données des instances RDS
         """
         logger.info("🗄️ Démarrage du scan RDS")
-        
-        # Créer un ScanRun avec status='running'
-        scan_run = ScanRun(
-            client_id=self.client_id,
-            service_type='rds',
-            scan_timestamp=datetime.now(),
-            total_resources=0,
-            status='running',  # ✅ Démarrer avec 'running'
-            user_id=user_id
-        )
-        db.add(scan_run)
-        db.commit()
-        
+
         # Déterminer les régions à scanner
         if self.requested_regions:
             regions_to_scan = self.requested_regions
@@ -72,41 +53,30 @@ class RDSScanner:
         else:
             regions_to_scan = self._get_available_regions()
             logger.info(f"📍 Régions disponibles: {regions_to_scan}")
-        
-        total_instances = 0
-        instances_by_region = {}
-        
+
+        instances_data = []
+
         # Scanner chaque région
         for region in regions_to_scan:
             try:
                 logger.info(f"🔍 Scan de la région {region}...")
-                instances_count = self._scan_region(region, db, scan_run)
-                instances_by_region[region] = instances_count
-                total_instances += instances_count
-                logger.success(f"✅ {instances_count} instances RDS trouvées dans {region}")
+                region_instances = self._scan_region(region)
+                instances_data.extend(region_instances)
+                logger.success(f"✅ {len(region_instances)} instances RDS trouvées dans {region}")
             except Exception as e:
                 logger.error(f"❌ Erreur lors du scan de {region}: {e}")
                 continue
-        
-        # Mettre à jour le scan_run
-        scan_run.total_resources = total_instances
-        scan_run.status = 'success' if total_instances > 0 else 'partial'
-        db.commit()
-        
-        logger.success(f"✅ Scan RDS terminé: {total_instances} instances trouvées")
-        
-        return {
-            "total_instances": total_instances,
-            "instances_by_region": instances_by_region,
-            "scan_run_id": scan_run.id
-        }
+
+        logger.success(f"✅ Scan RDS terminé: {len(instances_data)} instances trouvées")
+
+        return instances_data
     
-    def _scan_region(self, region: str, db: Session, scan_run: ScanRun) -> int:
+    def _scan_region(self, region: str) -> List[dict]:
         """
         Scanne une région spécifique.
 
         Returns:
-            Nombre d'instances RDS trouvées
+            Liste des instances RDS trouvées dans la région
         """
         logger.info(f"🌍 Connexion à la région {region}...")
         rds_client = self.session.client('rds', region_name=region)
@@ -121,23 +91,26 @@ class RDSScanner:
 
             if not instances:
                 logger.warning(f"⚠️  Aucune instance RDS dans {region}")
-                return 0
+                return []
 
-            # Scanner chaque instance
+            # Scanner chaque instance et collecter les données
+            instances_data = []
             for idx, instance in enumerate(instances, 1):
                 db_id = instance.get('DBInstanceIdentifier', 'unknown')
                 logger.info(f"📦 [{idx}/{len(instances)}] Traitement de {db_id}...")
-                self._scan_single_instance(instance, region, rds_client, db, scan_run)
+                instance_data = self._scan_single_instance(instance, region, rds_client)
+                if instance_data:
+                    instances_data.append(instance_data)
 
-            return len(instances)
+            return instances_data
         except Exception as e:
             logger.error(f"❌ Erreur lors de la récupération des instances RDS dans {region}: {e}")
             import traceback
             logger.error(traceback.format_exc())
-            return 0
+            return []
 
-    def _scan_single_instance(self, instance: dict, region: str, rds_client, db: Session, scan_run: ScanRun):
-        """Scanne une instance RDS individuelle et stocke les données"""
+    def _scan_single_instance(self, instance: dict, region: str, rds_client) -> Optional[dict]:
+        """Scanne une instance RDS individuelle et retourne ses données"""
         db_identifier = instance['DBInstanceIdentifier']
         logger.info(f"🔍 Scan de l'instance RDS: {db_identifier}")
 
@@ -147,33 +120,22 @@ class RDSScanner:
             instance_data = self._extract_instance_data(instance, region)
             logger.debug(f"  ✅ Métadonnées extraites: {len(instance_data)} champs")
 
-            # Créer l'instance RDS
-            logger.debug(f"  💾 Création de l'enregistrement RDSInstance...")
-            rds_instance = RDSInstance(
-                scan_run_id=scan_run.id,
-                client_id=self.client_id,
-                **instance_data
-            )
-            db.add(rds_instance)
-            db.flush()
-            logger.debug(f"  ✅ RDSInstance créée avec ID: {rds_instance.id}")
-
-            # Créer les métriques de performance
+            # Récupérer les métriques de performance
             logger.debug(f"  📊 Récupération des métriques CloudWatch...")
-            rds_performance = self._extract_performance_metrics(db_identifier, region, rds_client)
-            rds_performance.rds_instance_id = rds_instance.id
-            db.add(rds_performance)
-            logger.debug(f"  ✅ Métriques CloudWatch ajoutées")
+            performance_data = self._extract_performance_metrics(db_identifier, region, rds_client)
 
-            db.commit()
-            logger.success(f"✅ Instance RDS {db_identifier} sauvegardée avec succès")
+            # Fusionner les données
+            instance_data['performance'] = performance_data
+            instance_data['client_id'] = self.client_id
+
+            logger.debug(f"  ✅ Instance RDS {db_identifier} scannée")
+            return instance_data
 
         except Exception as e:
             logger.error(f"❌ Erreur scan instance RDS {db_identifier}: {e}")
             import traceback
             logger.error(traceback.format_exc())
-            db.rollback()
-            raise  # Re-raise pour voir l'erreur dans les logs
+            return None
 
     def _extract_instance_data(self, instance: dict, region: str) -> dict:
         """
@@ -270,14 +232,14 @@ class RDSScanner:
             "scan_timestamp": datetime.now()
         }
 
-    def _extract_performance_metrics(self, db_identifier: str, region: str, rds_client) -> RDSPerformance:
+    def _extract_performance_metrics(self, db_identifier: str, region: str, rds_client) -> dict:
         """
         Extrait les métriques de performance CloudWatch pour une instance RDS.
 
         Returns:
-            Objet RDSPerformance avec les métriques
+            Dictionnaire avec les métriques de performance
         """
-        rds_performance = RDSPerformance()
+        performance_data = {}
 
         try:
             cloudwatch_client = self.session.client('cloudwatch', region_name=region)
@@ -287,54 +249,54 @@ class RDSScanner:
             start_time = end_time - timedelta(hours=24)
 
             # Métriques CPU
-            rds_performance.cpu_utilization_avg = self._get_cloudwatch_metric(
+            performance_data['cpu_utilization_avg'] = self._get_cloudwatch_metric(
                 cloudwatch_client, db_identifier, 'CPUUtilization', start_time, end_time, 'Average'
             )
 
             # Métriques mémoire
-            rds_performance.freeable_memory_bytes = self._get_cloudwatch_metric(
+            performance_data['freeable_memory_bytes'] = self._get_cloudwatch_metric(
                 cloudwatch_client, db_identifier, 'FreeableMemory', start_time, end_time, 'Average'
             )
 
             # Métriques stockage
-            rds_performance.free_storage_space_bytes = self._get_cloudwatch_metric(
+            performance_data['free_storage_space_bytes'] = self._get_cloudwatch_metric(
                 cloudwatch_client, db_identifier, 'FreeStorageSpace', start_time, end_time, 'Average'
             )
 
             # Métriques connexions
-            rds_performance.database_connections = self._get_cloudwatch_metric(
+            performance_data['database_connections'] = self._get_cloudwatch_metric(
                 cloudwatch_client, db_identifier, 'DatabaseConnections', start_time, end_time, 'Average'
             )
 
             # Métriques IOPS
-            rds_performance.read_iops_avg = self._get_cloudwatch_metric(
+            performance_data['read_iops_avg'] = self._get_cloudwatch_metric(
                 cloudwatch_client, db_identifier, 'ReadIOPS', start_time, end_time, 'Average'
             )
-            rds_performance.write_iops_avg = self._get_cloudwatch_metric(
+            performance_data['write_iops_avg'] = self._get_cloudwatch_metric(
                 cloudwatch_client, db_identifier, 'WriteIOPS', start_time, end_time, 'Average'
             )
 
             # Métriques latence
-            rds_performance.read_latency_avg = self._get_cloudwatch_metric(
+            performance_data['read_latency_avg'] = self._get_cloudwatch_metric(
                 cloudwatch_client, db_identifier, 'ReadLatency', start_time, end_time, 'Average'
             )
-            rds_performance.write_latency_avg = self._get_cloudwatch_metric(
+            performance_data['write_latency_avg'] = self._get_cloudwatch_metric(
                 cloudwatch_client, db_identifier, 'WriteLatency', start_time, end_time, 'Average'
             )
 
             # Métriques throughput
-            rds_performance.read_throughput_bytes = self._get_cloudwatch_metric(
+            performance_data['read_throughput_bytes'] = self._get_cloudwatch_metric(
                 cloudwatch_client, db_identifier, 'ReadThroughput', start_time, end_time, 'Sum'
             )
-            rds_performance.write_throughput_bytes = self._get_cloudwatch_metric(
+            performance_data['write_throughput_bytes'] = self._get_cloudwatch_metric(
                 cloudwatch_client, db_identifier, 'WriteThroughput', start_time, end_time, 'Sum'
             )
 
             # Métriques réseau
-            rds_performance.network_receive_throughput_bytes = self._get_cloudwatch_metric(
+            performance_data['network_receive_throughput_bytes'] = self._get_cloudwatch_metric(
                 cloudwatch_client, db_identifier, 'NetworkReceiveThroughput', start_time, end_time, 'Sum'
             )
-            rds_performance.network_transmit_throughput_bytes = self._get_cloudwatch_metric(
+            performance_data['network_transmit_throughput_bytes'] = self._get_cloudwatch_metric(
                 cloudwatch_client, db_identifier, 'NetworkTransmitThroughput', start_time, end_time, 'Sum'
             )
 
@@ -343,7 +305,7 @@ class RDSScanner:
         except Exception as e:
             logger.warning(f"⚠️ Erreur récupération métriques pour {db_identifier}: {e}")
 
-        return rds_performance
+        return performance_data
 
     def _get_cloudwatch_metric(self, cloudwatch_client, db_identifier: str, metric_name: str,
                                 start_time: datetime, end_time: datetime, stat: str) -> float:
