@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700">
+  <defs>
+    <linearGradient id="browserGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="backendGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10B981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="dbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7C3AED;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="arrowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#F59E0B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#D97706;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="3" dy="5" stdDeviation="4" flood-opacity="0.25"/>
+    </filter>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#F59E0B"/>
+    </marker>
+    <marker id="arrowheadBack" markerWidth="10" markerHeight="7" refX="1" refY="3.5" orient="auto">
+      <polygon points="10 0, 0 3.5, 10 7" fill="#10B981"/>
+    </marker>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1000" height="700" fill="#0F172A"/>
+  
+  <!-- Title -->
+  <text x="500" y="40" text-anchor="middle" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#F8FAFC">🔄 Mécanique Frontend ↔ Backend</text>
+  <text x="500" y="65" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#94A3B8">CloudDiagnoze - Flux de communication</text>
+
+  <!-- ==================== ZONE NAVIGATEUR ==================== -->
+  <g filter="url(#shadow)">
+    <rect x="30" y="90" width="400" height="580" rx="15" fill="#1E293B" stroke="#3B82F6" stroke-width="3"/>
+    <rect x="30" y="90" width="400" height="45" rx="15" fill="url(#browserGrad)"/>
+    <text x="230" y="120" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="white">🌐 NAVIGATEUR (Client)</text>
+  </g>
+
+  <!-- localStorage -->
+  <g>
+    <rect x="55" y="150" width="160" height="80" rx="8" fill="#334155" stroke="#60A5FA" stroke-width="2"/>
+    <text x="135" y="175" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#60A5FA">📦 localStorage</text>
+    <text x="135" y="195" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#94A3B8">Token JWT</text>
+    <text x="135" y="210" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#94A3B8">Infos utilisateur</text>
+  </g>
+
+  <!-- auth.js -->
+  <g>
+    <rect x="235" y="150" width="175" height="80" rx="8" fill="#334155" stroke="#FBBF24" stroke-width="2"/>
+    <text x="322" y="175" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#FBBF24">🔑 auth.js</text>
+    <text x="322" y="195" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#94A3B8">login() / logout()</text>
+    <text x="322" y="210" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#94A3B8">getToken() / setAuth()</text>
+  </g>
+
+  <!-- auth-guard.js -->
+  <g>
+    <rect x="55" y="250" width="160" height="80" rx="8" fill="#334155" stroke="#EF4444" stroke-width="2"/>
+    <text x="135" y="275" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#EF4444">🛡️ auth-guard.js</text>
+    <text x="135" y="295" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#94A3B8">Vérifie le token</text>
+    <text x="135" y="310" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#94A3B8">Protège les pages</text>
+  </g>
+
+  <!-- api.js -->
+  <g>
+    <rect x="235" y="250" width="175" height="80" rx="8" fill="#334155" stroke="#10B981" stroke-width="2"/>
+    <text x="322" y="275" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#10B981">📡 api.js</text>
+    <text x="322" y="295" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#94A3B8">getEC2Instances()</text>
+    <text x="322" y="310" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#94A3B8">getS3Buckets() ...</text>
+  </g>
+
+  <!-- Pages HTML -->
+  <g>
+    <rect x="55" y="350" width="355" height="70" rx="8" fill="#334155" stroke="#A78BFA" stroke-width="2"/>
+    <text x="232" y="375" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#A78BFA">📄 Pages HTML</text>
+    <text x="232" y="400" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#94A3B8">login.html | dashboard.html | dashboard-ec2.html | config-scan.html</text>
+  </g>
+
+  <!-- Dashboard JS -->
+  <g>
+    <rect x="55" y="440" width="355" height="70" rx="8" fill="#334155" stroke="#EC4899" stroke-width="2"/>
+    <text x="232" y="465" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#EC4899">📊 Scripts Dashboard</text>
+    <text x="232" y="490" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#94A3B8">dashboard-ec2.js | dashboard-s3.js | scan-history.js | config-scan.js</text>
+  </g>
+
+  <!-- Interface utilisateur -->
+  <g>
+    <rect x="55" y="530" width="355" height="60" rx="8" fill="#1E3A5F" stroke="#38BDF8" stroke-width="2"/>
+    <text x="232" y="555" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#38BDF8">👁️ Interface Utilisateur</text>
+    <text x="232" y="575" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#94A3B8">Cartes, tableaux, graphiques, formulaires</text>
+  </g>
+
+  <!-- Flèches internes navigateur -->
+  <path d="M 215 190 L 235 190" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 322 230 L 322 250" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 135 230 L 135 250" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 232 420 L 232 440" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 232 510 L 232 530" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- ==================== FLECHES COMMUNICATION ==================== -->
+  <!-- Requête HTTP -->
+  <path d="M 430 280 L 560 280" stroke="#F59E0B" stroke-width="4" stroke-dasharray="10,5" marker-end="url(#arrowhead)"/>
+  <rect x="455" y="255" width="80" height="25" rx="5" fill="#F59E0B"/>
+  <text x="495" y="272" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#0F172A">HTTP + JWT</text>
+
+  <!-- Réponse JSON -->
+  <path d="M 560 320 L 430 320" stroke="#10B981" stroke-width="4" stroke-dasharray="10,5" marker-end="url(#arrowheadBack)"/>
+  <rect x="460" y="330" width="70" height="25" rx="5" fill="#10B981"/>
+  <text x="495" y="347" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#0F172A">JSON</text>
+
+  <!-- ==================== ZONE BACKEND ==================== -->
+  <g filter="url(#shadow)">
+    <rect x="570" y="90" width="400" height="400" rx="15" fill="#1E293B" stroke="#10B981" stroke-width="3"/>
+    <rect x="570" y="90" width="400" height="45" rx="15" fill="url(#backendGrad)"/>
+    <text x="770" y="120" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="white">⚙️ BACKEND (FastAPI)</text>
+  </g>
+
+  <!-- Endpoints Auth -->
+  <g>
+    <rect x="595" y="150" width="165" height="90" rx="8" fill="#334155" stroke="#FBBF24" stroke-width="2"/>
+    <text x="677" y="175" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#FBBF24">🔐 /api/v1/auth</text>
+    <text x="677" y="195" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#94A3B8">/login → Token JWT</text>
+    <text x="677" y="210" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#94A3B8">/signup → Créer compte</text>
+    <text x="677" y="225" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#94A3B8">/me → Infos user</text>
+  </g>
+
+  <!-- Endpoints Data -->
+  <g>
+    <rect x="780" y="150" width="165" height="90" rx="8" fill="#334155" stroke="#60A5FA" stroke-width="2"/>
+    <text x="862" y="175" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#60A5FA">📊 /api/v1/...</text>
+    <text x="862" y="195" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#94A3B8">/ec2/instances</text>
+    <text x="862" y="210" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#94A3B8">/s3/buckets</text>
+    <text x="862" y="225" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#94A3B8">/scans/history</text>
+  </g>
+
+  <!-- Middleware Security -->
+  <g>
+    <rect x="595" y="260" width="350" height="55" rx="8" fill="#7C3AED" stroke="#A78BFA" stroke-width="2"/>
+    <text x="770" y="285" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">🛡️ Middleware Sécurité</text>
+    <text x="770" y="302" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#E9D5FF">Vérification JWT | Rate Limiting | CORS | Validation</text>
+  </g>
+
+  <!-- Services -->
+  <g>
+    <rect x="595" y="335" width="350" height="55" rx="8" fill="#334155" stroke="#10B981" stroke-width="2"/>
+    <text x="770" y="358" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#10B981">🔧 Services Métier</text>
+    <text x="770" y="377" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#94A3B8">scan_engine.py | aws_scanner.py | security.py</text>
+  </g>
+
+  <!-- Modèles -->
+  <g>
+    <rect x="595" y="410" width="165" height="55" rx="8" fill="#334155" stroke="#EC4899" stroke-width="2"/>
+    <text x="677" y="433" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#EC4899">📋 Modèles</text>
+    <text x="677" y="452" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#94A3B8">User, EC2, S3, VPC</text>
+  </g>
+
+  <!-- SQLAlchemy -->
+  <g>
+    <rect x="780" y="410" width="165" height="55" rx="8" fill="#334155" stroke="#A78BFA" stroke-width="2"/>
+    <text x="862" y="433" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#A78BFA">🗄️ SQLAlchemy</text>
+    <text x="862" y="452" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#94A3B8">ORM → Requêtes SQL</text>
+  </g>
+
+  <!-- ==================== BASE DE DONNÉES ==================== -->
+  <g filter="url(#shadow)">
+    <rect x="570" y="510" width="400" height="160" rx="15" fill="#1E293B" stroke="#8B5CF6" stroke-width="3"/>
+    <rect x="570" y="510" width="400" height="45" rx="15" fill="url(#dbGrad)"/>
+    <text x="770" y="540" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="white">🗄️ BASE DE DONNÉES (MariaDB)</text>
+  </g>
+
+  <!-- Tables -->
+  <g>
+    <rect x="595" y="570" width="95" height="40" rx="6" fill="#334155" stroke="#60A5FA" stroke-width="1"/>
+    <text x="642" y="595" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#60A5FA">users</text>
+  </g>
+  <g>
+    <rect x="700" y="570" width="95" height="40" rx="6" fill="#334155" stroke="#10B981" stroke-width="1"/>
+    <text x="747" y="595" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#10B981">scan_runs</text>
+  </g>
+  <g>
+    <rect x="805" y="570" width="60" height="40" rx="6" fill="#334155" stroke="#F59E0B" stroke-width="1"/>
+    <text x="835" y="595" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#F59E0B">ec2</text>
+  </g>
+  <g>
+    <rect x="875" y="570" width="55" height="40" rx="6" fill="#334155" stroke="#EC4899" stroke-width="1"/>
+    <text x="902" y="595" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#EC4899">s3</text>
+  </g>
+
+  <text x="770" y="640" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#94A3B8">Données isolées par user_id → Chaque utilisateur voit SEULEMENT ses données</text>
+
+  <!-- Flèche Backend → BDD -->
+  <path d="M 770 465 L 770 510" stroke="#8B5CF6" stroke-width="3" marker-end="url(#arrowhead)"/>
+</svg>
+

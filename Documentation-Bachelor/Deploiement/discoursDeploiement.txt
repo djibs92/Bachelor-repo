@@ -1,0 +1,198 @@
+════════════════════════════════════════════════════════════════════════════════
+                    🚀 DISCOURS - DIAGRAMME DE DÉPLOIEMENT
+                            CloudDiagnoze - Soutenance Bachelor
+════════════════════════════════════════════════════════════════════════════════
+
+
+🎯 CONTEXTE (15 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"Pour déployer CloudDiagnoze, j'utilise Docker Compose qui orchestre 
+3 conteneurs indépendants. Une seule commande suffit pour lancer 
+toute l'infrastructure."
+
+
+📊 VUE D'ENSEMBLE (30 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Pointer le diagramme de haut en bas]
+
+"L'architecture de déploiement est simple et efficace :
+
+   • Une MACHINE HÔTE qui exécute Docker Engine
+   • 3 CONTENEURS isolés : Nginx, FastAPI, MariaDB
+   • Un RÉSEAU DOCKER privé pour la communication interne
+   • Un SEUL PORT exposé : le port 80
+
+C'est une architecture classique en microservices, containerisée 
+pour être reproductible sur n'importe quelle machine."
+
+
+📦 LES 3 CONTENEURS (1 minute 30)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Pointer chaque conteneur]
+
+"Chaque conteneur a un rôle précis :
+
+1️⃣  NGINX (vert) - Port 80
+   → Sert les fichiers statiques : HTML, JavaScript, CSS
+   → C'est le point d'entrée pour l'utilisateur
+   → Fait office de reverse proxy vers le backend
+
+2️⃣  FASTAPI (cyan) - Port 8000
+   → C'est le backend Python asynchrone
+   → Gère l'authentification JWT
+   → Exécute les scanners AWS
+   → Communique avec la base de données
+
+3️⃣  MARIADB (orange) - Port 3306
+   → Stocke toutes les données persistantes
+   → 11 tables : utilisateurs, scans, ressources AWS
+   → Volume Docker pour ne pas perdre les données au redémarrage"
+
+
+🌐 LE RÉSEAU DOCKER (45 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[Pointer la barre violette]
+
+"Les 3 conteneurs sont connectés sur un réseau Docker isolé 
+appelé 'clouddiagnoze_network'.
+
+Ce réseau offre plusieurs avantages :
+
+   ✓ ISOLATION : Les conteneurs ne sont pas accessibles depuis l'extérieur
+   ✓ DNS INTERNE : Le backend peut contacter la BDD par son nom 'mariadb'
+   ✓ SÉCURITÉ : Seul le port 80 est exposé au monde extérieur
+
+En pratique, un attaquant ne peut pas accéder directement au port 3306 
+de MariaDB depuis l'extérieur. Il doit passer par Nginx, puis FastAPI."
+
+
+⚡ COMMANDE DE LANCEMENT (30 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"Pour lancer toute l'infrastructure, une seule commande :
+
+   docker compose up -d
+
+Le '-d' signifie 'detached' : les conteneurs tournent en arrière-plan.
+
+Docker va automatiquement :
+   1. Télécharger les images si nécessaires
+   2. Créer le réseau isolé
+   3. Lancer les 3 conteneurs dans le bon ordre
+   4. Configurer les variables d'environnement
+
+En moins de 30 secondes, l'application est opérationnelle."
+
+
+🔮 EN PRODUCTION (45 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"Pour un déploiement en production, j'ajouterais :
+
+   1. HTTPS avec Let's Encrypt - certificat SSL gratuit
+   2. Un pipeline CI/CD avec GitHub Actions pour :
+      → Lancer les tests à chaque push
+      → Construire automatiquement les images Docker
+      → Déployer sur un serveur cloud (AWS EC2, DigitalOcean)
+   3. Un système de monitoring (Prometheus, Grafana)
+   4. Des backups automatiques de la base de données
+
+Mais pour ce projet Bachelor, Docker Compose démontre que
+l'architecture est containerisée et prête pour la production."
+
+
+🎤 CONCLUSION (20 secondes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"En résumé, le déploiement de CloudDiagnoze repose sur Docker Compose
+avec 3 conteneurs isolés sur un réseau privé.
+
+Cette architecture est :
+   • PORTABLE : fonctionne sur Linux, Mac, Windows
+   • REPRODUCTIBLE : même environnement partout
+   • SÉCURISÉE : un seul point d'entrée
+   • ÉVOLUTIVE : prête pour le cloud"
+
+
+════════════════════════════════════════════════════════════════════════════════
+                           💡 CONSEILS DE PRÉSENTATION
+════════════════════════════════════════════════════════════════════════════════
+
+
+🖐️ LANGAGE CORPOREL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   → Pointe chaque conteneur quand tu en parles
+   → Trace le chemin de la requête avec ton doigt : User → Nginx → FastAPI → DB
+   → Fais un geste "boîte" quand tu parles d'isolation
+
+
+📝 MOTS CLÉS À RETENIR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   • "Containerisé" - l'application tourne dans des conteneurs isolés
+   • "Orchestration" - Docker Compose gère le cycle de vie des conteneurs
+   • "Réseau isolé" - les conteneurs communiquent sur un réseau privé
+   • "Volume persistant" - les données survivent aux redémarrages
+   • "Reproductible" - même environnement sur toutes les machines
+
+
+❓ QUESTIONS PROBABLES DU JURY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Q1 : "Pourquoi Docker plutôt qu'une installation classique ?"
+
+   → "Docker garantit que l'application fonctionne de la même façon
+      sur ma machine de développement et en production.
+      Plus de 'ça marchait chez moi'."
+
+
+Q2 : "Que se passe-t-il si un conteneur plante ?"
+
+   → "Docker Compose peut être configuré avec 'restart: always' pour
+      redémarrer automatiquement les conteneurs. En production,
+      j'utiliserais Kubernetes pour une orchestration plus avancée."
+
+
+Q3 : "Comment les conteneurs communiquent entre eux ?"
+
+   → "Via le réseau Docker interne. Le backend utilise le nom 'mariadb'
+      pour se connecter à la base de données. Docker fait la résolution
+      DNS automatiquement."
+
+
+Q4 : "Pourquoi un seul port exposé ?"
+
+   → "Principe du moindre privilège. Moins on expose de ports,
+      moins il y a de surface d'attaque. L'utilisateur n'a besoin
+      que du port 80 pour accéder à l'application."
+
+
+Q5 : "Comment tu déploierais en production ?"
+
+   → "Je mettrais les images Docker sur un registry (Docker Hub),
+      puis je déploierais sur un serveur cloud avec un pipeline
+      GitHub Actions qui construit, teste, et déploie automatiquement."
+
+
+⏱️ TIMING RECOMMANDÉ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   VERSION COURTE (2 min) :
+   → Contexte + Vue d'ensemble + Commande de lancement
+
+   VERSION MOYENNE (4 min) :
+   → Tout sauf "En production"
+
+   VERSION LONGUE (5 min) :
+   → Tout le discours
+
+
+════════════════════════════════════════════════════════════════════════════════
+                              🚀 TU VAS GÉRER !
+════════════════════════════════════════════════════════════════════════════════
+

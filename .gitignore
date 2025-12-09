@@ -74,3 +74,6 @@ terraform.tfstate.backup
 *.tfvars
 *.tfvars.json
 
+# Documentation files that are too large
+Documentation-Bachelor/Document numérisé.pdf
+
