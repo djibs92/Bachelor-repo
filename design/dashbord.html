@@ -32,6 +32,9 @@
                         success: '#10B981',
                         warning: '#F59E0B',
                         danger: '#EF4444',
+                        aws: '#FF9900',
+                        azure: '#0078D4',
+                        gcp: '#4285F4',
                     },
                     fontFamily: {
                         sans: ['Rajdhani', 'sans-serif'],
@@ -600,6 +603,15 @@
                     <span class="material-symbols-outlined text-2xl">history</span>
                     <p class="text-sm font-medium leading-normal">Scan History</p>
                 </a>
+
+                <!-- Separator -->
+                <div class="h-px bg-slate-700/50 my-4"></div>
+
+                <!-- Change Provider -->
+                <a class="nav-link" href="provider-selection.html">
+                    <span class="material-symbols-outlined text-2xl">swap_horiz</span>
+                    <p class="text-sm font-medium leading-normal">Change Provider</p>
+                </a>
             </nav>
         </aside>
 
@@ -628,6 +640,13 @@
                             class="bg-transparent border-none outline-none text-white placeholder-slate-400 w-64"
                         />
                     </div>
+
+                    <!-- Provider Badge -->
+                    <a href="provider-selection.html" id="provider-badge" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-aws/10 border border-aws/30 hover:bg-aws/20 transition-all cursor-pointer" title="Cliquer pour changer de provider">
+                        <img id="provider-icon" src="AWSlogo.jpg" alt="AWS" class="w-6 h-6 rounded">
+                        <span id="provider-name" class="text-aws font-semibold text-sm">AWS</span>
+                        <span class="material-symbols-outlined text-aws/60 text-sm">swap_horiz</span>
+                    </a>
 
                     <!-- Notifications -->
                     <button class="relative flex items-center justify-center h-10 w-10 bg-slate-800/50 rounded-lg text-slate-300 hover:bg-primary/20 hover:text-primary border border-slate-700/50">
@@ -960,6 +979,10 @@
                 document.getElementById('user-name-header').textContent = user.full_name || 'Utilisateur';
                 document.getElementById('user-email-header').textContent = user.email;
 
+                // Provider Badge - Charger depuis localStorage
+                const selectedProvider = localStorage.getItem('selectedProvider') || 'aws';
+                updateProviderBadge(selectedProvider);
+
                 // Initialiser le menu utilisateur popup
                 userMenu.init(user);
             } catch (error) {
@@ -977,6 +1000,54 @@
             // 5. Initialiser le dashboard
             await dashboardGlobal.init();
         });
+    </script>
+
+    <!-- Provider Badge Logic -->
+    <script>
+        function updateProviderBadge(provider) {
+            const badge = document.getElementById('provider-badge');
+            const icon = document.getElementById('provider-icon');
+            const name = document.getElementById('provider-name');
+
+            const providers = {
+                aws: {
+                    name: 'AWS',
+                    icon: 'AWSlogo.jpg',
+                    color: 'aws',
+                    bgClass: 'bg-aws/10 border-aws/30 hover:bg-aws/20',
+                    textClass: 'text-aws'
+                },
+                azure: {
+                    name: 'Azure',
+                    icon: 'Microsoft-Azure.png',
+                    color: 'azure',
+                    bgClass: 'bg-azure/10 border-azure/30 hover:bg-azure/20',
+                    textClass: 'text-azure'
+                },
+                gcp: {
+                    name: 'GCP',
+                    icon: 'gcp-logo.png',
+                    color: 'gcp',
+                    bgClass: 'bg-gcp/10 border-gcp/30 hover:bg-gcp/20',
+                    textClass: 'text-gcp'
+                }
+            };
+
+            const config = providers[provider] || providers.aws;
+
+            // Update badge styling
+            badge.className = `flex items-center gap-2 px-3 py-2 rounded-lg ${config.bgClass} transition-all cursor-pointer`;
+            icon.src = config.icon;
+            icon.alt = config.name;
+            name.textContent = config.name;
+            name.className = `${config.textClass} font-semibold text-sm`;
+
+            // Update swap icon color
+            const swapIcon = badge.querySelector('.material-symbols-outlined');
+            if (swapIcon) {
+                swapIcon.className = `material-symbols-outlined ${config.textClass}/60 text-sm`;
+            }
+        }
     </script>
 
     <!-- Binary Rain Effect -->

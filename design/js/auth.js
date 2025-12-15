@@ -296,7 +296,7 @@ class AuthManager {
             // Vérifier si le token est valide
             const isValid = await this.validateToken();
             if (isValid) {
-                window.location.href = 'dashbord.html';
+                window.location.href = 'provider-selection.html';
                 return true;
             } else {
                 // Token expiré, rester sur la page de login

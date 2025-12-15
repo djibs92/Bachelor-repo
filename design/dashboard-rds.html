@@ -32,6 +32,9 @@
                         success: '#10B981',
                         warning: '#F59E0B',
                         danger: '#EF4444',
+                        aws: '#FF9900',
+                        azure: '#0078D4',
+                        gcp: '#4285F4',
                     },
                     fontFamily: {
                         sans: ['Rajdhani', 'sans-serif'],
@@ -453,6 +456,15 @@
                     <span class="material-symbols-outlined text-2xl">history</span>
                     <p class="text-sm font-medium leading-normal">Scan History</p>
                 </a>
+
+                <!-- Separator -->
+                <div class="h-px bg-slate-700/50 my-4"></div>
+
+                <!-- Change Provider -->
+                <a class="nav-link" href="provider-selection.html">
+                    <span class="material-symbols-outlined text-2xl">swap_horiz</span>
+                    <p class="text-sm font-medium leading-normal">Change Provider</p>
+                </a>
             </nav>
         </aside>
 
@@ -470,6 +482,13 @@
                         <span class="material-symbols-outlined text-slate-400">search</span>
                         <input type="text" placeholder="Rechercher..." class="bg-transparent text-white text-sm outline-none w-48">
                     </div>
+
+                    <!-- Provider Badge -->
+                    <a href="provider-selection.html" id="provider-badge" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-aws/10 border border-aws/30 hover:bg-aws/20 transition-all cursor-pointer" title="Cliquer pour changer de provider">
+                        <img id="provider-icon" src="AWSlogo.jpg" alt="AWS" class="w-6 h-6 rounded">
+                        <span id="provider-name" class="text-aws font-semibold text-sm">AWS</span>
+                        <span class="material-symbols-outlined text-aws/60 text-sm">swap_horiz</span>
+                    </a>
 
                     <!-- User Info -->
                     <div id="user-info-header" class="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-800/50 border border-slate-700/50 cursor-pointer hover:bg-slate-800">
