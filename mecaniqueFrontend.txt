@@ -1,0 +1,1231 @@
+═══════════════════════════════════════════════════════════════════════════════
+   CLOUDDIAGNOZE - MÉCANIQUE DU FRONT-END
+   Documentation complète de l'architecture et du fonctionnement
+═══════════════════════════════════════════════════════════════════════════════
+
+📋 TABLE DES MATIÈRES
+═══════════════════════════════════════════════════════════════════════════════
+1. Vue d'ensemble de l'architecture
+2. Structure des fichiers front-end
+3. Flux d'authentification
+4. Protection des pages
+5. Sélection du provider cloud
+6. Configuration API et communication
+7. Dashboard global
+8. Dashboards spécifiques par service
+9. Configuration et lancement de scans
+10. Système de polling et progression
+11. Historique des scans
+12. Paramètres utilisateur
+13. Interactions avec le backend
+14. Flux de données complet
+15. Technologies utilisées
+16. Points clés à retenir
+
+
+═══════════════════════════════════════════════════════════════════════════════
+1. VUE D'ENSEMBLE DE L'ARCHITECTURE
+═══════════════════════════════════════════════════════════════════════════════
+
+CloudDiagnoze est une application SPA (Single Page Application) qui permet de
+scanner et analyser des infrastructures cloud (AWS, Azure, GCP).
+
+ARCHITECTURE:
+┌─────────────┐       ┌──────────────┐       ┌─────────────┐
+│   Browser   │ ←────→│  Front-end   │←─────→│  Backend    │
+│   (HTML/JS) │       │   (design/)  │       │  (FastAPI)  │
+└─────────────┘       └──────────────┘       └─────────────┘
+                             │                       │
+                             ↓                       ↓
+                      localStorage             PostgreSQL
+                      (JWT Token)              + AWS API
+
+PRINCIPE DE FONCTIONNEMENT:
+- Le front-end est une collection de pages HTML statiques avec JavaScript modulaire
+- Chaque page est autonome mais partage des modules communs (auth, api, config)
+- Les données sont stockées dans une base PostgreSQL via l'API backend
+- L'authentification se fait via JWT (JSON Web Token)
+- Les scans AWS utilisent STS AssumeRole pour la sécurité
+
+
+═══════════════════════════════════════════════════════════════════════════════
+2. STRUCTURE DES FICHIERS FRONT-END
+═══════════════════════════════════════════════════════════════════════════════
+
+design/
+│
+├── 📄 Pages HTML (Interface utilisateur)
+│   ├── login.html                  ─→ Page de connexion
+│   ├── signup.html                 ─→ Page d'inscription
+│   ├── provider-selection.html     ─→ Sélection du provider (AWS/Azure/GCP)
+│   ├── dashbord.html              ─→ Dashboard global (vue d'ensemble)
+│   ├── dashboard-ec2.html         ─→ Dashboard instances EC2
+│   ├── dashboard-s3.html          ─→ Dashboard buckets S3
+│   ├── dashboard-vpc.html         ─→ Dashboard réseaux VPC
+│   ├── dashboard-rds.html         ─→ Dashboard bases de données RDS
+│   ├── config-scan-new.html       ─→ Configuration et lancement de scans
+│   ├── scan-history.html          ─→ Historique des scans
+│   └── settings.html              ─→ Paramètres utilisateur
+│
+├── 📁 js/ (Logique JavaScript modulaire)
+│   │
+│   ├── 🔐 Authentification
+│   │   ├── auth.js               ─→ Classe AuthManager (login, signup, logout)
+│   │   └── auth-guard.js         ─→ Protection des pages (vérification token)
+│   │
+│   ├── ⚙️ Configuration & API
+│   │   ├── config.env.js         ─→ URL de l'API selon l'environnement
+│   │   ├── config.js             ─→ Configuration des endpoints API
+│   │   └── api.js                ─→ Classe CloudDiagnozeAPI (requêtes HTTP)
+│   │
+│   ├── 📊 Dashboard & Stats
+│   │   ├── dashboard.js          ─→ Logique dashboard principal (legacy)
+│   │   ├── dashboard-global.js   ─→ Logique dashboard global moderne
+│   │   ├── global-stats.js       ─→ Calcul des statistiques globales
+│   │   ├── dashboard-ec2.js      ─→ Logique dashboard EC2
+│   │   ├── dashboard-s3.js       ─→ Logique dashboard S3
+│   │   ├── dashboard-vpc.js      ─→ Logique dashboard VPC
+│   │   ├── dashboard-rds.js      ─→ Logique dashboard RDS
+│   │   ├── ec2-stats.js          ─→ Statistiques EC2
+│   │   ├── s3-stats.js           ─→ Statistiques S3
+│   │   ├── vpc-stats.js          ─→ Statistiques VPC
+│   │   └── rds-stats.js          ─→ Statistiques RDS
+│   │
+│   ├── 🔍 Scan & Configuration
+│   │   ├── config-scan.js        ─→ Configuration et lancement des scans
+│   │   └── scan-history.js       ─→ Gestion de l'historique des scans
+│   │
+│   ├── 👤 Utilisateur
+│   │   ├── user-menu.js          ─→ Menu utilisateur (dropdown, logout)
+│   │   └── settings.js           ─→ Gestion des paramètres utilisateur
+│   │
+│   └── 🛠️ Utilitaires
+│       ├── page-loader.js        ─→ Loading indicator
+│       └── debug-api.js          ─→ Outils de debug API
+│
+├── 📁 css/
+│   └── dashboard-modern.css      ─→ Styles personnalisés du dashboard
+│
+└── 📁 assets/
+    └── images/
+        ├── logo.svg              ─→ Logo CloudDiagnoze
+        └── logo-simple.svg       ─→ Logo simplifié
+
+
+═══════════════════════════════════════════════════════════════════════════════
+3. FLUX D'AUTHENTIFICATION
+═══════════════════════════════════════════════════════════════════════════════
+
+ÉTAPE 1: Inscription (signup.html)
+────────────────────────────────────
+L'utilisateur arrive sur signup.html et remplit le formulaire:
+  - Email
+  - Mot de passe
+  - Nom complet (optionnel)
+  - Nom de l'entreprise (optionnel)
+  - AWS Role ARN (optionnel)
+
+→ Appel API: POST /api/v1/auth/signup
+  ├─ Paramètres: { email, password, full_name, company_name, role_arn }
+  └─ Réponse: { message: "Compte créé avec succès" }
+
+→ L'utilisateur est redirigé vers login.html
+
+
+ÉTAPE 2: Connexion (login.html)
+────────────────────────────────────
+L'utilisateur saisit ses identifiants:
+  - Email
+  - Mot de passe
+
+→ Le formulaire appelle authManager.login(email, password)
+  └─ Voir design/js/auth.js (ligne 150)
+
+→ Appel API: POST /api/v1/auth/login
+  ├─ Paramètres: { email, password }
+  └─ Réponse: {
+      access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      token_type: "bearer",
+      user: { id, email, full_name, company_name, role_arn, ... }
+    }
+
+→ Le token JWT et les infos utilisateur sont stockés dans localStorage:
+  ├─ localStorage.setItem('clouddiagnoze_token', access_token)
+  └─ localStorage.setItem('clouddiagnoze_user', JSON.stringify(user))
+
+→ Redirection vers provider-selection.html
+
+
+ÉTAPE 3: Déconnexion
+────────────────────────────────────
+L'utilisateur clique sur "Logout" dans le menu utilisateur.
+
+→ authManager.logout() est appelé
+  ├─ localStorage.removeItem('clouddiagnoze_token')
+  ├─ localStorage.removeItem('clouddiagnoze_user')
+  └─ window.location.href = 'login.html'
+
+
+═══════════════════════════════════════════════════════════════════════════════
+4. PROTECTION DES PAGES
+═══════════════════════════════════════════════════════════════════════════════
+
+PRINCIPE:
+Toutes les pages protégées incluent auth-guard.js qui vérifie automatiquement
+si l'utilisateur est connecté au chargement de la page.
+
+FICHIER: design/js/auth-guard.js
+────────────────────────────────────
+
+Au chargement de CHAQUE page protégée:
+
+1. Vérification que authManager existe
+   └─ Si absent → redirection vers login.html
+
+2. Vérification du token dans localStorage
+   └─ Si absent → redirection vers login.html
+
+3. Validation du token auprès de l'API
+   → Appel: GET /api/v1/auth/me
+     ├─ Header: Authorization: Bearer <token>
+     └─ Si 401 (Unauthorized) → Token expiré
+        ├─ authManager.clearAuth()
+        └─ Redirection vers login.html
+
+4. Si tout est OK → La page se charge normalement
+   └─ Les infos utilisateur sont rafraîchies depuis l'API
+
+EXEMPLE D'UTILISATION:
+────────────────────────────────────
+<!-- Dans dashbord.html -->
+<script src="js/config.env.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/auth-guard.js"></script>  ← Protection automatique !
+
+→ Si le token est invalide ou absent, l'utilisateur ne verra JAMAIS le contenu
+   de la page, il sera immédiatement redirigé vers login.html.
+
+
+═══════════════════════════════════════════════════════════════════════════════
+5. SÉLECTION DU PROVIDER CLOUD
+═══════════════════════════════════════════════════════════════════════════════
+
+FICHIER: design/provider-selection.html
+────────────────────────────────────────
+
+PRINCIPE:
+Après la connexion, l'utilisateur doit sélectionner le provider cloud qu'il
+souhaite scanner (AWS, Azure ou GCP).
+
+INTERFACE:
+┌─────────────────────────────────────────────────────────────┐
+│  CLOUDDIAGNOZE                                              │
+│  Select Your Cloud Provider                                │
+│                                                             │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐                │
+│  │   AWS    │  │  Azure   │  │   GCP    │                │
+│  │ ☁️        │  │ ☁️        │  │ ☁️        │                │
+│  │Available │  │Coming Soon│  │Coming Soon│               │
+│  └──────────┘  └──────────┘  └──────────┘                │
+└─────────────────────────────────────────────────────────────┘
+
+FONCTIONNEMENT:
+1. L'utilisateur clique sur une carte (ex: AWS)
+
+2. JavaScript vérifie si le provider est disponible
+   └─ Si "Coming Soon" → Animation shake (refus)
+   └─ Si disponible → Sélection
+
+3. Le choix est stocké dans localStorage
+   → localStorage.setItem('selectedProvider', 'aws')
+
+4. Animation de transition + redirection vers dashbord.html
+
+PROVIDERS SUPPORTÉS (actuellement):
+  ✅ AWS (Amazon Web Services)
+  ⏳ Azure (Microsoft) - À venir
+  ⏳ GCP (Google Cloud Platform) - À venir
+
+
+═══════════════════════════════════════════════════════════════════════════════
+6. CONFIGURATION API ET COMMUNICATION
+═══════════════════════════════════════════════════════════════════════════════
+
+Le front-end communique avec le backend via une API REST. Toute la logique
+de communication est centralisée dans design/js/api.js.
+
+FICHIER 1: design/js/config.env.js
+────────────────────────────────────
+Définit l'URL de base de l'API selon l'environnement:
+  - Production: https://clouddiagnoze.com/api/v1
+  - Développement: http://localhost:8000/api/v1
+
+window.API_BASE_URL = 'http://localhost:8000/api/v1';
+window.AUTH_API_BASE_URL = 'http://localhost:8000/api/v1/auth';
+
+
+FICHIER 2: design/js/config.js
+────────────────────────────────────
+Définit tous les endpoints de l'API:
+
+const API_CONFIG = {
+    BASE_URL: window.API_BASE_URL,
+
+    ENDPOINTS: {
+        LATEST_SCAN_SESSION: '/scans/latest-session',
+        SCANS_HISTORY: '/scans/history',
+        SCAN_STATUS: '/scans/status',
+        EC2_INSTANCES: '/ec2/instances',
+        S3_BUCKETS: '/s3/buckets',
+        VPC_INSTANCES: '/vpc/instances',
+        RDS_INSTANCES: '/rds/instances',
+        ...
+    }
+};
+
+
+FICHIER 3: design/js/api.js - Classe CloudDiagnozeAPI
+────────────────────────────────────────────────────────
+Cette classe centralise TOUTES les requêtes API.
+
+MÉTHODES PRINCIPALES:
+─────────────────────
+1. request(endpoint, options)
+   └─ Méthode générique pour faire des requêtes HTTP
+   └─ Ajoute automatiquement le token JWT dans le header
+   └─ Gère les erreurs 401 (token expiré) automatiquement
+
+2. getLatestScanSession(scanId)
+   └─ GET /scans/latest-session
+   └─ Récupère la dernière session de scan
+
+3. getScansHistory(params)
+   └─ GET /scans/history?limit=100&service_type=ec2
+   └─ Récupère l'historique des scans
+
+4. getScanStatus(services)
+   └─ GET /scans/status?services=ec2,s3,vpc
+   └─ Vérifie l'état d'un scan en cours
+
+5. getEC2Instances(params)
+   └─ GET /ec2/instances?limit=100&latest_only=true
+   └─ Récupère les instances EC2
+
+6. getS3Buckets(params)
+   └─ GET /s3/buckets?limit=100&latest_only=true
+   └─ Récupère les buckets S3
+
+7. getVPCInstances(params)
+   └─ GET /vpc/instances?limit=100&latest_only=true
+   └─ Récupère les VPCs
+
+8. getRDSInstances(params)
+   └─ GET /rds/instances?limit=100&latest_only=true
+   └─ Récupère les instances RDS
+
+9. getAllResources(params)
+   └─ Appelle getEC2, getS3, getVPC, getRDS en parallèle
+   └─ Retourne toutes les ressources en une seule fois
+
+10. getDashboardStats(params)
+    └─ Calcule les statistiques du dashboard
+    └─ (Total ressources, scans ce mois, moyenne CPU, etc.)
+
+EXEMPLE D'UTILISATION:
+─────────────────────
+// Créer une instance (déjà fait dans api.js)
+const api = new CloudDiagnozeAPI();
+
+// Récupérer les instances EC2
+const ec2Data = await api.getEC2Instances({
+    limit: 100,
+    latest_only: true,
+    region: 'eu-west-1'
+});
+
+// Le token JWT est AUTOMATIQUEMENT ajouté dans le header !
+// Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+GESTION DES ERREURS:
+─────────────────────
+- Si le token est expiré (401) → Déconnexion automatique
+- Si erreur réseau → Exception JavaScript
+- Si erreur serveur (500) → Exception JavaScript
+
+
+═══════════════════════════════════════════════════════════════════════════════
+7. DASHBOARD GLOBAL
+═══════════════════════════════════════════════════════════════════════════════
+
+FICHIER: design/dashbord.html
+────────────────────────────────────
+
+Le dashboard global est la page principale après connexion. Il affiche une
+vue d'ensemble de toute l'infrastructure cloud.
+
+COMPOSANTS AFFICHÉS:
+─────────────────────
+1. 📊 STATISTIQUES (4 cartes en haut)
+   ├─ Total Resources      → Nombre total de ressources (EC2+S3+VPC+RDS)
+   ├─ Active Alerts        → Nombre d'alertes actives
+   ├─ Scans This Month     → Nombre de scans ce mois
+   └─ Security Score       → Score de sécurité global
+
+2. 📈 GRAPHIQUES (ligne du milieu)
+   ├─ Resource Distribution → Donut chart (répartition EC2/S3/VPC/RDS)
+   ├─ Infrastructure Health → Gauge circulaire (santé globale)
+   ├─ EC2 Regions          → Bar chart (instances par région)
+   ├─ S3 Regions           → Bar chart (buckets par région)
+   └─ VPC Regions          → Bar chart (VPCs par région)
+
+3. 🚨 ALERTES (ligne du bas)
+   └─ Critical Alerts → Liste des alertes critiques
+
+
+FICHIERS JAVASCRIPT:
+─────────────────────
+1. design/js/dashboard-global.js
+   └─ Classe DashboardGlobal
+   └─ Gère l'initialisation et le rafraîchissement du dashboard
+
+2. design/js/global-stats.js
+   └─ Classe GlobalStats
+   └─ Calcule les statistiques à partir des données API
+
+FONCTIONNEMENT:
+─────────────────────
+Au chargement de la page (DOMContentLoaded):
+
+1. Vérification de l'authentification
+   └─ authManager.isAuthenticated()
+   └─ Si non authentifié → Redirection vers login.html
+
+2. Récupération des infos utilisateur
+   └─ authManager.getCurrentUser()
+   └─ Affichage du nom et email dans le header
+
+3. Initialisation du dashboard
+   └─ dashboardGlobal.init()
+
+   a) Récupération des données depuis l'API
+      ├─ api.getLatestScanSession()
+      ├─ api.getEC2Instances()
+      ├─ api.getS3Buckets()
+      ├─ api.getVPCInstances()
+      └─ api.getRDSInstances()
+
+   b) Calcul des statistiques
+      └─ globalStats.calculateStats(data)
+
+   c) Affichage des cartes de stats
+      └─ updateStatCards(stats)
+
+   d) Création des graphiques avec Chart.js
+      ├─ createResourceDistributionChart()
+      ├─ createHealthScoreChart()
+      ├─ createEC2RegionsChart()
+      ├─ createS3RegionsChart()
+      └─ createVPCRegionsChart()
+
+   e) Affichage des alertes
+      └─ updateAlertsList(alerts)
+
+4. Bouton de rafraîchissement
+   └─ Permet de recharger les données sans recharger la page
+   └─ dashboardGlobal.refreshData()
+
+
+EXEMPLE DE DONNÉES:
+─────────────────────
+Statistiques affichées:
+{
+  totalResources: 42,      // 15 EC2 + 10 S3 + 8 VPC + 9 RDS
+  scansThisMonth: 5,       // Nombre de scans ce mois
+  totalScans: 12,          // Total de scans depuis le début
+  activeAlerts: 3,         // Alertes critiques
+  avgCPU: 45.2,            // Moyenne CPU des instances EC2
+  distribution: {
+    aws: 42,
+    azure: 0,
+    gcp: 0
+  }
+}
+
+
+═══════════════════════════════════════════════════════════════════════════════
+8. DASHBOARDS SPÉCIFIQUES PAR SERVICE
+═══════════════════════════════════════════════════════════════════════════════
+
+CloudDiagnoze propose 4 dashboards spécialisés pour chaque service AWS:
+
+1. dashboard-ec2.html  → Instances EC2
+2. dashboard-s3.html   → Buckets S3
+3. dashboard-vpc.html  → Réseaux VPC
+4. dashboard-rds.html  → Bases de données RDS
+
+PRINCIPE COMMUN:
+────────────────
+Chaque dashboard fonctionne sur le même modèle:
+  - Page HTML (.html)
+  - Script JavaScript principal (.js)
+  - Script de statistiques (*-stats.js)
+
+EXEMPLE: DASHBOARD EC2
+────────────────────────────────────
+
+FICHIERS:
+  - design/dashboard-ec2.html
+  - design/js/dashboard-ec2.js
+  - design/js/ec2-stats.js
+
+COMPOSANTS AFFICHÉS:
+  1. Statistiques globales
+     ├─ Total Instances
+     ├─ Running Instances
+     ├─ Stopped Instances
+     └─ Average CPU Usage
+
+  2. Filtres
+     ├─ Par région (us-east-1, eu-west-1, ...)
+     ├─ Par état (running, stopped, terminated)
+     └─ Par type (t2.micro, t2.small, m5.large, ...)
+
+  3. Graphiques
+     ├─ Distribution par région
+     ├─ Distribution par type
+     └─ Utilisation CPU par instance
+
+  4. Tableau des instances
+     └─ Liste détaillée de toutes les instances avec:
+        - ID
+        - Nom
+        - Région
+        - Type
+        - État
+        - CPU
+        - Actions (Voir détails)
+
+FONCTIONNEMENT:
+  1. Au chargement → Appel API: GET /ec2/instances
+  2. Calcul des stats → ec2-stats.js
+  3. Affichage des graphiques → Chart.js
+  4. Création du tableau → JavaScript vanilla
+  5. Gestion des filtres → Re-calcul et re-affichage
+
+
+AUTRES DASHBOARDS:
+────────────────────────────────────
+
+DASHBOARD S3 (dashboard-s3.html):
+  ├─ Total Buckets
+  ├─ Total Size
+  ├─ Public Buckets (🚨 alerte sécurité)
+  ├─ Versioning Enabled
+  ├─ Distribution par région
+  └─ Tableau des buckets
+
+DASHBOARD VPC (dashboard-vpc.html):
+  ├─ Total VPCs
+  ├─ Total Subnets
+  ├─ Internet Gateways
+  ├─ NAT Gateways
+  ├─ Distribution par région
+  └─ Tableau des VPCs
+
+DASHBOARD RDS (dashboard-rds.html):
+  ├─ Total Instances
+  ├─ Running Instances
+  ├─ Total Storage
+  ├─ Average CPU Usage
+  ├─ Distribution par région
+  ├─ Distribution par moteur (MySQL, PostgreSQL, etc.)
+  └─ Tableau des instances
+
+
+═══════════════════════════════════════════════════════════════════════════════
+9. CONFIGURATION ET LANCEMENT DE SCANS
+═══════════════════════════════════════════════════════════════════════════════
+
+FICHIER: design/config-scan-new.html
+────────────────────────────────────
+
+Cette page permet de configurer et lancer un nouveau scan AWS.
+
+INTERFACE:
+┌─────────────────────────────────────────────────────────────┐
+│  NEW SCAN CONFIGURATION                                     │
+│                                                             │
+│  1. SELECT SERVICES TO SCAN                                │
+│     ☐ EC2 (Instances)                                      │
+│     ☐ S3 (Buckets)                                         │
+│     ☐ VPC (Networks)                                       │
+│     ☐ RDS (Databases)                                      │
+│                                                             │
+│  2. SELECT AWS REGIONS                                     │
+│     ☐ All Regions                                          │
+│     ☐ us-east-1  ☐ us-east-2  ☐ us-west-1  ☐ us-west-2   │
+│     ☐ eu-west-1  ☐ eu-west-2  ☐ eu-central-1             │
+│     ...                                                     │
+│                                                             │
+│  3. ROLE ARN (from settings)                               │
+│     arn:aws:iam::123456789012:role/CloudDiagnozeRole      │
+│                                                             │
+│  [LAUNCH SCAN]                                             │
+│                                                             │
+│  📊 RECENT SCANS                                           │
+│     #abc123 | EC2, S3 | 2024-01-15 14:30 | ✅ Completed   │
+│     #def456 | VPC, RDS | 2024-01-15 12:00 | ✅ Completed  │
+└─────────────────────────────────────────────────────────────┘
+
+
+FICHIER: design/js/config-scan.js
+────────────────────────────────────
+
+Classe ConfigScan qui gère toute la logique.
+
+PROPRIÉTÉS:
+───────────
+- selectedServices: []     → Liste des services sélectionnés
+- selectedRegions: []      → Liste des régions sélectionnées
+- userRoleArn: ""          → ARN du rôle AWS (depuis settings)
+- pollingInterval: null    → Intervalle pour le polling
+- scannedServices: []      → Services en cours de scan
+
+MÉTHODES:
+────────────────────────────────────
+
+1. init()
+   └─ Initialisation de la page
+   └─ Chargement de l'historique des scans
+
+2. toggleService(service)
+   └─ Active/désactive un service (EC2, S3, VPC, RDS)
+   └─ Met à jour la liste selectedServices[]
+
+3. toggleRegion(region, checked)
+   └─ Active/désactive une région
+   └─ Met à jour la liste selectedRegions[]
+
+4. toggleAllRegions(checked)
+   └─ Sélectionne/désélectionne toutes les régions
+
+5. startScan() ← MÉTHODE PRINCIPALE
+   └─ Lance le scan
+
+   VALIDATION:
+   ───────────
+   a) Vérifier qu'au moins 1 service est sélectionné
+   b) Vérifier qu'au moins 1 région est sélectionnée
+   c) Vérifier que le Role ARN est configuré
+      └─ authManager.getCurrentUser()
+      └─ Si pas de role_arn → Redirection vers settings.html
+
+   LANCEMENT:
+   ──────────
+   d) Désactiver le bouton de scan
+   e) Afficher les barres de progression pour chaque service
+   f) Appeler scanAllServices(selectedServices)
+
+6. scanAllServices(services) ← SCAN MULTI-SERVICES
+   └─ Lance UN SEUL scan pour TOUS les services sélectionnés
+   └─ Cela garantit que tous les services auront le même timestamp
+
+   REQUÊTE API:
+   ────────────
+   POST /api/v1/scans
+   {
+     "provider": "aws",
+     "services": ["ec2", "s3", "vpc"],  ← Tous en une fois !
+     "auth_mode": {
+       "type": "sts",
+       "role_arn": "arn:aws:iam::123456789012:role/CloudDiagnozeRole"
+     },
+     "client_id": "ASM-Enterprise",
+     "regions": ["us-east-1", "eu-west-1"]
+   }
+
+   RÉPONSE:
+   ────────
+   {
+     "scan_id": "abc123def456",
+     "status": "QUEUED",
+     "message": "Scan EC2, S3, VPC démarré en arrière-plan"
+   }
+
+   → Le backend lance le scan en tâche de fond (BackgroundTask)
+   → Le front-end démarre le polling pour vérifier l'état
+
+7. startScanPolling(services) ← VÉRIFICATION ÉTAT
+   └─ Voir section suivante (Polling)
+
+
+═══════════════════════════════════════════════════════════════════════════════
+10. SYSTÈME DE POLLING ET PROGRESSION
+═══════════════════════════════════════════════════════════════════════════════
+
+PRINCIPE:
+─────────
+Le scan AWS prend du temps (10-30 secondes). Le front-end ne peut pas attendre
+la réponse de l'API, il doit donc vérifier régulièrement l'état du scan.
+
+C'est le POLLING: interroger l'API toutes les 500ms pour savoir si le scan
+est terminé.
+
+FICHIER: design/js/config-scan.js → Méthode startScanPolling()
+─────────────────────────────────────────────────────────────────
+
+FONCTIONNEMENT:
+───────────────
+
+1. INITIALISATION (0-10%)
+   ─────────────────────────
+   Au lancement du scan, chaque service démarre à 10% de progression.
+   └─ updateServiceProgress(service, 10, 0)
+
+2. PROGRESSION ARTIFICIELLE (10% → 70%)
+   ─────────────────────────────────────
+   Pour donner une impression de fluidité, la progression monte artificiellement
+   de 10% à 70% sur 4 secondes.
+
+   setInterval(() => {
+     if (progress < 70) {
+       progress += 3;  // +3% toutes les 200ms
+       updateServiceProgress(service, progress, 0);
+     }
+   }, 200);
+
+3. POLLING API (toutes les 500ms)
+   ─────────────────────────────────
+   En parallèle, le front-end interroge l'API pour connaître l'état réel.
+
+   GET /api/v1/scans/status?services=ec2,s3,vpc
+
+   RÉPONSE:
+   {
+     "completed": false,
+     "services_status": {
+       "ec2": {
+         "completed": false,
+         "total_resources": 0
+       },
+       "s3": {
+         "completed": true,
+         "total_resources": 12
+       },
+       "vpc": {
+         "completed": false,
+         "total_resources": 0
+       }
+     }
+   }
+
+4. MISE À JOUR DE LA PROGRESSION RÉELLE
+   ──────────────────────────────────────
+   Dès qu'un service est marqué comme "completed" par l'API:
+
+   a) Arrêter la progression artificielle pour ce service
+   b) Passer de 70% à 100% en douceur (animation 500ms)
+      └─ updateServiceProgress(service, 100, total_resources)
+   c) Marquer le service comme terminé
+      └─ completeServiceProgress(service)
+
+5. FIN DU SCAN
+   ─────────────
+   Quand TOUS les services sont "completed":
+
+   a) Arrêter le polling
+   b) Afficher une notification de succès
+   c) Attendre 2 secondes
+   d) Rediriger vers le dashboard
+      └─ window.location.href = 'dashbord.html'
+
+
+BARRES DE PROGRESSION:
+──────────────────────
+
+Chaque carte de service (EC2, S3, VPC, RDS) possède:
+  - Un overlay de progression (remplissage de gauche à droite)
+  - Un badge de pourcentage (0% → 100%)
+
+<div class="service-card" data-service="ec2">
+  <div class="progress-overlay" data-progress-overlay="ec2"></div>
+  <div class="progress-badge" data-progress-badge="ec2">0%</div>
+</div>
+
+MÉTHODES D'AFFICHAGE:
+─────────────────────
+- showServiceProgress(service)
+  └─ Affiche la barre à 0%
+
+- updateServiceProgress(service, percentage, resourcesCount)
+  └─ Met à jour la progression (0-100%)
+
+- completeServiceProgress(service)
+  └─ Marque le service comme terminé (100% + style vert)
+
+- errorServiceProgress(service)
+  └─ Marque le service en erreur (style rouge)
+
+
+═══════════════════════════════════════════════════════════════════════════════
+11. HISTORIQUE DES SCANS
+═══════════════════════════════════════════════════════════════════════════════
+
+FICHIER: design/scan-history.html
+────────────────────────────────────
+
+Cette page affiche l'historique de tous les scans effectués par l'utilisateur.
+
+FICHIER: design/js/scan-history.js
+────────────────────────────────────
+
+FONCTIONNEMENT:
+───────────────
+
+1. Au chargement de la page
+   └─ Appel API: GET /api/v1/scans/history?limit=100
+
+2. Réponse de l'API
+   {
+     "scans": [
+       {
+         "scan_id": "abc123",
+         "service_type": "ec2",
+         "scan_timestamp": "2024-01-15T14:30:00Z",
+         "status": "success",
+         "total_resources": 15,
+         "region": "eu-west-1",
+         "client_id": "ASM-Enterprise"
+       },
+       {
+         "scan_id": "abc123",
+         "service_type": "s3",
+         "scan_timestamp": "2024-01-15T14:30:00Z",
+         "status": "success",
+         "total_resources": 10,
+         "region": "eu-west-1",
+         "client_id": "ASM-Enterprise"
+       },
+       ...
+     ],
+     "total_scans": 24
+   }
+
+3. Groupement des scans
+   └─ Les scans lancés en même temps (même timestamp) sont regroupés
+   └─ groupScansByTimestamp(scans)
+
+   Exemple:
+   ────────
+   Scan #abc123 (2024-01-15 14:30)
+     ├─ EC2: 15 ressources ✅
+     ├─ S3: 10 ressources ✅
+     └─ VPC: 8 ressources ✅
+
+4. Affichage dans un tableau
+   └─ Chaque ligne = 1 groupe de scans
+   └─ Clic sur une ligne → Afficher les détails (modal)
+
+FILTRES:
+────────
+- Par service (EC2, S3, VPC, RDS)
+- Par statut (success, failed, running)
+- Par date (ce mois, dernier mois, tout)
+
+
+═══════════════════════════════════════════════════════════════════════════════
+12. PARAMÈTRES UTILISATEUR
+═══════════════════════════════════════════════════════════════════════════════
+
+FICHIER: design/settings.html
+────────────────────────────────────
+
+Cette page permet à l'utilisateur de modifier ses informations:
+  - Nom complet
+  - Nom de l'entreprise
+  - AWS Role ARN (TRÈS IMPORTANT pour les scans)
+  - Mot de passe
+
+FICHIER: design/js/settings.js
+────────────────────────────────────
+
+FONCTIONNEMENT:
+───────────────
+
+1. Chargement des infos actuelles
+   └─ authManager.getCurrentUser()
+   └─ Pré-remplir les champs du formulaire
+
+2. Modification des informations
+   └─ L'utilisateur modifie les champs
+   └─ Clic sur "Save Changes"
+
+3. Sauvegarde
+   └─ Appel API: PATCH /api/v1/auth/me
+      {
+        "full_name": "John Doe",
+        "company_name": "ACME Corp",
+        "role_arn": "arn:aws:iam::123456789012:role/CloudDiagnozeRole"
+      }
+
+4. Mise à jour du localStorage
+   └─ Les infos utilisateur sont mises à jour dans localStorage
+   └─ authManager.setAuth(token, updatedUser)
+
+RÔLE ARN AWS:
+─────────────
+C'est le paramètre le plus important !
+
+Sans Role ARN configuré, l'utilisateur ne peut PAS lancer de scan.
+
+Le Role ARN permet à CloudDiagnoze d'assumer un rôle AWS (STS AssumeRole)
+pour accéder aux ressources du compte AWS de l'utilisateur de manière sécurisée.
+
+Exemple de Role ARN:
+  arn:aws:iam::123456789012:role/CloudDiagnozeRole
+
+Permissions nécessaires:
+  - ec2:DescribeInstances
+  - s3:ListBuckets
+  - ec2:DescribeVpcs
+  - rds:DescribeDBInstances
+
+
+═══════════════════════════════════════════════════════════════════════════════
+13. INTERACTIONS AVEC LE BACKEND
+═══════════════════════════════════════════════════════════════════════════════
+
+Le backend est une API FastAPI (Python) qui gère:
+  - L'authentification (JWT)
+  - Le stockage des données (PostgreSQL)
+  - Les scans AWS (boto3 + STS AssumeRole)
+
+FICHIER: CloudiagnozeApp/main.py
+────────────────────────────────────
+
+ROUTES PRINCIPALES:
+───────────────────
+
+1. AUTHENTIFICATION (api/endpoints/auth.py)
+   ─────────────────────────────────────────
+   POST /api/v1/auth/signup
+   POST /api/v1/auth/login
+   GET /api/v1/auth/me
+   PATCH /api/v1/auth/me
+
+2. SCANS (api/endpoints/scan.py)
+   ────────────────────────────────
+   POST /api/v1/scans
+   GET /api/v1/scans/status?services=ec2,s3
+   GET /api/v1/scans/history?limit=100
+   GET /api/v1/scans/latest-session
+
+3. RESSOURCES (api/endpoints/scan.py + events.py)
+   ───────────────────────────────────────────────
+   GET /api/v1/ec2/instances
+   GET /api/v1/ec2/instances/{id}
+   GET /api/v1/s3/buckets
+   GET /api/v1/s3/buckets/{name}
+   GET /api/v1/vpc/instances
+   GET /api/v1/rds/instances
+
+ISOLATION DES DONNÉES:
+──────────────────────
+Toutes les routes (sauf signup/login) nécessitent un token JWT.
+
+Le token JWT contient le user_id de l'utilisateur connecté.
+
+Le backend filtre AUTOMATIQUEMENT toutes les données par user_id:
+  → L'utilisateur A ne voit QUE ses propres scans et ressources
+  → L'utilisateur B ne voit QUE ses propres scans et ressources
+
+Cela se fait via la dépendance `current_user: User = Depends(get_current_user)`
+
+EXEMPLE:
+────────
+async def get_ec2_instances(
+    current_user: User = Depends(get_current_user)  ← Injection du user
+):
+    # Filtrer par user_id automatiquement
+    instances = db.query(EC2Instance)\
+                  .filter(EC2Instance.user_id == current_user.id)\
+                  .all()
+    return instances
+
+
+SCAN AWS:
+─────────
+
+Quand un scan est lancé (POST /scans):
+
+1. Le backend reçoit la requête avec:
+   - provider: "aws"
+   - services: ["ec2", "s3"]
+   - auth_mode: { type: "sts", role_arn: "..." }
+   - regions: ["us-east-1"]
+
+2. Le backend démarre une tâche de fond (BackgroundTask)
+   └─ Cette tâche va appeler scan_list_service()
+
+3. scan_list_service() (dans api/services/scan_engine.py):
+   a) Assume le rôle AWS avec boto3.STS.assume_role()
+   b) Pour chaque service (ec2, s3, ...):
+      - Créer un scanner spécifique (EC2Scanner, S3Scanner, ...)
+      - Appeler scanner.scan(regions)
+      - Sauvegarder les résultats dans PostgreSQL
+   c) Marquer le scan comme "completed"
+
+4. Le front-end interroge GET /scans/status pour savoir si c'est terminé
+
+5. Quand terminé, le front-end récupère les données:
+   GET /ec2/instances → Retourne les instances scannées
+
+
+═══════════════════════════════════════════════════════════════════════════════
+14. FLUX DE DONNÉES COMPLET
+═══════════════════════════════════════════════════════════════════════════════
+
+Voici le flux complet d'utilisation de CloudDiagnoze:
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ÉTAPE 1: INSCRIPTION & CONNEXION                                        │
+└──────────────────────────────────────────────────────────────────────────┘
+Utilisateur → signup.html → POST /auth/signup → Compte créé
+Utilisateur → login.html → POST /auth/login → JWT Token
+Token stocké dans localStorage
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ÉTAPE 2: PROTECTION & VALIDATION                                        │
+└──────────────────────────────────────────────────────────────────────────┘
+Chaque page → auth-guard.js → GET /auth/me (avec JWT)
+  ✅ Token valide → Page chargée
+  ❌ Token invalide → Redirection vers login.html
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ÉTAPE 3: SÉLECTION DU PROVIDER                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+Utilisateur → provider-selection.html → Sélectionne AWS
+Choix stocké dans localStorage → Redirection vers dashbord.html
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ÉTAPE 4: DASHBOARD GLOBAL                                               │
+└──────────────────────────────────────────────────────────────────────────┘
+dashbord.html → Initialisation
+  → api.getLatestScanSession() → Dernière session de scan
+  → api.getEC2Instances() → Instances EC2
+  → api.getS3Buckets() → Buckets S3
+  → api.getVPCInstances() → VPCs
+  → api.getRDSInstances() → Instances RDS
+
+Calcul des statistiques → Affichage des graphiques (Chart.js)
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ÉTAPE 5: CONFIGURATION D'UN NOUVEAU SCAN                                │
+└──────────────────────────────────────────────────────────────────────────┘
+Utilisateur → config-scan-new.html
+  1. Sélectionne services: ☑ EC2, ☑ S3, ☑ VPC
+  2. Sélectionne régions: ☑ us-east-1, ☑ eu-west-1
+  3. Vérifie Role ARN dans settings
+  4. Clic sur "Launch Scan"
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ÉTAPE 6: LANCEMENT DU SCAN                                              │
+└──────────────────────────────────────────────────────────────────────────┘
+configScan.startScan()
+  → configScan.scanAllServices(["ec2", "s3", "vpc"])
+  → POST /api/v1/scans {
+      provider: "aws",
+      services: ["ec2", "s3", "vpc"],
+      auth_mode: { type: "sts", role_arn: "..." },
+      regions: ["us-east-1", "eu-west-1"]
+    }
+
+Backend → BackgroundTask → scan_list_service()
+  → Assume Role AWS (STS)
+  → EC2Scanner.scan(regions) → Sauvegarde dans PostgreSQL
+  → S3Scanner.scan(regions) → Sauvegarde dans PostgreSQL
+  → VPCScanner.scan(regions) → Sauvegarde dans PostgreSQL
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ÉTAPE 7: POLLING (Vérification de l'état)                               │
+└──────────────────────────────────────────────────────────────────────────┘
+Front-end → startScanPolling()
+  → Toutes les 500ms: GET /api/v1/scans/status?services=ec2,s3,vpc
+
+  Progression artificielle: 10% → 70% (animation fluide)
+
+  Réponse API:
+  {
+    "completed": false,
+    "services_status": {
+      "ec2": { "completed": true, "total_resources": 15 },
+      "s3": { "completed": true, "total_resources": 10 },
+      "vpc": { "completed": false, "total_resources": 0 }
+    }
+  }
+
+  → Mise à jour des barres de progression en temps réel
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ÉTAPE 8: SCAN TERMINÉ                                                   │
+└──────────────────────────────────────────────────────────────────────────┘
+Quand completed: true
+  → Arrêter le polling
+  → Afficher notification de succès
+  → Attendre 2 secondes
+  → Redirection vers dashbord.html
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ÉTAPE 9: VISUALISATION DES RÉSULTATS                                    │
+└──────────────────────────────────────────────────────────────────────────┘
+dashbord.html → Affiche les nouvelles données
+  → Statistiques mises à jour
+  → Graphiques mis à jour
+  → Alertes affichées
+
+Dashboards spécifiques:
+  → dashboard-ec2.html → Détails des instances EC2
+  → dashboard-s3.html → Détails des buckets S3
+  → dashboard-vpc.html → Détails des VPCs
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ÉTAPE 10: HISTORIQUE                                                    │
+└──────────────────────────────────────────────────────────────────────────┘
+scan-history.html → GET /api/v1/scans/history
+  → Affiche tous les scans passés
+  → Groupés par timestamp
+  → Clic sur un scan → Voir les détails
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ÉTAPE 11: PARAMÈTRES                                                    │
+└──────────────────────────────────────────────────────────────────────────┘
+settings.html → Modifier Role ARN, infos utilisateur
+  → PATCH /api/v1/auth/me
+  → Mise à jour dans PostgreSQL + localStorage
+
+
+═══════════════════════════════════════════════════════════════════════════════
+15. TECHNOLOGIES UTILISÉES
+═══════════════════════════════════════════════════════════════════════════════
+
+FRONT-END:
+──────────
+✅ HTML5                     → Structure des pages
+✅ CSS3 + Tailwind CSS       → Styles et design moderne
+✅ JavaScript ES6+ (Vanilla) → Logique front-end (pas de framework)
+✅ Chart.js 4.4.0            → Graphiques et visualisations
+✅ Material Symbols          → Icônes Google
+✅ Google Fonts              → Typographies (Orbitron, Rajdhani, JetBrains Mono)
+✅ Jest                      → Tests unitaires JavaScript
+
+BACK-END:
+─────────
+✅ Python 3.14               → Langage principal
+✅ FastAPI                   → Framework API REST
+✅ SQLAlchemy                → ORM pour PostgreSQL
+✅ PostgreSQL                → Base de données
+✅ boto3                     → SDK AWS pour Python
+✅ JWT (JSON Web Token)      → Authentification
+✅ Pydantic                  → Validation des données
+✅ uvicorn                   → Serveur ASGI
+
+CLOUD & INFRA:
+──────────────
+✅ AWS (Amazon Web Services) → Cloud provider principal
+✅ STS (Security Token Service) → AssumeRole pour sécurité
+✅ Docker                    → Containerisation (backend + frontend)
+✅ Docker Compose            → Orchestration multi-containers
+✅ Nginx                     → Reverse proxy + serveur web
+✅ Terraform (optionnel)     → Infrastructure as Code
+
+OUTILS DE DÉVELOPPEMENT:
+────────────────────────
+✅ Git                       → Versioning
+✅ GitHub                    → Hébergement du code
+✅ pytest                    → Tests backend Python
+✅ moto                      → Mock AWS pour tests
+✅ Claude Code               → Assistant IA pour le développement
+
+
+═══════════════════════════════════════════════════════════════════════════════
+16. POINTS CLÉS À RETENIR
+═══════════════════════════════════════════════════════════════════════════════
+
+1. ARCHITECTURE MODULAIRE
+   ─────────────────────
+   Le front-end est organisé en modules JavaScript réutilisables.
+   Chaque fonctionnalité a son propre fichier (.js).
+
+2. AUTHENTIFICATION SÉCURISÉE
+   ───────────────────────────
+   JWT stocké dans localStorage + Validation automatique sur chaque page.
+   Token expiré → Déconnexion automatique.
+
+3. ISOLATION DES DONNÉES
+   ──────────────────────
+   Chaque utilisateur voit uniquement SES PROPRES données.
+   Le backend filtre tout par user_id.
+
+4. COMMUNICATION API CENTRALISÉE
+   ──────────────────────────────
+   Toutes les requêtes passent par la classe CloudDiagnozeAPI (api.js).
+   Token JWT ajouté automatiquement à chaque requête.
+
+5. SCAN MULTI-SERVICES
+   ──────────────────────
+   Un seul appel API pour scanner plusieurs services AWS en même temps.
+   Garantit que tous les services ont le même timestamp.
+
+6. POLLING INTELLIGENT
+   ──────────────────────
+   Progression artificielle (10% → 70%) + Vérification backend toutes les 500ms.
+   Interface fluide et réactive.
+
+7. DASHBOARDS INTERACTIFS
+   ─────────────────────
+   Graphiques Chart.js + Filtres + Tableaux dynamiques.
+   Mise à jour en temps réel sans recharger la page.
+
+8. SÉCURITÉ AWS
+   ────────────
+   Utilisation de STS AssumeRole pour accéder aux ressources AWS.
+   Les credentials AWS ne sont JAMAIS stockés côté front-end.
+
+9. RESPONSIVE DESIGN
+   ──────────────────
+   Interface adaptée à tous les écrans (desktop, tablette, mobile).
+   Utilisation de Tailwind CSS pour le responsive.
+
+10. TESTS AUTOMATISÉS
+    ─────────────────
+    Tests Jest pour le front-end + pytest pour le backend.
+    Mock AWS avec moto pour tester sans vraie infra.
+
+
+═══════════════════════════════════════════════════════════════════════════════
+FIN DE LA DOCUMENTATION
+═══════════════════════════════════════════════════════════════════════════════
+
+Pour toute question ou amélioration, consultez le code source:
+  - Front-end: design/
+  - Back-end: CloudiagnozeApp/
+
+Documentation officielle du projet:
+  - Documentation-Bachelor/
+
+Diagramme visuel:
+  - mecaniqueFront.svg (à la racine du projet)
+
+
+Projet réalisé dans le cadre du Bachelor 2024/2025.
+© CloudDiagnoze - Tous droits réservés.
