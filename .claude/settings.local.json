@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(jj log:*)",
+      "Bash(jj status:*)",
+      "Bash(jj bookmark:*)",
+      "Bash(jj diff:*)",
+      "Bash(jj abandon:*)",
+      "Bash(jj describe:*)",
+      "Bash(jj git push:*)"
+    ]
+  },
+  "Transform": "AWS::Serverless-2016-10-31"
+}
