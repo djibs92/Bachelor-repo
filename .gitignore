@@ -47,6 +47,11 @@ env/
 .DS_Store
 Thumbs.db
 
+# Node modules
+node_modules/
+design/node_modules/
+design/coverage/
+
 # Logs
 *.log
 logs/

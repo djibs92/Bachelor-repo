@@ -12,9 +12,9 @@ def get_assumed_session(role_arn: str):
     try:
         sts = boto3.client(
             "sts",
-            aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
-            aws_secret_access_key=os.getenv("AWS_SECRET_KEY"),
-            region_name=os.getenv("AWS_REGION")
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+            region_name=os.getenv("AWS_DEFAULT_REGION", "eu-west-1")
         )
 
         response = sts.assume_role(
@@ -29,7 +29,7 @@ def get_assumed_session(role_arn: str):
             aws_access_key_id=credentials['AccessKeyId'],
             aws_secret_access_key=credentials['SecretAccessKey'],
             aws_session_token=credentials['SessionToken'],
-            region_name=os.getenv("AWS_REGION")
+            region_name=os.getenv("AWS_DEFAULT_REGION", "eu-west-1")
         )
         return session
 
@@ -37,8 +37,8 @@ def get_assumed_session(role_arn: str):
         logger.error("❌ Erreur AssumeRole : {}", str(e))
         logger.warning("🔁 Fallback vers les credentials .env locaux")
         return boto3.Session(
-            aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
-            aws_secret_access_key=os.getenv("AWS_SECRET_KEY"),
-            region_name=os.getenv("AWS_REGION")
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+            region_name=os.getenv("AWS_DEFAULT_REGION", "eu-west-1")
         )
         

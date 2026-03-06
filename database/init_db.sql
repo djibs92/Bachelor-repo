@@ -32,6 +32,7 @@ COMMENT='Utilisateurs de CloudDiagnoze';
 -- Stocke les informations sur chaque exécution de scan
 CREATE TABLE IF NOT EXISTS scan_runs (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    session_id VARCHAR(50) NULL COMMENT 'ID de session pour grouper les scans multi-services',
     client_id VARCHAR(100) NOT NULL COMMENT 'Identifiant du client (ex: ASM-Enterprise)',
     service_type VARCHAR(20) NOT NULL COMMENT 'Type de service scanné (ec2, s3, vpc, rds)',
     scan_timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Date et heure du scan',
@@ -39,6 +40,7 @@ CREATE TABLE IF NOT EXISTS scan_runs (
     status ENUM('running', 'success', 'partial', 'failed') DEFAULT 'running' COMMENT 'Statut du scan',
     user_id INT COMMENT 'ID de l utilisateur qui a lancé le scan',
 
+    INDEX idx_session_id (session_id),
     INDEX idx_client_service (client_id, service_type),
     INDEX idx_timestamp (scan_timestamp),
     INDEX idx_user_id (user_id),
