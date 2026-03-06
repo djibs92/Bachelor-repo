@@ -5,7 +5,7 @@
 // ✅ SÉCURITÉ : URL de base depuis config.env.js (varie selon l'environnement)
 const API_CONFIG = {
     // URL de base de l'API (définie dans config.env.js)
-    BASE_URL: window.API_BASE_URL || 'http://localhost:8000/api/v1',
+    BASE_URL: window.API_BASE_URL || '/api/v1',
     
     // Endpoints disponibles
     ENDPOINTS: {
@@ -33,4 +33,3 @@ const API_CONFIG = {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = API_CONFIG;
 }
-

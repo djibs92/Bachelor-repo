@@ -20,13 +20,13 @@ const ENV = {
 // Configuration des URLs selon l'environnement
 const ENV_CONFIG = {
     development: {
-        API_BASE_URL: 'http://localhost:8000/api/v1',
-        AUTH_API_BASE_URL: 'http://localhost:8000/api/v1/auth'
+        API_BASE_URL: '/api/v1',
+        AUTH_API_BASE_URL: '/api/v1/auth'
     },
     production: {
         // ⚠️ À REMPLACER par vos URLs de production (HTTPS obligatoire)
-        API_BASE_URL: 'https://api.votre-domaine.com/api/v1',
-        AUTH_API_BASE_URL: 'https://api.votre-domaine.com/api/v1/auth'
+        API_BASE_URL: '/api/v1',
+        AUTH_API_BASE_URL: '/api/v1/auth'
     }
 };
 
@@ -42,4 +42,3 @@ window.AUTH_API_BASE_URL = CONFIG.AUTH_API_BASE_URL;
 console.log(`🌍 Environnement détecté : ${CURRENT_ENV}`);
 console.log(`🔗 API Base URL : ${CONFIG.API_BASE_URL}`);
 console.log(`🔐 Auth API URL : ${CONFIG.AUTH_API_BASE_URL}`);
-
