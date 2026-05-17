@@ -34,9 +34,9 @@ services:
       - "3306:3306"
     volumes:
       # Volume persistant pour les données
+      # Les tables sont créées/migrées par Alembic au démarrage du backend
+      # (cf. Dockerfile.backend : `alembic upgrade head` avant uvicorn).
       - mariadb_data:/var/lib/mysql
-      # Script d'initialisation (exécuté au premier démarrage)
-      - ./database/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
