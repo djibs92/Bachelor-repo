@@ -1,22 +1,25 @@
 /**
- * Tests pour auth.js - Gestion de l'authentification
+ * Tests pour auth.js - Gestion de l'authentification (JWT via cookie httpOnly)
+ *
+ * Depuis la migration sécurité, le JWT n'est plus stocké dans localStorage.
+ * Il est transporté dans un cookie httpOnly posé par le backend.
+ * Seules les infos utilisateur non sensibles sont mises en cache côté JS.
  */
 
 // Clés de stockage (copiées de auth.js)
 const STORAGE_KEYS = {
-    TOKEN: 'clouddiagnoze_token',
     USER: 'clouddiagnoze_user'
 };
 
-// Classe AuthManager simplifiée pour les tests
+// Classe AuthManager simplifiée pour les tests (mirroir de design/js/auth.js)
 class AuthManager {
     constructor() {
-        this.token = this.getToken();
         this.user = this.getUser();
     }
 
+    // Conservée pour rétro-compatibilité, retourne toujours null
     getToken() {
-        return localStorage.getItem(STORAGE_KEYS.TOKEN);
+        return null;
     }
 
     getUser() {
@@ -24,28 +27,25 @@ class AuthManager {
         return userJson ? JSON.parse(userJson) : null;
     }
 
-    setAuth(token, user) {
-        localStorage.setItem(STORAGE_KEYS.TOKEN, token);
+    setAuth(_token, user) {
         localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-        this.token = token;
         this.user = user;
     }
 
     clearAuth() {
-        localStorage.removeItem(STORAGE_KEYS.TOKEN);
         localStorage.removeItem(STORAGE_KEYS.USER);
-        this.token = null;
         this.user = null;
     }
 
     isAuthenticated() {
-        return !!this.token;
+        return !!this.user;
     }
 
     async login(email, password) {
         try {
             const response = await fetch(`${AUTH_API_BASE_URL}/login`, {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
             });
@@ -56,7 +56,7 @@ class AuthManager {
                 throw new Error(data.detail || 'Erreur lors de la connexion');
             }
 
-            this.setAuth(data.access_token, data.user);
+            this.setAuth(null, data.user);
             return { success: true, user: data.user };
         } catch (error) {
             return { success: false, error: error.message };
@@ -98,32 +98,35 @@ describe('AuthManager', () => {
     });
 
     // ========================================
-    // TESTS : Gestion du token
+    // TESTS : Gestion du token (cookie httpOnly)
     // ========================================
     describe('Token Management', () => {
-        test('getToken retourne null si aucun token stocké', () => {
+        test('getToken retourne toujours null (JWT en cookie httpOnly, inaccessible au JS)', () => {
             expect(authManager.getToken()).toBeNull();
         });
 
-        test('setAuth stocke le token et l\'utilisateur', () => {
-            const token = 'jwt-test-token-123';
+        test('le token JWT n\'est jamais écrit dans localStorage', () => {
             const user = { id: 1, email: 'test@example.com', full_name: 'Test User' };
+            authManager.setAuth('jwt-test-token-123', user);
 
-            authManager.setAuth(token, user);
-
-            expect(localStorage.setItem).toHaveBeenCalledWith(STORAGE_KEYS.TOKEN, token);
+            // Seul l'objet utilisateur doit être stocké, jamais le token
             expect(localStorage.setItem).toHaveBeenCalledWith(STORAGE_KEYS.USER, JSON.stringify(user));
-            expect(authManager.token).toBe(token);
+            expect(localStorage.setItem).not.toHaveBeenCalledWith(
+                expect.stringMatching(/token/i),
+                expect.anything()
+            );
             expect(authManager.user).toEqual(user);
         });
 
-        test('clearAuth supprime le token et l\'utilisateur', () => {
-            authManager.setAuth('token', { id: 1 });
+        test('clearAuth supprime l\'utilisateur en cache (le cookie est effacé côté serveur)', () => {
+            authManager.setAuth(null, { id: 1 });
             authManager.clearAuth();
 
-            expect(localStorage.removeItem).toHaveBeenCalledWith(STORAGE_KEYS.TOKEN);
             expect(localStorage.removeItem).toHaveBeenCalledWith(STORAGE_KEYS.USER);
-            expect(authManager.token).toBeNull();
+            // Aucun appel pour retirer un token ne doit avoir eu lieu
+            expect(localStorage.removeItem).not.toHaveBeenCalledWith(
+                expect.stringMatching(/token/i)
+            );
             expect(authManager.user).toBeNull();
         });
     });
@@ -132,23 +135,24 @@ describe('AuthManager', () => {
     // TESTS : Authentification
     // ========================================
     describe('isAuthenticated', () => {
-        test('retourne false si pas de token', () => {
+        test('retourne false si pas d\'utilisateur en cache', () => {
             expect(authManager.isAuthenticated()).toBe(false);
         });
 
-        test('retourne true si token présent', () => {
-            authManager.token = 'valid-token';
+        test('retourne true si un utilisateur est en cache', () => {
+            authManager.user = { id: 1, email: 'test@example.com' };
             expect(authManager.isAuthenticated()).toBe(true);
         });
     });
+
+
 
     // ========================================
     // TESTS : Login API
     // ========================================
     describe('login', () => {
-        test('login réussi stocke le token et retourne success', async () => {
+        test('login réussi met en cache l\'utilisateur (token en cookie httpOnly) et envoie credentials: include', async () => {
             const mockResponse = {
-                access_token: 'jwt-token-abc123',
                 user: { id: 1, email: 'user@test.com', full_name: 'Test User' }
             };
 
@@ -161,18 +165,27 @@ describe('AuthManager', () => {
 
             expect(result.success).toBe(true);
             expect(result.user).toEqual(mockResponse.user);
-            expect(authManager.token).toBe(mockResponse.access_token);
+            // Le token JWT n'est plus exposé au JS
+            expect(authManager.getToken()).toBeNull();
+            expect(authManager.user).toEqual(mockResponse.user);
+
             expect(global.fetch).toHaveBeenCalledWith(
                 'http://localhost:8000/api/v1/auth/login',
                 expect.objectContaining({
                     method: 'POST',
+                    credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: 'user@test.com', password: 'password123' })
                 })
             );
+            // Le token ne doit jamais être stocké dans localStorage
+            expect(localStorage.setItem).not.toHaveBeenCalledWith(
+                expect.stringMatching(/token/i),
+                expect.anything()
+            );
         });
 
-        test('login échoué retourne erreur', async () => {
+        test('login échoué retourne erreur et ne met rien en cache', async () => {
             global.fetch.mockResolvedValueOnce({
                 ok: false,
                 json: async () => ({ detail: 'Email ou mot de passe incorrect' })
@@ -182,7 +195,8 @@ describe('AuthManager', () => {
 
             expect(result.success).toBe(false);
             expect(result.error).toBe('Email ou mot de passe incorrect');
-            expect(authManager.token).toBeNull();
+            expect(authManager.user).toBeNull();
+            expect(authManager.getToken()).toBeNull();
         });
 
         test('login gère les erreurs réseau', async () => {
@@ -243,4 +257,3 @@ describe('AuthManager', () => {
         });
     });
 });
-
