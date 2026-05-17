@@ -221,7 +221,7 @@ class DashboardGlobal {
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <a href="dashbord.html" class="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors">
+                    <a href="dashboard.html" class="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors">
                         Retour au scan actuel
                     </a>
                     <button onclick="document.getElementById('historical-scan-banner').remove()" class="p-2 hover:bg-white/20 rounded-lg transition-colors">

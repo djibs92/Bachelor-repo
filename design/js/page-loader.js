@@ -47,7 +47,7 @@ function preloadPage(url) {
 // Précharger les pages principales au chargement
 window.addEventListener('load', function() {
     setTimeout(() => {
-        preloadPage('dashbord.html');
+        preloadPage('dashboard.html');
         preloadPage('dashboard-ec2.html');
         preloadPage('dashboard-s3.html');
         preloadPage('config-scan-new.html');

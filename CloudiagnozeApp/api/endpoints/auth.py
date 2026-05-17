@@ -8,7 +8,9 @@ Ce module fournit les endpoints pour :
 - Réinitialisation de mot de passe (forgot-password, reset-password)
 """
 
-from fastapi import APIRouter, HTTPException, Depends, Header, Request
+import os
+
+from fastapi import APIRouter, HTTPException, Depends, Header, Request, Response, Cookie
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -31,6 +33,38 @@ from api.utils import (
 )
 
 router = APIRouter()
+
+# ========================================
+# CONFIGURATION COOKIE JWT
+# ========================================
+ACCESS_TOKEN_COOKIE_NAME = "access_token"
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", str(60 * 24 * 7)))
+COOKIE_SECURE = os.getenv("COOKIE_SECURE", "true").lower() == "true"
+COOKIE_SAMESITE = os.getenv("COOKIE_SAMESITE", "lax").lower()
+
+
+def _set_access_token_cookie(response: Response, token: str) -> None:
+    """Pose le cookie httpOnly contenant le JWT sur la réponse."""
+    response.set_cookie(
+        key=ACCESS_TOKEN_COOKIE_NAME,
+        value=token,
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+        path="/",
+    )
+
+
+def _clear_access_token_cookie(response: Response) -> None:
+    """Supprime le cookie httpOnly contenant le JWT."""
+    response.delete_cookie(
+        key=ACCESS_TOKEN_COOKIE_NAME,
+        path="/",
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+    )
 
 # ========================================
 # MODÈLES PYDANTIC (SCHÉMAS)
@@ -133,13 +167,20 @@ class MessageResponse(BaseModel):
 
 
 def get_current_user(
-    authorization: Optional[str] = Header(None), db: Session = Depends(get_db)
+    authorization: Optional[str] = Header(None),
+    access_token: Optional[str] = Cookie(default=None),
+    db: Session = Depends(get_db),
 ) -> User:
     """
     Récupère l'utilisateur actuel à partir du token JWT.
 
+    Le token est lu en priorité dans le cookie httpOnly `access_token` ;
+    le header `Authorization: Bearer <token>` reste accepté pour la
+    rétro-compatibilité (Swagger, clients CLI, intégrations).
+
     Args:
-        authorization: Header Authorization (format: "Bearer <token>")
+        authorization: Header Authorization optionnel (format: "Bearer <token>")
+        access_token: Cookie httpOnly contenant le JWT
         db: Session de base de données
 
     Returns:
@@ -148,20 +189,27 @@ def get_current_user(
     Raises:
         HTTPException: Si le token est invalide ou l'utilisateur n'existe pas
     """
-    if not authorization:
-        raise HTTPException(status_code=401, detail="Token manquant")
+    token: Optional[str] = None
 
-    # Extraire le token du header "Bearer <token>"
-    try:
-        scheme, token = authorization.split()
-        if scheme.lower() != "bearer":
+    # 1. Priorité au cookie httpOnly
+    if access_token:
+        token = access_token
+    # 2. Fallback sur le header Authorization
+    elif authorization:
+        try:
+            scheme, header_token = authorization.split()
+            if scheme.lower() != "bearer":
+                raise HTTPException(
+                    status_code=401, detail="Schéma d'authentification invalide"
+                )
+            token = header_token
+        except ValueError:
             raise HTTPException(
-                status_code=401, detail="Schéma d'authentification invalide"
+                status_code=401, detail="Format du header Authorization invalide"
             )
-    except ValueError:
-        raise HTTPException(
-            status_code=401, detail="Format du header Authorization invalide"
-        )
+
+    if not token:
+        raise HTTPException(status_code=401, detail="Token manquant")
 
     # Vérifier le token
     payload = verify_token(token)
@@ -247,7 +295,10 @@ async def signup(
 @router.post("/login", response_model=LoginResponse)
 @limiter.limit("10/minute")
 async def login(
-    request: Request, login_data: LoginRequest, db: Session = Depends(get_db)
+    request: Request,
+    login_data: LoginRequest,
+    response: Response,
+    db: Session = Depends(get_db),
 ):
     """
     Connexion d'un utilisateur.
@@ -255,6 +306,7 @@ async def login(
     Args:
         request: Requête HTTP (pour rate limiting)
         login_data: Données de connexion
+        response: Réponse HTTP (pour poser le cookie httpOnly)
         db: Session de base de données
 
     Returns:
@@ -289,9 +341,13 @@ async def login(
     # 5. Créer le token JWT
     access_token = create_access_token({"sub": user.email, "user_id": user.id})
 
+    # 6. Poser le cookie httpOnly (méthode d'auth principale côté navigateur)
+    _set_access_token_cookie(response, access_token)
+
     logger.success(f"✅ Connexion réussie pour {user.email}")
 
-    # 6. Retourner le token et les infos utilisateur
+    # 7. Retourner le token et les infos utilisateur
+    #    (le token reste dans la réponse pour la rétro-compatibilité Swagger/CLI)
     return LoginResponse(
         access_token=access_token,
         token_type="bearer",
@@ -303,6 +359,22 @@ async def login(
             "role_arn": user.role_arn,
         },
     )
+
+
+@router.post("/logout", response_model=MessageResponse)
+async def logout(response: Response):
+    """
+    Déconnexion d'un utilisateur : supprime le cookie httpOnly `access_token`.
+
+    Args:
+        response: Réponse HTTP (pour effacer le cookie)
+
+    Returns:
+        Message de confirmation
+    """
+    _clear_access_token_cookie(response)
+    logger.info("🚪 Déconnexion : cookie access_token effacé")
+    return MessageResponse(message="Déconnexion réussie")
 
 
 @router.get("/me", response_model=UserResponse)

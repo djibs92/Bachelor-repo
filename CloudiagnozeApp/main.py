@@ -4,7 +4,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.utils import get_openapi
 import os
 from api.endpoints.scan import router as scan_router
-from api.endpoints.events import router as events_router
+from api.endpoints.scans import router as scans_router
+from api.endpoints.admin import router as admin_router
+from api.endpoints.aws.ec2 import router as ec2_router
+from api.endpoints.aws.s3 import router as s3_router
 from api.endpoints.auth import router as auth_router
 import uvicorn
 from loguru import logger
@@ -128,7 +131,10 @@ app.add_middleware(
 # Inclusion des routers avec les tags appropriés
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["🔐 Authentication"])
 app.include_router(scan_router, prefix="/api/v1", tags=["🔍 Scans"])
-app.include_router(events_router, prefix="/api/v1")
+app.include_router(scans_router, prefix="/api/v1")
+app.include_router(ec2_router, prefix="/api/v1")
+app.include_router(s3_router, prefix="/api/v1")
+app.include_router(admin_router, prefix="/api/v1")
 
 
 @app.get("/")

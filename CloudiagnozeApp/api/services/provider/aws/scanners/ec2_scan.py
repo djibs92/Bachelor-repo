@@ -1,4 +1,4 @@
-from api.services.ScanAbstraction.create_cloud_scanne import CloudScanner
+from api.services.ScanAbstraction.create_cloud_scanner import CloudScanner
 from typing import List, Optional
 from loguru import logger
 import boto3
@@ -208,30 +208,4 @@ class EC2Scanner(CloudScanner):
             logger.warning(f"⚠️ Erreur CloudWatch {metric_name} pour {instance_id}: {e}")
             return None
 
-    def _get_authorized_regions(self) -> List[str]:
-        """Récupère les régions autorisées via l'API AWS"""
-        try:
-            # Utiliser le pool pour le client initial
-            ec2_client = self.get_client('ec2', 'us-east-1')
-            response = ec2_client.describe_regions()
 
-            authorized = []
-            for region in response['Regions']:
-                region_name = region['RegionName']
-                try:
-                    # Tester l'accès à chaque région avec le pool
-                    test_client = self.get_client('ec2', region_name)
-                    test_client.describe_instances()
-                    authorized.append(region_name)
-                    logger.info(f"✅ Région {region_name} accessible")
-                except Exception as e:
-                    logger.warning(f"⚠️ Région {region_name} inaccessible: {e}")
-                    # Supprimer le client défaillant
-                    self.invalidate_client('ec2', region_name)
-                    continue
-
-            return authorized if authorized else ['us-east-1']
-
-        except Exception as e:
-            logger.warning(f"⚠️ Impossible de récupérer les régions: {e}")
-            return ['us-east-1']
