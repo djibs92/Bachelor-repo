@@ -30,8 +30,8 @@ services:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "3306:3306"
+    expose:
+      - "3306"
     volumes:
       # Volume persistant pour les données
       # Les tables sont créées/migrées par Alembic au démarrage du backend
