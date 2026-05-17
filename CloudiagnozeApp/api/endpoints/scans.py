@@ -63,26 +63,11 @@ async def get_latest_scan_session(
 
         # Utiliser session_id pour grouper les scans multi-services de manière fiable
         # Le session_id est défini dans scan_engine.py lors du lancement d'un scan
-        if reference_scan.session_id:
-            # Méthode préférée : grouper par session_id
-            session_scans = db.query(ScanRun).filter(
-                ScanRun.user_id == current_user.id,
-                ScanRun.session_id == reference_scan.session_id,
-                ScanRun.status.in_(['success', 'partial', 'failed'])
-            ).order_by(ScanRun.scan_timestamp.desc()).all()
-        else:
-            # Fallback pour les anciens scans sans session_id : utiliser une fenêtre de temps
-            from datetime import timedelta
-            session_window = timedelta(minutes=5)
-            session_start = reference_scan.scan_timestamp - session_window
-            session_end = reference_scan.scan_timestamp + session_window
-
-            session_scans = db.query(ScanRun).filter(
-                ScanRun.user_id == current_user.id,
-                ScanRun.scan_timestamp >= session_start,
-                ScanRun.scan_timestamp <= session_end,
-                ScanRun.status.in_(['success', 'partial', 'failed'])
-            ).order_by(ScanRun.scan_timestamp.desc()).all()
+        session_scans = db.query(ScanRun).filter(
+            ScanRun.user_id == current_user.id,
+            ScanRun.session_id == reference_scan.session_id,
+            ScanRun.status.in_(['success', 'partial', 'failed'])
+        ).order_by(ScanRun.scan_timestamp.desc()).all()
 
         # Extraire les services uniques
         services = list(set([scan.service_type for scan in session_scans]))
