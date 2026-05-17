@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
 
 from main import app
-from api.database import get_db, User, ScanRun, EC2Instance, S3Bucket, VPCInstance, RDSInstance
+from api.database import get_db, User, ScanRun, EC2Instance, S3Bucket
 from api.database.connection import Base
 from api.utils import hash_password, create_access_token
 
@@ -28,8 +28,7 @@ def test_db_setup():
     # Importer tous les modèles pour que SQLAlchemy les connaisse
     from api.database.models import (
         User, ScanRun, EC2Instance, EC2Performance,
-        S3Bucket, S3Performance, VPCInstance, VPCPerformance,
-        RDSInstance, RDSPerformance
+        S3Bucket, S3Performance
     )
     
     # Créer une DB SQLite en mémoire avec StaticPool pour partager entre threads

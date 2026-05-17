@@ -131,54 +131,17 @@ class CloudDiagnozeAPI {
         return await this.request(`${API_CONFIG.ENDPOINTS.S3_BUCKET_BY_NAME}/${bucketName}`);
     }
 
-    /**
-     * Récupère les VPCs
-     */
-    async getVPCInstances(params = {}) {
-        const queryParams = new URLSearchParams({
-            limit: params.limit || 100,
-            latest_only: params.latest_only !== undefined ? params.latest_only : true,
-            ...(params.client_id && { client_id: params.client_id }),
-            ...(params.region && { region: params.region }),
-            ...(params.scan_id && { scan_id: params.scan_id })
-        });
-
-        return await this.request(`${API_CONFIG.ENDPOINTS.VPC_INSTANCES}?${queryParams}`);
-    }
-
-    /**
-     * Récupère les instances RDS
-     */
-    async getRDSInstances(params = {}) {
-        const queryParams = new URLSearchParams({
-            limit: params.limit || 100,
-            latest_only: params.latest_only !== undefined ? params.latest_only : true,
-            ...(params.client_id && { client_id: params.client_id }),
-            ...(params.region && { region: params.region }),
-            ...(params.scan_id && { scan_id: params.scan_id })
-        });
-
-        return await this.request(`${API_CONFIG.ENDPOINTS.RDS_INSTANCES}?${queryParams}`);
-    }
-
-    /**
-     * Récupère toutes les ressources (EC2 + S3 + VPC + RDS)
-     */
     async getAllResources(params = {}) {
         try {
-            const [ec2Data, s3Data, vpcData, rdsData] = await Promise.all([
+            const [ec2Data, s3Data] = await Promise.all([
                 this.getEC2Instances(params),
-                this.getS3Buckets(params),
-                this.getVPCInstances(params),
-                this.getRDSInstances(params)
+                this.getS3Buckets(params)
             ]);
 
             return {
                 ec2: ec2Data,
                 s3: s3Data,
-                vpc: vpcData,
-                rds: rdsData,
-                total: (ec2Data.total_instances || 0) + (s3Data.total_buckets || 0) + (vpcData.total_vpcs || 0) + (rdsData.total_instances || 0)
+                total: (ec2Data.total_instances || 0) + (s3Data.total_buckets || 0)
             };
         } catch (error) {
             console.error('Erreur lors de la récupération des ressources:', error);

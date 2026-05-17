@@ -116,20 +116,20 @@ describe('ConfigScan', () => {
         });
 
         test('ne crée pas de doublons', () => {
-            configScan.toggleService('vpc');
-            configScan.toggleService('rds');
-            configScan.toggleService('vpc'); // Toggle off
-            configScan.toggleService('vpc'); // Toggle on again
-            
-            const vpcCount = configScan.selectedServices.filter(s => s === 'vpc').length;
-            expect(vpcCount).toBe(1);
+            configScan.toggleService('ec2');
+            configScan.toggleService('s3');
+            configScan.toggleService('ec2'); // Toggle off
+            configScan.toggleService('ec2'); // Toggle on again
+
+            const ec2Count = configScan.selectedServices.filter(s => s === 'ec2').length;
+            expect(ec2Count).toBe(1);
         });
 
         test('gère tous les services AWS supportés', () => {
-            const services = ['ec2', 's3', 'vpc', 'rds'];
+            const services = ['ec2', 's3'];
             services.forEach(s => configScan.toggleService(s));
-            
-            expect(configScan.selectedServices).toHaveLength(4);
+
+            expect(configScan.selectedServices).toHaveLength(2);
             expect(configScan.selectedServices).toEqual(expect.arrayContaining(services));
         });
     });
@@ -212,39 +212,36 @@ describe('ConfigScan', () => {
             const scans = [
                 { scan_id: 1, service_type: 'ec2', scan_timestamp: baseTime.toISOString() },
                 { scan_id: 2, service_type: 's3', scan_timestamp: new Date(baseTime.getTime() + 5000).toISOString() }, // +5 sec
-                { scan_id: 3, service_type: 'vpc', scan_timestamp: new Date(baseTime.getTime() + 10000).toISOString() } // +10 sec
             ];
 
             const groups = configScan.groupScansByTimestamp(scans);
 
-            // Tous les 3 scans devraient être dans le même groupe (< 1 minute d'écart)
+            // Les 2 scans devraient être dans le même groupe (< 1 minute d'écart)
             expect(groups).toHaveLength(1);
-            expect(groups[0].scans).toHaveLength(3);
+            expect(groups[0].scans).toHaveLength(2);
         });
 
         test('sépare les scans avec timestamps éloignés', () => {
             const scans = [
                 { scan_id: 1, service_type: 'ec2', scan_timestamp: '2024-01-15T10:00:00Z' },
                 { scan_id: 2, service_type: 's3', scan_timestamp: '2024-01-15T10:05:00Z' }, // +5 min
-                { scan_id: 3, service_type: 'vpc', scan_timestamp: '2024-01-15T11:00:00Z' }  // +1 heure
             ];
 
             const groups = configScan.groupScansByTimestamp(scans);
 
-            // 3 groupes séparés (> 1 minute d'écart entre chaque)
-            expect(groups).toHaveLength(3);
+            // 2 groupes séparés (> 1 minute d'écart)
+            expect(groups).toHaveLength(2);
         });
 
         test('trie les groupes par timestamp décroissant', () => {
             const scans = [
                 { scan_id: 1, service_type: 'ec2', scan_timestamp: '2024-01-15T08:00:00Z' },
                 { scan_id: 2, service_type: 's3', scan_timestamp: '2024-01-15T12:00:00Z' },
-                { scan_id: 3, service_type: 'vpc', scan_timestamp: '2024-01-15T10:00:00Z' }
             ];
 
             const groups = configScan.groupScansByTimestamp(scans);
 
-            // Le plus récent en premier (12:00, 10:00, 08:00)
+            // Le plus récent en premier (12:00, 08:00)
             expect(groups[0].scans[0].scan_timestamp).toBe('2024-01-15T12:00:00Z');
         });
     });

@@ -28,8 +28,7 @@ def test_db_setup():
     # Importer tous les modèles pour que SQLAlchemy les connaisse
     from api.database.models import (
         User, ScanRun, EC2Instance, EC2Performance,
-        S3Bucket, S3Performance, VPCInstance, VPCPerformance,
-        RDSInstance, RDSPerformance
+        S3Bucket, S3Performance
     )
 
     # Créer une DB SQLite en mémoire avec StaticPool pour partager entre threads

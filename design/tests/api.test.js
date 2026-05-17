@@ -262,10 +262,10 @@ describe('CloudDiagnozeAPI', () => {
                 json: async () => ({ completed: true, services_status: {} })
             });
 
-            await api.getScanStatus(['ec2', 's3', 'vpc']);
+            await api.getScanStatus(['ec2', 's3']);
 
             expect(global.fetch).toHaveBeenCalledWith(
-                expect.stringContaining('services=ec2,s3,vpc'),
+                expect.stringContaining('services=ec2,s3'),
                 expect.any(Object)
             );
         });

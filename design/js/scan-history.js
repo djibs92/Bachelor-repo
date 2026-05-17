@@ -71,7 +71,6 @@ class ScanHistoryManager {
         const labels = Object.keys(scansByDay).sort();
         const ec2Data = labels.map(date => scansByDay[date].ec2 || 0);
         const s3Data = labels.map(date => scansByDay[date].s3 || 0);
-        const vpcData = labels.map(date => scansByDay[date].vpc || 0);
 
         this.evolutionChart = new Chart(ctx, {
             type: 'line',
@@ -97,14 +96,6 @@ class ScanHistoryManager {
                         tension: 0.4,
                         fill: true
                     },
-                    {
-                        label: 'VPC Networks',
-                        data: vpcData,
-                        borderColor: '#8b5cf6',
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }
                 ]
             },
             options: {
@@ -151,7 +142,7 @@ class ScanHistoryManager {
             const date = new Date(scan.scan_timestamp).toISOString().split('T')[0];
             
             if (!grouped[date]) {
-                grouped[date] = { ec2: 0, s3: 0, vpc: 0 };
+                grouped[date] = { ec2: 0, s3: 0 };
             }
             
             const service = scan.service_type.toLowerCase();
@@ -355,9 +346,7 @@ class ScanHistoryManager {
         // Services scannés
         const services = scanGroup.scans.map(s => {
             const color = s.service_type === 'ec2' ? 'bg-blue-500' :
-                         s.service_type === 's3' ? 'bg-green-500' :
-                         s.service_type === 'vpc' ? 'bg-orange-500' :
-                         s.service_type === 'rds' ? 'bg-purple-500' : 'bg-purple-500';
+                         s.service_type === 's3' ? 'bg-green-500' : 'bg-slate-500';
             return `<span class="px-2 py-1 rounded text-xs font-semibold ${color}">${s.service_type.toUpperCase()}</span>`;
         }).join(' ');
 
@@ -509,9 +498,7 @@ class ScanHistoryManager {
         let content = '';
         scanGroup.scans.forEach(scan => {
             const serviceColor = scan.service_type === 'ec2' ? 'text-blue-400' :
-                                scan.service_type === 's3' ? 'text-green-400' :
-                                scan.service_type === 'vpc' ? 'text-orange-400' :
-                                scan.service_type === 'rds' ? 'text-purple-400' : 'text-purple-400';
+                                scan.service_type === 's3' ? 'text-green-400' : 'text-slate-400';
             const statusColor = scan.status === 'success' ? 'text-green-400' :
                                scan.status === 'failed' ? 'text-red-400' : 'text-orange-400';
 

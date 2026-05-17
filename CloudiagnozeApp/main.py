@@ -23,7 +23,7 @@ tags_metadata = [
     },
     {
         "name": "🔍 Scans",
-        "description": "Lancement et suivi des scans d'infrastructure AWS. Supporte EC2, S3, VPC et RDS.",
+        "description": "Lancement et suivi des scans d'infrastructure AWS. Supporte EC2 et S3.",
     },
     {
         "name": "💻 EC2",
@@ -32,14 +32,6 @@ tags_metadata = [
     {
         "name": "🪣 S3",
         "description": "Récupération des buckets S3, configurations de sécurité et métriques.",
-    },
-    {
-        "name": "🌐 VPC",
-        "description": "Récupération des VPCs, sous-réseaux et configurations réseau.",
-    },
-    {
-        "name": "🗄️ RDS",
-        "description": "Récupération des instances de bases de données RDS.",
     },
     {
         "name": "⚙️ Admin",
@@ -64,7 +56,7 @@ pour inventorier vos ressources, détecter les problèmes de sécurité et optim
 
 | Fonctionnalité | Description |
 |----------------|-------------|
-| **Scan multi-services** | EC2, S3, VPC, RDS en un seul appel |
+| **Scan multi-services** | EC2, S3 en un seul appel |
 | **Multi-régions** | Scannez plusieurs régions AWS simultanément |
 | **Authentification sécurisée** | JWT + AWS STS AssumeRole |
 | **Isolation des données** | Chaque utilisateur voit uniquement ses propres scans |
@@ -100,8 +92,6 @@ Authorization: Bearer <votre_token_jwt>
 
 - **EC2** : Instances, types, états, IPs, security groups
 - **S3** : Buckets, configurations de sécurité, versioning
-- **VPC** : Virtual Private Clouds, sous-réseaux, routage
-- **RDS** : Instances de bases de données managées
 
     """,
     version="1.0.0",

@@ -672,14 +672,6 @@
                     <span class="material-symbols-outlined text-2xl">folder</span>
                     <p class="text-sm font-medium leading-normal">S3 Buckets</p>
                 </a>
-                <a class="nav-link" href="dashboard-vpc.html">
-                    <span class="material-symbols-outlined text-2xl">cloud</span>
-                    <p class="text-sm font-medium leading-normal">VPC Networks</p>
-                </a>
-                <a class="nav-link" href="dashboard-rds.html">
-                    <span class="material-symbols-outlined text-2xl">database</span>
-                    <p class="text-sm font-medium leading-normal">RDS Databases</p>
-                </a>
                 <a class="nav-link active" href="config-scan-new.html">
                     <span class="material-symbols-outlined text-2xl">radar</span>
                     <p class="text-sm font-medium leading-normal">New Scan</p>
@@ -839,73 +831,6 @@
                                     <input type="checkbox" class="hidden" data-service-toggle="s3"/>
                                 </div>
 
-                                <!-- VPC Card -->
-                                <div class="service-card glass-card rounded-xl p-6 cursor-pointer border-2 border-slate-700 relative overflow-hidden"
-                                     data-service="vpc" onclick="configScan.toggleService('vpc')">
-
-                                    <!-- ✨ Overlay de progression -->
-                                    <div class="service-card-progress-overlay" data-progress-overlay="vpc"></div>
-
-                                    <!-- Badge de sélection -->
-                                    <div class="selection-badge">
-                                        <span class="material-symbols-outlined text-white text-lg">check</span>
-                                    </div>
-
-                                    <!-- ✨ Badge de pourcentage -->
-                                    <div class="service-card-progress-badge" data-progress-badge="vpc">0%</div>
-
-                                    <!-- ✨ Badge de complétion -->
-                                    <div class="service-card-completion-badge" data-completion-badge="vpc">
-                                        <span class="material-symbols-outlined text-white text-3xl">check</span>
-                                    </div>
-
-                                    <div class="flex items-center gap-4 mb-4">
-                                        <div class="service-icon-container w-16 h-16 bg-orange-500/20 rounded-xl flex items-center justify-center">
-                                            <span class="material-symbols-outlined text-orange-400 text-4xl">cloud</span>
-                                        </div>
-                                        <div class="flex-1">
-                                            <h4 class="text-white font-bold text-lg">VPC</h4>
-                                            <p class="text-slate-400 text-sm">Network</p>
-                                        </div>
-                                    </div>
-                                    <p class="text-slate-400 text-sm mb-3">Réseaux virtuels, subnets, sécurité</p>
-
-                                    <input type="checkbox" class="hidden" data-service-toggle="vpc"/>
-                                </div>
-
-                                <!-- RDS Card -->
-                                <div class="service-card glass-card rounded-xl p-6 cursor-pointer border-2 border-slate-700 relative overflow-hidden"
-                                     data-service="rds" onclick="configScan.toggleService('rds')">
-
-                                    <!-- ✨ Overlay de progression -->
-                                    <div class="service-card-progress-overlay" data-progress-overlay="rds"></div>
-
-                                    <!-- Badge de sélection -->
-                                    <div class="selection-badge">
-                                        <span class="material-symbols-outlined text-white text-lg">check</span>
-                                    </div>
-
-                                    <!-- ✨ Badge de pourcentage -->
-                                    <div class="service-card-progress-badge" data-progress-badge="rds">0%</div>
-
-                                    <!-- ✨ Badge de complétion -->
-                                    <div class="service-card-completion-badge" data-completion-badge="rds">
-                                        <span class="material-symbols-outlined text-white text-3xl">check</span>
-                                    </div>
-
-                                    <div class="flex items-center gap-4 mb-4">
-                                        <div class="service-icon-container w-16 h-16 bg-cyan-500/20 rounded-xl flex items-center justify-center">
-                                            <span class="material-symbols-outlined text-cyan-400 text-4xl">database</span>
-                                        </div>
-                                        <div class="flex-1">
-                                            <h4 class="text-white font-bold text-lg">RDS</h4>
-                                            <p class="text-slate-400 text-sm">Database</p>
-                                        </div>
-                                    </div>
-                                    <p class="text-slate-400 text-sm mb-3">Bases de données relationnelles, performance</p>
-
-                                    <input type="checkbox" class="hidden" data-service-toggle="rds"/>
-                                </div>
 
 
                             </div>
