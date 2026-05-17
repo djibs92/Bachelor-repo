@@ -1,4 +1,4 @@
-from api.services.ScanAbstraction.create_cloud_scanne import CloudScanner
+from api.services.ScanAbstraction.create_cloud_scanner import CloudScanner
 from typing import List, Optional
 from loguru import logger
 import boto3
