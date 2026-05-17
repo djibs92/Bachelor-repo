@@ -10,8 +10,6 @@ pytest_plugins = (
     'pytest_asyncio',
     'tests.aws_tests.fixtures_ec2',
     'tests.aws_tests.fixtures_s3',
-    'tests.aws_tests.fixtures_vpc',
-    'tests.aws_tests.fixtures_rds',
 )
 
 

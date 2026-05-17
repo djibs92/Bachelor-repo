@@ -273,8 +273,6 @@ class DashboardGlobal {
         const details = [];
         if (totalResources.ec2 > 0) details.push(`${totalResources.ec2} EC2`);
         if (totalResources.s3 > 0) details.push(`${totalResources.s3} S3`);
-        if (totalResources.vpc > 0) details.push(`${totalResources.vpc} VPC`);
-        if (totalResources.rds > 0) details.push(`${totalResources.rds} RDS`);
         document.getElementById('total-resources-detail').textContent = details.join(' | ') || 'Aucune ressource';
 
         // Active Alerts
@@ -292,8 +290,6 @@ class DashboardGlobal {
         const scanDetails = [];
         if (scans.ec2 > 0) scanDetails.push(`${scans.ec2} EC2`);
         if (scans.s3 > 0) scanDetails.push(`${scans.s3} S3`);
-        if (scans.vpc > 0) scanDetails.push(`${scans.vpc} VPC`);
-        if (scans.rds > 0) scanDetails.push(`${scans.rds} RDS`);
         document.getElementById('scans-month-detail').textContent = scanDetails.join(' | ') || 'Aucun scan';
 
         // Security Score
@@ -330,7 +326,6 @@ class DashboardGlobal {
         this.createHealthScoreChart();
         this.createEC2RegionChart();
         this.createS3RegionChart();
-        this.createVPCRegionChart();
     }
 
     /**
@@ -442,16 +437,7 @@ class DashboardGlobal {
             chartData.push(data.s3.count);
             colors.push('#10b981');  // Vert S3
         }
-        if (data.vpc.count > 0) {
-            labels.push('VPC Networks');
-            chartData.push(data.vpc.count);
-            colors.push('#fb923c');  // Orange VPC
-        }
-        if (data.rds.count > 0) {
-            labels.push('RDS Databases');
-            chartData.push(data.rds.count);
-            colors.push('#06b6d4');  // Cyan RDS
-        }
+
 
         this.charts.resourceDistribution = new Chart(ctx, {
             type: 'doughnut',
@@ -532,12 +518,7 @@ class DashboardGlobal {
             if (data.s3.count > 0) {
                 legendHTML += `<div class="flex items-center gap-2"><div class="h-2 w-2 rounded-full bg-green-500"></div>S3 <span>${data.s3.percentage}%</span></div>`;
             }
-            if (data.vpc.count > 0) {
-                legendHTML += `<div class="flex items-center gap-2"><div class="h-2 w-2 rounded-full" style="background-color: #fb923c;"></div>VPC <span>${data.vpc.percentage}%</span></div>`;
-            }
-            if (data.rds.count > 0) {
-                legendHTML += `<div class="flex items-center gap-2"><div class="h-2 w-2 rounded-full" style="background-color: #06b6d4;"></div>RDS <span>${data.rds.percentage}%</span></div>`;
-            }
+
 
             legendContainer.innerHTML = legendHTML;
         }
@@ -670,75 +651,6 @@ class DashboardGlobal {
                         callbacks: {
                             label: function(context) {
                                 return `${context.parsed.x} bucket${context.parsed.x > 1 ? 's' : ''}`;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        ticks: {
-                            color: '#cbd5e1',
-                            stepSize: 1,
-                            font: { size: 12 }
-                        },
-                        grid: {
-                            color: 'rgba(148, 163, 184, 0.1)',
-                            drawBorder: false
-                        }
-                    },
-                    y: {
-                        ticks: {
-                            color: '#fff',
-                            font: { size: 13, weight: '500' }
-                        },
-                        grid: { display: false }
-                    }
-                }
-            }
-        });
-    }
-
-    /**
-     * Graphique: VPC par région (Bar chart horizontal)
-     */
-    createVPCRegionChart() {
-        const ctx = document.getElementById('chart-vpc-regions');
-        if (!ctx) return;
-
-        const regionData = window.globalStats.getVPCRegionDistribution();
-
-        this.charts.vpcRegions = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: regionData.labels,
-                datasets: [{
-                    label: 'VPCs',
-                    data: regionData.data,
-                    backgroundColor: 'rgba(251, 146, 60, 0.8)',  // Orange VPC
-                    borderColor: 'rgba(251, 146, 60, 1)',
-                    borderWidth: 2,
-                    borderRadius: 8,
-                    barThickness: 25  // Largeur uniforme pour toutes les barres
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                        titleColor: '#fff',
-                        bodyColor: '#cbd5e1',
-                        borderColor: '#fb923c',
-                        borderWidth: 1,
-                        padding: 12,
-                        displayColors: false,
-                        callbacks: {
-                            label: function(context) {
-                                return `${context.parsed.x} VPC${context.parsed.x > 1 ? 's' : ''}`;
                             }
                         }
                     }
@@ -922,7 +834,6 @@ class DashboardGlobal {
             let typeColor = 'text-slate-400';
             if (resource.type === 'EC2') typeColor = 'text-blue-400';
             else if (resource.type === 'S3') typeColor = 'text-green-400';
-            else if (resource.type === 'VPC') typeColor = 'text-orange-400';
 
             // Couleur selon l'état
             const stateColor = resource.state === 'running' || resource.state === 'active' || resource.state === 'available' ? 'text-green-400' : 'text-red-400';
@@ -1072,9 +983,7 @@ class DashboardGlobal {
                         ${scanGroup.scans.map(s => {
                             const color = s.service_type === 'ec2' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
                                          s.service_type === 's3' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
-                                         s.service_type === 'vpc' ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' :
-                                         s.service_type === 'rds' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' :
-                                         'bg-purple-500/20 text-purple-400 border-purple-500/30';
+                                         'bg-slate-500/20 text-slate-400 border-slate-500/30';
                             return `<span class="px-2 py-1 rounded-md text-xs font-medium border ${color}">${s.service_type.toUpperCase()}</span>`;
                         }).join('')}
                     </div>
@@ -1156,9 +1065,7 @@ class DashboardGlobal {
 
         scanGroup.scans.forEach(scan => {
             const serviceColor = scan.service_type === 'ec2' ? 'blue' :
-                                scan.service_type === 's3' ? 'green' :
-                                scan.service_type === 'vpc' ? 'orange' :
-                                scan.service_type === 'rds' ? 'purple' : 'purple';
+                                scan.service_type === 's3' ? 'green' : 'slate';
 
             const statusColor = scan.status === 'success' ? 'green' :
                                scan.status === 'failed' ? 'red' : 'orange';
@@ -1271,31 +1178,6 @@ class DashboardGlobal {
             }
         });
 
-        // Analyser les checks VPC
-        window.globalStats.vpcInstances.forEach(vpc => {
-            const vpcName = vpc.tags?.Name || vpc.vpc_id;
-            if (vpc.flow_logs_enabled) {
-                container.innerHTML += this.createCheckItem(
-                    `VPC: ${vpcName}`,
-                    'Flow Logs activé',
-                    true
-                );
-            }
-            if (vpc.internet_gateway_attached) {
-                container.innerHTML += this.createCheckItem(
-                    `VPC: ${vpcName}`,
-                    'Internet Gateway attaché',
-                    true
-                );
-            }
-            if (vpc.tags && (typeof vpc.tags === 'object' ? Object.keys(vpc.tags).length > 0 : vpc.tags.length > 0)) {
-                container.innerHTML += this.createCheckItem(
-                    `VPC: ${vpcName}`,
-                    'Tags configurés',
-                    true
-                );
-            }
-        });
 
         // Checks échoués
         if (securityData.failedChecks > 0) {
@@ -1355,31 +1237,6 @@ class DashboardGlobal {
                 }
             });
 
-            // Analyser les checks VPC échoués
-            window.globalStats.vpcInstances.forEach(vpc => {
-                const vpcName = vpc.tags?.Name || vpc.vpc_id;
-                if (!vpc.flow_logs_enabled) {
-                    container.innerHTML += this.createCheckItem(
-                        `VPC: ${vpcName}`,
-                        'Flow Logs désactivé',
-                        false
-                    );
-                }
-                if (!vpc.internet_gateway_attached) {
-                    container.innerHTML += this.createCheckItem(
-                        `VPC: ${vpcName}`,
-                        'Pas d\'Internet Gateway',
-                        false
-                    );
-                }
-                if (!vpc.tags || (typeof vpc.tags === 'object' ? Object.keys(vpc.tags).length === 0 : vpc.tags.length === 0)) {
-                    container.innerHTML += this.createCheckItem(
-                        `VPC: ${vpcName}`,
-                        'Pas de tags',
-                        false
-                    );
-                }
-            });
         }
 
         this.openModal('modal-security');

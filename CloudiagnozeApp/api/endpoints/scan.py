@@ -37,7 +37,7 @@ class ScanRequest(BaseModel):
         json_schema_extra = {
             "example": {
                 "provider": "aws",
-                "services": ["ec2", "s3", "vpc"],
+                "services": ["ec2", "s3"],
                 "auth_mode": {
                     "type": "sts",
                     "role_arn": "arn:aws:iam::123456789012:role/CloudDiagnozeRole"
@@ -151,7 +151,7 @@ async def get_scan_status(
     Vérifie si tous les services demandés ont terminé leur scan.
 
     Args:
-        services: Liste des services séparés par des virgules (ex: "ec2,s3,vpc,rds")
+        services: Liste des services séparés par des virgules (ex: "ec2,s3")
 
     Returns:
         {
@@ -217,13 +217,13 @@ async def export_scan_session(
     """
     Exporte tous les détails d'une session de scan au format JSON.
 
-    Retourne toutes les ressources scannées (EC2, S3, VPC, RDS) pour une session donnée.
+    Retourne toutes les ressources scannées (EC2, S3) pour une session donnée.
     ⚠️ ISOLATION : Seules les scans de l'utilisateur connecté sont accessibles.
 
     Args:
         scan_session_id: ID du scan de référence (scan_id du premier scan du groupe)
     """
-    from api.database import ScanRun, EC2Instance, S3Bucket, VPCInstance, RDSInstance
+    from api.database import ScanRun, EC2Instance, S3Bucket
     from sqlalchemy.orm import joinedload
     from datetime import datetime, timedelta, timezone
 
@@ -269,8 +269,6 @@ async def export_scan_session(
         "resources": {
             "ec2_instances": [],
             "s3_buckets": [],
-            "vpc_instances": [],
-            "rds_instances": []
         },
         "summary": {
             "total_resources": 0,
@@ -375,150 +373,23 @@ async def export_scan_session(
                     "scan_timestamp": bucket.scan_timestamp.isoformat() if bucket.scan_timestamp else None
                 })
 
-        elif scan_run.service_type == "vpc":
-            vpcs = db.query(VPCInstance).filter(
-                VPCInstance.scan_run_id == scan_run.id
-            ).all()
-
-            for vpc in vpcs:
-                # Convertir les métriques de performance en dict
-                perf_data = None
-                if vpc.performance:
-                    perf_data = {
-                        "network_in_bytes": vpc.performance.network_in_bytes,
-                        "network_out_bytes": vpc.performance.network_out_bytes,
-                        "network_packets_in": vpc.performance.network_packets_in,
-                        "network_packets_out": vpc.performance.network_packets_out,
-                        "nat_gateway_bytes_in": vpc.performance.nat_gateway_bytes_in,
-                        "nat_gateway_bytes_out": vpc.performance.nat_gateway_bytes_out
-                    }
-
-                export_data["resources"]["vpc_instances"].append({
-                    "client_id": vpc.client_id,
-                    "vpc_id": vpc.vpc_id,
-                    "cidr_block": vpc.cidr_block,
-                    "state": vpc.state,
-                    "region": vpc.region,
-                    "is_default": vpc.is_default,
-                    "tenancy": vpc.tenancy,
-                    "subnet_count": vpc.subnet_count,
-                    "public_subnets_count": vpc.public_subnets_count,
-                    "private_subnets_count": vpc.private_subnets_count,
-                    "availability_zones": vpc.availability_zones,
-                    "internet_gateway_attached": vpc.internet_gateway_attached,
-                    "nat_gateways_count": vpc.nat_gateways_count,
-                    "route_tables_count": vpc.route_tables_count,
-                    "security_groups_count": vpc.security_groups_count,
-                    "network_acls_count": vpc.network_acls_count,
-                    "flow_logs_enabled": vpc.flow_logs_enabled,
-                    "vpc_endpoints_count": vpc.vpc_endpoints_count,
-                    "vpc_peering_connections_count": vpc.vpc_peering_connections_count,
-                    "transit_gateway_attachments_count": vpc.transit_gateway_attachments_count,
-                    "tags": vpc.tags,
-                    "performance": perf_data,
-                    "scan_timestamp": vpc.scan_timestamp.isoformat() if vpc.scan_timestamp else None
-                })
-
-        elif scan_run.service_type == "rds":
-            databases = db.query(RDSInstance).filter(
-                RDSInstance.scan_run_id == scan_run.id
-            ).all()
-
-            for db_instance in databases:
-                # Convertir les métriques de performance en dict
-                perf_data = None
-                if db_instance.performance:
-                    perf_data = {
-                        "cpu_utilization_avg": db_instance.performance.cpu_utilization_avg,
-                        "freeable_memory_bytes": db_instance.performance.freeable_memory_bytes,
-                        "free_storage_space_bytes": db_instance.performance.free_storage_space_bytes,
-                        "database_connections": db_instance.performance.database_connections,
-                        "read_iops_avg": db_instance.performance.read_iops_avg,
-                        "write_iops_avg": db_instance.performance.write_iops_avg,
-                        "read_latency_avg": db_instance.performance.read_latency_avg,
-                        "write_latency_avg": db_instance.performance.write_latency_avg,
-                        "read_throughput_bytes": db_instance.performance.read_throughput_bytes,
-                        "write_throughput_bytes": db_instance.performance.write_throughput_bytes,
-                        "network_receive_throughput_bytes": db_instance.performance.network_receive_throughput_bytes,
-                        "network_transmit_throughput_bytes": db_instance.performance.network_transmit_throughput_bytes
-                    }
-
-                export_data["resources"]["rds_instances"].append({
-                    "resource_id": db_instance.resource_id,
-                    "db_instance_identifier": db_instance.db_instance_identifier,
-                    "client_id": db_instance.client_id,
-                    "db_instance_class": db_instance.db_instance_class,
-                    "engine": db_instance.engine,
-                    "engine_version": db_instance.engine_version,
-                    "db_instance_status": db_instance.db_instance_status,
-                    "region": db_instance.region,
-                    "availability_zone": db_instance.availability_zone,
-                    "multi_az": db_instance.multi_az,
-                    "endpoint_address": db_instance.endpoint_address,
-                    "endpoint_port": db_instance.endpoint_port,
-                    "allocated_storage": db_instance.allocated_storage,
-                    "storage_type": db_instance.storage_type,
-                    "storage_encrypted": db_instance.storage_encrypted,
-                    "iops": db_instance.iops,
-                    "vpc_id": db_instance.vpc_id,
-                    "db_subnet_group_name": db_instance.db_subnet_group_name,
-                    "publicly_accessible": db_instance.publicly_accessible,
-                    "master_username": db_instance.master_username,
-                    "iam_database_authentication_enabled": db_instance.iam_database_authentication_enabled,
-                    "deletion_protection": db_instance.deletion_protection,
-                    "backup_retention_period": db_instance.backup_retention_period,
-                    "preferred_backup_window": db_instance.preferred_backup_window,
-                    "preferred_maintenance_window": db_instance.preferred_maintenance_window,
-                    "latest_restorable_time": db_instance.latest_restorable_time.isoformat() if db_instance.latest_restorable_time else None,
-                    "auto_minor_version_upgrade": db_instance.auto_minor_version_upgrade,
-                    "enhanced_monitoring_resource_arn": db_instance.enhanced_monitoring_resource_arn,
-                    "monitoring_interval": db_instance.monitoring_interval,
-                    "performance_insights_enabled": db_instance.performance_insights_enabled,
-                    "tags": db_instance.tags,
-                    "security_groups": db_instance.security_groups,
-                    "parameter_groups": db_instance.parameter_groups,
-                    "option_groups": db_instance.option_groups,
-                    "performance": perf_data,
-                    "instance_create_time": db_instance.instance_create_time.isoformat() if db_instance.instance_create_time else None,
-                    "scan_timestamp": db_instance.scan_timestamp.isoformat() if db_instance.scan_timestamp else None
-                })
-
     # Calculer le résumé
     export_data["summary"]["total_resources"] = (
         len(export_data["resources"]["ec2_instances"]) +
-        len(export_data["resources"]["s3_buckets"]) +
-        len(export_data["resources"]["vpc_instances"]) +
-        len(export_data["resources"]["rds_instances"])
+        len(export_data["resources"]["s3_buckets"])
     )
 
     export_data["summary"]["by_service"] = {
         "ec2": len(export_data["resources"]["ec2_instances"]),
         "s3": len(export_data["resources"]["s3_buckets"]),
-        "vpc": len(export_data["resources"]["vpc_instances"]),
-        "rds": len(export_data["resources"]["rds_instances"])
     }
 
-    # Compter par région (en parcourant les ressources)
     regions = {}
-
-    # Compter les régions depuis les instances EC2
     for instance in export_data["resources"]["ec2_instances"]:
         region = instance.get("region", "unknown")
         regions[region] = regions.get(region, 0) + 1
-
-    # Compter les régions depuis les buckets S3
     for bucket in export_data["resources"]["s3_buckets"]:
         region = bucket.get("region", "unknown")
-        regions[region] = regions.get(region, 0) + 1
-
-    # Compter les régions depuis les VPCs
-    for vpc in export_data["resources"]["vpc_instances"]:
-        region = vpc.get("region", "unknown")
-        regions[region] = regions.get(region, 0) + 1
-
-    # Compter les régions depuis les instances RDS
-    for rds in export_data["resources"]["rds_instances"]:
-        region = rds.get("region", "unknown")
         regions[region] = regions.get(region, 0) + 1
 
     export_data["summary"]["by_region"] = regions

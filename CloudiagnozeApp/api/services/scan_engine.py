@@ -2,31 +2,28 @@ from typing import List, Dict, Any
 from loguru import logger
 from api.services.factories.connection_factory import ConnectionFactory
 from api.services.factories.scanner_factory import ScannerFactory
-from api.services.storage_service import save_ec2_scan, save_s3_scan, save_vpc_scan, save_rds_scan
+from api.services.storage_service import save_ec2_scan, save_s3_scan
 
 
-# Mapping service → fonction de sauvegarde
 SAVE_FUNCTIONS = {
     "ec2": save_ec2_scan,
     "s3": save_s3_scan,
-    "vpc": save_vpc_scan,
-    "rds": save_rds_scan,
 }
 
 
 async def scan_list_service(scan_id: str, provider: str, services: List[str], auth_mode: Dict[str, Any], client_id: str, regions: List[str] = None, user_id: int = None):
     """
-    Moteur principal de CloudDiagnoze
-    Orchestrateur qui lance les scans pour chaque service demandé
+    Moteur principal de CloudDiagnoze.
+    Orchestre les scans EC2 et S3 pour chaque service demandé.
 
     Args:
-        scan_id: ID unique du scan (utilisé comme session_id pour grouper les services)
-        provider: Provider cloud (aws, azure, gcp)
-        services: Liste des services à scanner (ec2, s3, vpc, rds)
+        scan_id: ID unique du scan (sert de session_id pour grouper les services)
+        provider: Provider cloud (aws)
+        services: Liste des services à scanner (ec2, s3)
         auth_mode: Mode d'authentification
         client_id: ID du client
-        regions: Régions à scanner (optionnel)
-        user_id: ID de l'utilisateur qui lance le scan (pour isolation des comptes)
+        regions: Régions à scanner (optionnel, toutes si absent)
+        user_id: ID de l'utilisateur qui lance le scan (isolation multi-tenant)
     """
     logger.info(f"🚀 Démarrage scan_list_service pour scan_id: {scan_id}")
     logger.info(f"Provider: {provider}, Services: {services}, User ID: {user_id}")

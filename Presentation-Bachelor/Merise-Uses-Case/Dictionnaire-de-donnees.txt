@@ -1,0 +1,184 @@
+===============================================================
+  DICTIONNAIRE DE DONNEES - CloudDiagnoze
+===============================================================
+
+---------------------------------------------------------------
+  LEGENDE
+---------------------------------------------------------------
+  PK  = Cle primaire (identifiant unique de la ligne)
+  FK  = Cle etrangere (reference vers une autre table)
+  NN  = Not Null (valeur obligatoire)
+  UQ  = Unique (valeur unique dans la table)
+  DEF = Valeur par defaut
+---------------------------------------------------------------
+
+
+===============================================================
+  TABLE : users
+  Role : Stocke les comptes utilisateurs de la plateforme
+===============================================================
+
++----------------------+---------------+-------------------+----------------------------------------------+
+| Champ                | Type          | Contraintes       | Description                                  |
++----------------------+---------------+-------------------+----------------------------------------------+
+| id                   | INT           | PK, NN, AUTO_INC  | Identifiant unique de l'utilisateur          |
+| email                | VARCHAR(255)  | NN, UQ            | Adresse email — sert d'identifiant connexion |
+| password_hash        | VARCHAR(255)  | NN                | Mot de passe hashe avec bcrypt               |
+| full_name            | VARCHAR(255)  | -                 | Nom complet de l'utilisateur                 |
+| company_name         | VARCHAR(255)  | -                 | Nom de l'entreprise                          |
+| role_arn             | VARCHAR(255)  | -                 | Role ARN AWS pour STS AssumeRole (optionnel) |
+| created_at           | DATETIME      | NN, DEF=maintenant| Date de creation du compte                   |
+| last_login           | DATETIME      | -                 | Date de la derniere connexion                |
+| is_active            | BOOLEAN       | DEF=true          | Compte actif (true) ou desactive (false)     |
+| reset_token          | VARCHAR(255)  | -                 | Token temporaire pour reset du mot de passe  |
+| reset_token_expiry   | DATETIME      | -                 | Date d'expiration du token de reset          |
++----------------------+---------------+-------------------+----------------------------------------------+
+
+
+===============================================================
+  TABLE : scan_runs
+  Role : Historique de chaque execution de scan
+         Un enregistrement = un scan d'un service (ec2 ou s3)
+===============================================================
+
++----------------------+---------------+-------------------+----------------------------------------------+
+| Champ                | Type          | Contraintes       | Description                                  |
++----------------------+---------------+-------------------+----------------------------------------------+
+| id                   | INT           | PK, NN, AUTO_INC  | Identifiant unique du scan                   |
+| session_id           | VARCHAR(50)   | -                 | Regroupe plusieurs scans lances en meme temps|
+| client_id            | VARCHAR(100)  | NN                | Identifiant texte du client                  |
+| service_type         | VARCHAR(20)   | NN                | Service scanne : 'ec2' ou 's3'               |
+| scan_timestamp       | DATETIME      | NN, DEF=maintenant| Date et heure du lancement du scan           |
+| total_resources      | INT           | DEF=0             | Nombre de ressources collectees              |
+| status               | ENUM          | DEF='running'     | Etat : running / success / partial / failed  |
+| user_id              | INT           | FK -> users.id    | Utilisateur ayant lance le scan              |
++----------------------+---------------+-------------------+----------------------------------------------+
+
+
+===============================================================
+  TABLE : ec2_instances
+  Role : Metadonnees des instances EC2 collectees lors d'un scan
+===============================================================
+
++----------------------+---------------+----------------------+----------------------------------------------+
+| Champ                | Type          | Contraintes          | Description                                  |
++----------------------+---------------+----------------------+----------------------------------------------+
+| id                   | INT           | PK, NN, AUTO_INC     | Identifiant unique                           |
+| scan_run_id          | INT           | FK -> scan_runs.id   | Scan ayant collecte cette instance           |
+| resource_id          | VARCHAR(255)  | NN                   | ARN complet de la ressource AWS              |
+| instance_id          | VARCHAR(50)   | NN                   | ID EC2 (ex: i-0abc1234)                      |
+| client_id            | VARCHAR(100)  | NN                   | Identifiant du client                        |
+| instance_type        | VARCHAR(50)   | -                    | Type d'instance (ex: t3.micro, m5.large)     |
+| state                | VARCHAR(20)   | -                    | Etat : running, stopped, terminated...       |
+| ami_id               | VARCHAR(50)   | -                    | ID de l'image machine utilisee (AMI)         |
+| availability_zone    | VARCHAR(50)   | -                    | Zone de disponibilite (ex: eu-west-3a)       |
+| tenancy              | VARCHAR(20)   | -                    | Type de tenancy : default, dedicated, host   |
+| architecture         | VARCHAR(20)   | -                    | Architecture CPU : x86_64 ou arm64           |
+| virtualization_type  | VARCHAR(20)   | -                    | Type de virtualisation (hvm, paravirtual)    |
+| vpc_id               | VARCHAR(50)   | -                    | ID du reseau virtuel (VPC)                   |
+| subnet_id            | VARCHAR(50)   | -                    | ID du sous-reseau                            |
+| private_ip           | VARCHAR(15)   | -                    | Adresse IP privee de l'instance              |
+| public_ip            | VARCHAR(15)   | -                    | Adresse IP publique (si assignee)            |
+| iam_profile          | VARCHAR(255)  | -                    | Profil IAM attache a l'instance              |
+| root_device_name     | VARCHAR(50)   | -                    | Nom du disque racine (ex: /dev/xvda)         |
+| launch_time          | DATETIME      | -                    | Date de lancement de l'instance              |
+| region               | VARCHAR(50)   | -                    | Region AWS (ex: eu-west-3)                   |
+| ebs_volumes          | JSON          | -                    | Liste des disques EBS attaches               |
+| tags                 | JSON          | -                    | Tags AWS associes a l'instance               |
+| scan_timestamp       | DATETIME      | NN                   | Date a laquelle le scan a ete effectue       |
++----------------------+---------------+----------------------+----------------------------------------------+
+
+
+===============================================================
+  TABLE : ec2_performance
+  Role : Metriques CloudWatch de performance pour chaque instance EC2
+===============================================================
+
++----------------------------+----------+---------------------------+----------------------------------------------+
+| Champ                      | Type     | Contraintes               | Description                                  |
++----------------------------+----------+---------------------------+----------------------------------------------+
+| id                         | INT      | PK, NN, AUTO_INC          | Identifiant unique                           |
+| ec2_instance_id            | INT      | FK -> ec2_instances.id    | Instance EC2 concernee                       |
+| cpu_utilization_avg        | FLOAT    | -                         | Utilisation CPU moyenne (en %)               |
+| memory_utilization_avg     | FLOAT    | -                         | Utilisation memoire moyenne (en %)           |
+| network_in_bytes           | BIGINT   | -                         | Volume de donnees recu (en octets)           |
+| network_out_bytes          | BIGINT   | -                         | Volume de donnees emis (en octets)           |
++----------------------------+----------+---------------------------+----------------------------------------------+
+
+
+===============================================================
+  TABLE : s3_buckets
+  Role : Metadonnees et configuration securite des buckets S3 collectes
+===============================================================
+
++----------------------+---------------+----------------------+----------------------------------------------+
+| Champ                | Type          | Contraintes          | Description                                  |
++----------------------+---------------+----------------------+----------------------------------------------+
+| id                   | INT           | PK, NN, AUTO_INC     | Identifiant unique                           |
+| scan_run_id          | INT           | FK -> scan_runs.id   | Scan ayant collecte ce bucket                |
+| resource_id          | VARCHAR(255)  | NN                   | ARN complet du bucket S3                     |
+| bucket_name          | VARCHAR(255)  | NN                   | Nom du bucket                                |
+| client_id            | VARCHAR(100)  | NN                   | Identifiant du client                        |
+| creation_date        | DATETIME      | -                    | Date de creation du bucket                   |
+| region               | VARCHAR(50)   | -                    | Region AWS du bucket                         |
+| encryption_enabled   | BOOLEAN       | DEF=false            | Chiffrement des donnees active               |
+| versioning_enabled   | BOOLEAN       | DEF=false            | Versioning des fichiers active               |
+| public_access_blocked| BOOLEAN       | DEF=false            | Blocage de l'acces public active             |
+| public_read_enabled  | BOOLEAN       | DEF=false            | Lecture publique autorisee                   |
+| bucket_policy_enabled| BOOLEAN       | DEF=false            | Politique d'acces bucket configuree          |
+| lifecycle_enabled    | BOOLEAN       | DEF=false            | Regles de cycle de vie configurees           |
+| cors_enabled         | BOOLEAN       | DEF=false            | Partage cross-origin (CORS) configure        |
+| website_enabled      | BOOLEAN       | DEF=false            | Hebergement de site web active               |
+| logging_enabled      | BOOLEAN       | DEF=false            | Journalisation des acces active              |
+| notifications_enabled| BOOLEAN       | DEF=false            | Notifications d'evenements configurees       |
+| replication_enabled  | BOOLEAN       | DEF=false            | Replication vers une autre region active     |
+| scan_timestamp       | DATETIME      | NN                   | Date a laquelle le scan a ete effectue       |
++----------------------+---------------+----------------------+----------------------------------------------+
+
+
+===============================================================
+  TABLE : s3_performance
+  Role : Metriques CloudWatch de performance pour chaque bucket S3
+===============================================================
+
++------------------------------+----------+------------------------+----------------------------------------------+
+| Champ                        | Type     | Contraintes            | Description                                  |
++------------------------------+----------+------------------------+----------------------------------------------+
+| id                           | INT      | PK, NN, AUTO_INC       | Identifiant unique                           |
+| s3_bucket_id                 | INT      | FK -> s3_buckets.id    | Bucket S3 concerne                           |
+| all_requests                 | BIGINT   | -                      | Nombre total de requetes recues              |
+| get_requests                 | BIGINT   | -                      | Nombre de requetes GET (telechargement)      |
+| put_requests                 | BIGINT   | -                      | Nombre de requetes PUT (upload)              |
+| delete_requests              | BIGINT   | -                      | Nombre de requetes DELETE (suppression)      |
+| errors_4xx                   | BIGINT   | -                      | Nombre d'erreurs client (4xx)                |
+| errors_5xx                   | BIGINT   | -                      | Nombre d'erreurs serveur (5xx)               |
+| first_byte_latency_avg       | FLOAT    | -                      | Latence moyenne premier octet (en ms)        |
+| total_request_latency_avg    | FLOAT    | -                      | Latence moyenne totale des requetes (en ms)  |
+| bytes_downloaded             | BIGINT   | -                      | Volume total telecharge (en octets)          |
+| bytes_uploaded               | BIGINT   | -                      | Volume total uploade (en octets)             |
++------------------------------+----------+------------------------+----------------------------------------------+
+
+
+===============================================================
+  RELATIONS ENTRE TABLES
+===============================================================
+
+  users (1) ---------> (N) scan_runs
+    Un utilisateur peut avoir plusieurs scans.
+    Un scan appartient a un seul utilisateur.
+
+  scan_runs (1) -----> (N) ec2_instances
+    Un scan EC2 peut contenir plusieurs instances.
+    Une instance appartient a un seul scan.
+
+  scan_runs (1) -----> (N) s3_buckets
+    Un scan S3 peut contenir plusieurs buckets.
+    Un bucket appartient a un seul scan.
+
+  ec2_instances (1) -> (0/1) ec2_performance
+    Une instance peut avoir des metriques de performance.
+
+  s3_buckets (1) ----> (0/1) s3_performance
+    Un bucket peut avoir des metriques de performance.
+
+===============================================================

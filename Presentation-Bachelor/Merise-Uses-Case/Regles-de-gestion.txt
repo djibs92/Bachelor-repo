@@ -1,0 +1,66 @@
+# Regles de Gestion - CloudDiagnoze
+
+## Gestion des utilisateurs
+
+### RG01 - Unicite de l'email
+Un utilisateur ne peut pas s'inscrire avec un email deja utilise dans le systeme.
+
+### RG02 - Complexite du mot de passe
+Un mot de passe doit contenir au minimum 8 caracteres, dont au moins 1 majuscule, 1 minuscule et 1 chiffre.
+
+### RG03 - Stockage du mot de passe
+Le mot de passe n'est jamais stocke en clair. Il est systematiquement hashe avec l'algorithme bcrypt avant persistance en base.
+
+### RG04 - Compte actif
+Un utilisateur dont le compte est desactive (is_active = false) ne peut pas se connecter.
+
+### RG05 - Authentification par token JWT
+Toute action (scan, consultation, modification) necessite un token JWT valide transmis dans le header Authorization.
+
+### RG06 - Limitation des tentatives d'inscription
+L'inscription est limitee a 5 tentatives par minute par adresse IP.
+
+### RG07 - Limitation des tentatives de connexion
+La connexion est limitee a 10 tentatives par minute par adresse IP.
+
+## Gestion du compte
+
+### RG08 - Reinitialisation du mot de passe
+Un token de reinitialisation de mot de passe est valide pendant 24 heures. Passe ce delai, il est invalide.
+
+### RG09 - Confidentialite de la reinitialisation
+La demande de reinitialisation retourne toujours le meme message, que l'email existe ou non, afin d'eviter l'enumeration de comptes.
+
+### RG10 - Changement de mot de passe
+Pour changer son mot de passe, l'utilisateur doit fournir son mot de passe actuel en confirmation.
+
+### RG11 - Suppression en cascade
+La suppression d'un compte entraine la suppression de tous ses scans, instances EC2 et buckets S3 associes.
+
+## Gestion des scans
+
+### RG12 - Provider supporte
+Le seul fournisseur cloud supporte est AWS.
+
+### RG13 - Services supportes
+Les seuls services AWS scannables sont EC2 et S3.
+
+### RG14 - Mode d'authentification AWS
+Le seul mode d'authentificaiton AWS supporte est STS Assume role (via un Role ARN) . 
+
+### RG15 - Appartenance d'un scan
+Un scan appartient exclusivement a l'utilisateur qui l'a lance. Un utilisateur ne peut consulter que ses propres scans.
+
+### RG16 - Statut d'un scan
+Un scan possede obligatoirement l'un des statuts suivants : running, success, partial, failed.
+
+### RG17 - Session multi-services
+Un scan multi-services (EC2 + S3 simultanement) est regroupe sous un identifiant de session unique (session_id).
+
+## Gestion des ressources
+
+### RG18 - Rattachement des ressources
+Toute instance EC2 ou bucket S3 collecte est rattache a un seul scan. La suppression du scan entraine la suppression des ressources associees.
+
+### RG19 - Securite des buckets S3
+Pour chaque bucket S3 scanne, les proprietes de securite suivantes sont enregistrees : chiffrement, versioning, blocage de l'acces public, lecture publique, politique de bucket.
