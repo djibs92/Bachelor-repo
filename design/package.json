@@ -5,18 +5,29 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "build:css": "tailwindcss -i ./src/input.css -o ./css/output.css --minify",
+    "watch:css": "tailwindcss -i ./src/input.css -o ./css/output.css --watch"
   },
   "devDependencies": {
     "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0"
+    "jest-environment-jsdom": "^29.7.0",
+    "tailwindcss": "^3.4.19"
   },
   "jest": {
     "testEnvironment": "jsdom",
-    "roots": ["<rootDir>/tests"],
-    "testMatch": ["**/*.test.js"],
-    "moduleFileExtensions": ["js"],
-    "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"],
+    "roots": [
+      "<rootDir>/tests"
+    ],
+    "testMatch": [
+      "**/*.test.js"
+    ],
+    "moduleFileExtensions": [
+      "js"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup.js"
+    ],
     "verbose": true,
     "collectCoverageFrom": [
       "js/**/*.js",
@@ -24,4 +35,3 @@
     ]
   }
 }
-
