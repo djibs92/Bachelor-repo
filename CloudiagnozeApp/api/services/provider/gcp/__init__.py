@@ -1,2 +1,0 @@
-# GCP Provider module (placeholder)
-

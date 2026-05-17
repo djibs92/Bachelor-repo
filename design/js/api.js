@@ -8,27 +8,26 @@ class CloudDiagnozeAPI {
     }
 
     /**
-     * Fonction générique pour faire des requêtes HTTP
+     * Fonction générique pour faire des requêtes HTTP.
+     * Le JWT est transporté automatiquement via le cookie httpOnly `access_token`
+     * grâce à `credentials: 'include'`.
      */
     async request(endpoint, options = {}) {
         const url = `${this.baseURL}${endpoint}`;
 
-        // Récupérer le token JWT depuis authManager
-        const token = authManager ? authManager.getToken() : null;
-
         try {
             const response = await fetch(url, {
                 ...options,
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
-                    ...(token && { 'Authorization': `Bearer ${token}` }),  // ✅ AJOUT DU TOKEN JWT
                     ...options.headers
                 }
             });
 
-            // Gérer les erreurs 401 (token expiré)
+            // Gérer les erreurs 401 (session expirée)
             if (response.status === 401) {
-                console.log('🔒 Token expiré (401), nettoyage et redirection...');
+                console.log('🔒 Session expirée (401), nettoyage et redirection...');
                 if (authManager) {
                     authManager.clearAuth();
                 }

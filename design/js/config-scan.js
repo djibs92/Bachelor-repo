@@ -291,12 +291,12 @@ class ConfigScan {
         };
 
         try {
-            // Appeler l'API avec le token JWT
+            // Appeler l'API (JWT transmis via cookie httpOnly)
             const response = await fetch(`${API_CONFIG.BASE_URL}/scans`, {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authManager.getToken()}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(scanRequest)
             });
@@ -423,7 +423,7 @@ class ConfigScan {
 
                     // Attendre 2 secondes puis rediriger
                     setTimeout(() => {
-                        window.location.href = 'dashbord.html';
+                        window.location.href = 'dashboard.html';
                     }, 2000);
                 }
 
@@ -811,7 +811,7 @@ class ConfigScan {
                     <p class="font-bold text-lg">Scan terminé avec succès !</p>
                     <p class="text-sm text-green-400/80 mt-1">Les résultats sont maintenant disponibles</p>
                 </div>
-                <button onclick="window.location.href='dashbord.html'"
+                <button onclick="window.location.href='dashboard.html'"
                         class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
                     Voir le dashboard
                 </button>

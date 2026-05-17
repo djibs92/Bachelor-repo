@@ -103,9 +103,9 @@ async function handlePersonalInfoUpdate() {
 
         const response = await fetch(`${API_CONFIG.BASE_URL}/auth/me`, {
             method: 'PATCH',
+            credentials: 'include',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authManager.getToken()}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 full_name: fullName,
@@ -176,9 +176,9 @@ async function handlePasswordChange() {
 
         const response = await fetch(`${API_CONFIG.BASE_URL}/auth/change-password`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authManager.getToken()}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 current_password: currentPassword,

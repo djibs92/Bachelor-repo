@@ -534,7 +534,7 @@ class ScanHistoryManager {
         // Rediriger vers le Dashboard Global avec le premier scan_id du groupe
         // Le dashboard chargera tous les scans de cette session (fenêtre de 5 minutes)
         const firstScanId = scanGroup.scans[0]?.scan_id || scanGroup.id;
-        window.location.href = `dashbord.html?scan_id=${firstScanId}`;
+        window.location.href = `dashboard.html?scan_id=${firstScanId}`;
     }
 
     /**
@@ -562,11 +562,11 @@ class ScanHistoryManager {
 
         try {
             // Appeler l'API pour récupérer les détails complets
-            const token = authManager ? authManager.getToken() : localStorage.getItem('clouddiagnoze_token');
+            // Le JWT est transmis via le cookie httpOnly (credentials: 'include')
             const response = await fetch(`${API_CONFIG.BASE_URL}/scans/${scanGroup.id}/export`, {
                 method: 'GET',
+                credentials: 'include',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
             });

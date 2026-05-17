@@ -15,8 +15,9 @@
 const AUTH_API_BASE_URL = window.AUTH_API_BASE_URL || 'http://localhost:8000/api/v1/auth';
 
 // Clés de stockage localStorage
+// ⚠️ SÉCURITÉ : le token JWT N'EST PLUS stocké côté JS (cookie httpOnly côté serveur).
+// Seules les infos utilisateur non sensibles restent en cache UI.
 const STORAGE_KEYS = {
-    TOKEN: 'clouddiagnoze_token',
     USER: 'clouddiagnoze_user'
 };
 
@@ -25,15 +26,15 @@ const STORAGE_KEYS = {
  */
 class AuthManager {
     constructor() {
-        this.token = this.getToken();
         this.user = this.getUser();
     }
 
     /**
-     * Récupère le token depuis localStorage
+     * @deprecated Le JWT est désormais transporté via un cookie httpOnly.
+     * Cette méthode est conservée pour la rétro-compatibilité et retourne null.
      */
     getToken() {
-        return localStorage.getItem(STORAGE_KEYS.TOKEN);
+        return null;
     }
 
     /**
@@ -45,62 +46,52 @@ class AuthManager {
     }
 
     /**
-     * Stocke le token et les infos utilisateur
+     * Stocke les infos utilisateur (le JWT est posé en cookie httpOnly par le backend).
      */
-    setAuth(token, user) {
-        localStorage.setItem(STORAGE_KEYS.TOKEN, token);
+    setAuth(_token, user) {
         localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-        this.token = token;
         this.user = user;
     }
 
     /**
-     * Supprime le token et les infos utilisateur
+     * Supprime les infos utilisateur en cache (le cookie est effacé par /auth/logout).
      */
     clearAuth() {
-        localStorage.removeItem(STORAGE_KEYS.TOKEN);
         localStorage.removeItem(STORAGE_KEYS.USER);
-        this.token = null;
         this.user = null;
     }
 
     /**
-     * Vérifie si l'utilisateur est connecté
+     * Vérifie si l'utilisateur est connecté (présence d'infos utilisateur en cache).
+     * La validité réelle de la session est vérifiée côté serveur via le cookie httpOnly.
      */
     isAuthenticated() {
-        return !!this.token;
+        return !!this.user;
     }
 
     /**
-     * Vérifie si le token est valide en appelant l'API
-     * Retourne true si valide, false sinon (et supprime le token expiré)
+     * Vérifie si la session (cookie httpOnly) est valide en appelant l'API.
+     * Retourne true si valide, false sinon (et nettoie le cache local).
      */
     async validateToken() {
-        if (!this.token) {
-            return false;
-        }
-
         try {
             const response = await fetch(`${AUTH_API_BASE_URL}/me`, {
                 method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
+                credentials: 'include'
             });
 
             if (response.status === 401) {
-                // Token expiré ou invalide
-                console.log('🔒 Token expiré, nettoyage...');
+                console.log('🔒 Session expirée, nettoyage...');
                 this.clearAuth();
                 return false;
             }
 
             if (!response.ok) {
-                console.error('Erreur lors de la validation du token:', response.status);
+                console.error('Erreur lors de la validation de la session:', response.status);
                 return false;
             }
 
-            // Token valide, mettre à jour les infos utilisateur
+            // Session valide, mettre à jour les infos utilisateur
             const data = await response.json();
             localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data));
             this.user = data;
@@ -146,11 +137,13 @@ class AuthManager {
 
     /**
      * Connexion d'un utilisateur
+     * Le backend pose le JWT dans un cookie httpOnly via Set-Cookie.
      */
     async login(email, password) {
         try {
             const response = await fetch(`${AUTH_API_BASE_URL}/login`, {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -166,8 +159,8 @@ class AuthManager {
                 throw new Error(data.detail || 'Erreur lors de la connexion');
             }
 
-            // Stocker le token et les infos utilisateur
-            this.setAuth(data.access_token, data.user);
+            // Stocker uniquement les infos utilisateur (le token est en cookie httpOnly)
+            this.setAuth(null, data.user);
 
             return { success: true, user: data.user };
         } catch (error) {
@@ -177,9 +170,18 @@ class AuthManager {
     }
 
     /**
-     * Déconnexion
+     * Déconnexion : appelle le backend pour effacer le cookie httpOnly,
+     * nettoie le cache local puis redirige vers la page de login.
      */
-    logout() {
+    async logout() {
+        try {
+            await fetch(`${AUTH_API_BASE_URL}/logout`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+        } catch (error) {
+            console.error('Erreur logout (cookie effacé localement) :', error);
+        }
         this.clearAuth();
         window.location.href = 'login.html';
     }
@@ -188,22 +190,15 @@ class AuthManager {
      * Récupère les infos de l'utilisateur connecté depuis l'API
      */
     async getCurrentUser() {
-        if (!this.token) {
-            return { success: false, error: 'Non authentifié' };
-        }
-
         try {
             const response = await fetch(`${AUTH_API_BASE_URL}/me`, {
                 method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
+                credentials: 'include'
             });
 
             const data = await response.json();
 
             if (!response.ok) {
-                // Token invalide ou expiré
                 if (response.status === 401) {
                     this.clearAuth();
                     window.location.href = 'login.html';
