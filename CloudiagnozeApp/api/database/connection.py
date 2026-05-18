@@ -29,7 +29,19 @@ DB_HOST = os.getenv("DB_HOST", "localhost")  # Par défaut localhost (Docker exp
 DB_PORT = os.getenv("DB_PORT", "3306")
 DB_NAME = os.getenv("DB_NAME", "clouddiagnoze")
 DB_USER = os.getenv("DB_USER", "clouddiagnoze_user")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+
+# ========================================
+# VALIDATION DU MOT DE PASSE
+# ========================================
+# Refuse de démarrer l'application si le mot de passe n'est pas défini.
+# Cela évite de tenter une connexion avec un mot de passe vide en production
+# et oblige à fournir explicitement la variable d'environnement DB_PASSWORD.
+if not DB_PASSWORD:
+    raise ValueError(
+        "La variable d'environnement DB_PASSWORD est obligatoire et ne peut pas être vide. "
+        "Définissez-la dans votre fichier .env ou dans l'environnement avant de démarrer l'application."
+    )
 
 # ========================================
 # CONSTRUCTION DE L'URL DE CONNEXION

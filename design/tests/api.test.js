@@ -1,10 +1,13 @@
 /**
  * Tests pour api.js - Classe CloudDiagnozeAPI
+ *
+ * Depuis la migration sécurité, le JWT n'est plus injecté dans l'en-tête
+ * `Authorization: Bearer ...`. Il est transporté via le cookie httpOnly
+ * `access_token` grâce à `credentials: 'include'` sur chaque requête.
  */
 
-// Mock de authManager
+// Mock de authManager (le token n'est plus accessible côté JS)
 global.authManager = {
-    getToken: jest.fn(() => 'mock-jwt-token'),
     clearAuth: jest.fn()
 };
 
@@ -16,14 +19,13 @@ class CloudDiagnozeAPI {
 
     async request(endpoint, options = {}) {
         const url = `${this.baseURL}${endpoint}`;
-        const token = authManager ? authManager.getToken() : null;
 
         try {
             const response = await fetch(url, {
                 ...options,
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
-                    ...(token && { 'Authorization': `Bearer ${token}` }),
                     ...options.headers
                 }
             });
@@ -87,7 +89,6 @@ describe('CloudDiagnozeAPI', () => {
 
     beforeEach(() => {
         api = new CloudDiagnozeAPI();
-        global.authManager.getToken.mockReturnValue('mock-jwt-token');
     });
 
     // ========================================
@@ -103,7 +104,7 @@ describe('CloudDiagnozeAPI', () => {
     // TESTS : Méthode request()
     // ========================================
     describe('request()', () => {
-        test('ajoute le header Authorization avec le token JWT', async () => {
+        test('envoie credentials: include pour transporter le cookie httpOnly', async () => {
             global.fetch.mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({ data: 'test' })
@@ -114,12 +115,24 @@ describe('CloudDiagnozeAPI', () => {
             expect(global.fetch).toHaveBeenCalledWith(
                 'http://localhost:8000/api/v1/test-endpoint',
                 expect.objectContaining({
+                    credentials: 'include',
                     headers: expect.objectContaining({
-                        'Authorization': 'Bearer mock-jwt-token',
                         'Content-Type': 'application/json'
                     })
                 })
             );
+        });
+
+        test('n\'ajoute plus d\'en-tête Authorization Bearer (JWT en cookie)', async () => {
+            global.fetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ data: 'test' })
+            });
+
+            await api.request('/test-endpoint');
+
+            const [, fetchOptions] = global.fetch.mock.calls[0];
+            expect(fetchOptions.headers).not.toHaveProperty('Authorization');
         });
 
         test('gère erreur 401 et redirige vers login', async () => {
@@ -133,6 +146,7 @@ describe('CloudDiagnozeAPI', () => {
             expect(global.window.location.href).toBe('login.html');
         });
 
+
         test('gère les erreurs HTTP non-401', async () => {
             global.fetch.mockResolvedValueOnce({
                 ok: false,
@@ -142,7 +156,7 @@ describe('CloudDiagnozeAPI', () => {
             await expect(api.request('/error')).rejects.toThrow('HTTP error! status: 500');
         });
 
-        test('fonctionne sans token (authManager null)', async () => {
+        test('fonctionne sans authManager (authManager null)', async () => {
             const originalAuthManager = global.authManager;
             global.authManager = null;
 
@@ -151,7 +165,6 @@ describe('CloudDiagnozeAPI', () => {
                 json: async () => ({ data: 'public' })
             });
 
-            // Recréer l'API pour tester sans authManager
             const apiNoAuth = new CloudDiagnozeAPI();
             const result = await apiNoAuth.request('/public');
 
