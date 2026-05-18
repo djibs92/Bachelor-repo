@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from main import app
 from api.database import get_db, User
@@ -452,7 +452,7 @@ class TestResetPasswordEndpoint:
         db = test_db()
         user = db.query(User).filter(User.email == sample_user.email).first()
         user.reset_token = generate_reset_token()
-        user.reset_token_expiry = datetime.now() - timedelta(hours=1)  # Expiré il y a 1h
+        user.reset_token_expiry = datetime.now(timezone.utc) - timedelta(hours=1)  # Expiré il y a 1h
         db.commit()
         reset_token = user.reset_token
         db.close()
