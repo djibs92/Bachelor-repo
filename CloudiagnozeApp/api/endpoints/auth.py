@@ -190,23 +190,25 @@ def get_current_user(
         HTTPException: Si le token est invalide ou l'utilisateur n'existe pas
     """
     token: Optional[str] = None
+    header_token: Optional[str] = None
 
-    # 1. Priorité au cookie httpOnly
-    if access_token:
-        token = access_token
-    # 2. Fallback sur le header Authorization
-    elif authorization:
-        try:
-            scheme, header_token = authorization.split()
-            if scheme.lower() != "bearer":
-                raise HTTPException(
-                    status_code=401, detail="Schéma d'authentification invalide"
-                )
-            token = header_token
-        except ValueError:
+    # 1. Si un header Authorization est fourni, on valide systématiquement
+    #    sa syntaxe (`Bearer <token>`) avant toute autre logique, même si
+    #    un cookie valide est présent (sécurité : un header malformé doit
+    #    toujours être rejeté).
+    if authorization:
+        parts = authorization.split()
+        if len(parts) != 2 or parts[0].lower() != "bearer":
             raise HTTPException(
                 status_code=401, detail="Format du header Authorization invalide"
             )
+        header_token = parts[1]
+
+    # 2. Priorité au cookie httpOnly, puis fallback sur le header validé
+    if access_token:
+        token = access_token
+    elif header_token:
+        token = header_token
 
     if not token:
         raise HTTPException(status_code=401, detail="Token manquant")
