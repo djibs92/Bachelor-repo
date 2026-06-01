@@ -1,0 +1,280 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1420" width="1600" height="1420" style="font-family: Arial, sans-serif; background: white;">
+
+  <defs>
+    <marker id="arr-sync" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <polygon points="0 0, 10 5, 0 10" fill="#2c3e50"/>
+    </marker>
+    <marker id="arr-return" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <polygon points="0 0, 10 5, 0 10" fill="#7f8c8d"/>
+    </marker>
+    <marker id="arr-db" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <polygon points="0 0, 10 5, 0 10" fill="#c0392b"/>
+    </marker>
+    <marker id="arr-sse" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <polygon points="0 0, 10 5, 0 10" fill="#8e44ad"/>
+    </marker>
+  </defs>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- TITRE -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <text x="800" y="36" text-anchor="middle" font-size="24" font-weight="bold" fill="#1a1a2e">Diagramme de Séquence — Scan EC2 Asynchrone</text>
+  <text x="800" y="58" text-anchor="middle" font-size="13" fill="#7f8c8d">BackgroundTasks FastAPI · SSE · Architecture agnostique au provider</text>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- ACTEURS -->
+  <!-- ══════════════════════════════════════════════════ -->
+
+  <!-- Utilisateur -->
+  <rect x="34" y="78" width="122" height="60" rx="30" fill="#5a67d8" stroke="#434190" stroke-width="1.5"/>
+  <text x="95" y="105" text-anchor="middle" font-size="13" font-weight="bold" fill="white">Utilisateur</text>
+  <text x="95" y="122" text-anchor="middle" font-size="11" fill="#c7d2fe">Client</text>
+
+  <!-- Frontend -->
+  <rect x="206" y="78" width="122" height="60" rx="6" fill="#0369a1" stroke="#075985" stroke-width="1.5"/>
+  <text x="267" y="105" text-anchor="middle" font-size="13" font-weight="bold" fill="white">Frontend</text>
+  <text x="267" y="122" text-anchor="middle" font-size="11" fill="#bae6fd">JavaScript</text>
+
+  <!-- API FastAPI -->
+  <rect x="378" y="78" width="122" height="60" rx="6" fill="#0369a1" stroke="#075985" stroke-width="1.5"/>
+  <text x="439" y="105" text-anchor="middle" font-size="13" font-weight="bold" fill="white">API</text>
+  <text x="439" y="122" text-anchor="middle" font-size="11" fill="#bae6fd">FastAPI</text>
+
+  <!-- ScanEngine -->
+  <rect x="550" y="78" width="132" height="60" rx="6" fill="#0369a1" stroke="#075985" stroke-width="1.5"/>
+  <text x="616" y="105" text-anchor="middle" font-size="13" font-weight="bold" fill="white">ScanEngine</text>
+  <text x="616" y="122" text-anchor="middle" font-size="11" fill="#bae6fd">Orchestrator</text>
+
+  <!-- ScannerFactory -->
+  <rect x="732" y="78" width="138" height="60" rx="6" fill="#0369a1" stroke="#075985" stroke-width="1.5"/>
+  <text x="801" y="105" text-anchor="middle" font-size="13" font-weight="bold" fill="white">ScannerFactory</text>
+  <text x="801" y="122" text-anchor="middle" font-size="11" fill="#bae6fd">Factory Pattern</text>
+
+  <!-- AWSConnection — NOUVEAU -->
+  <rect x="920" y="78" width="138" height="60" rx="6" fill="#1d6a5a" stroke="#145246" stroke-width="1.5"/>
+  <text x="989" y="105" text-anchor="middle" font-size="13" font-weight="bold" fill="white">AWSConnection</text>
+  <text x="989" y="122" text-anchor="middle" font-size="11" fill="#a7f3d0">boto3 Session</text>
+
+  <!-- EC2Scanner -->
+  <rect x="1108" y="78" width="122" height="60" rx="6" fill="#0369a1" stroke="#075985" stroke-width="1.5"/>
+  <text x="1169" y="105" text-anchor="middle" font-size="13" font-weight="bold" fill="white">EC2Scanner</text>
+  <text x="1169" y="122" text-anchor="middle" font-size="11" fill="#bae6fd">AWS Scanner</text>
+
+  <!-- AWS -->
+  <rect x="1282" y="78" width="122" height="60" rx="6" fill="#FF9900" stroke="#cc7a00" stroke-width="1.5"/>
+  <text x="1343" y="105" text-anchor="middle" font-size="13" font-weight="bold" fill="white">AWS</text>
+  <text x="1343" y="122" text-anchor="middle" font-size="11" fill="#fff3cd">boto3 API</text>
+
+  <!-- Database -->
+  <rect x="1452" y="78" width="122" height="60" rx="6" fill="#be185d" stroke="#9d174d" stroke-width="1.5"/>
+  <text x="1513" y="105" text-anchor="middle" font-size="13" font-weight="bold" fill="white">Database</text>
+  <text x="1513" y="122" text-anchor="middle" font-size="11" fill="#fce7f3">MariaDB</text>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- LIFELINES -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <line x1="95"   y1="138" x2="95"   y2="1360" stroke="#ccc" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="267"  y1="138" x2="267"  y2="1360" stroke="#ccc" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="439"  y1="138" x2="439"  y2="1360" stroke="#ccc" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="616"  y1="138" x2="616"  y2="1360" stroke="#ccc" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="801"  y1="138" x2="801"  y2="1360" stroke="#ccc" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="989"  y1="138" x2="989"  y2="1360" stroke="#ccc" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="1169" y1="138" x2="1169" y2="1360" stroke="#ccc" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="1343" y1="138" x2="1343" y2="1360" stroke="#ccc" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="1513" y1="138" x2="1513" y2="1360" stroke="#ccc" stroke-width="1.5" stroke-dasharray="5 4"/>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- PHASE 1 : REQUÊTE INITIALE (synchrone)            -->
+  <!-- ══════════════════════════════════════════════════ -->
+
+  <rect x="34" y="162" width="1556" height="18" rx="3" fill="#e0f2fe" stroke="#bae6fd" stroke-width="1"/>
+  <text x="800" y="175" text-anchor="middle" font-size="11" font-weight="bold" fill="#0369a1">PHASE 1 — Requête initiale (synchrone)</text>
+
+  <!-- 1. Clic -->
+  <rect x="82" y="185" width="26" height="50" rx="2" fill="#5a67d8" opacity="0.25"/>
+  <line x1="95" y1="195" x2="267" y2="195" stroke="#2c3e50" stroke-width="2" marker-end="url(#arr-sync)"/>
+  <text x="102" y="190" font-size="12" font-weight="bold" fill="#2c3e50">1. Clic "Lancer scan EC2"</text>
+
+  <!-- 2. POST /api/v1/scans -->
+  <rect x="254" y="210" width="26" height="70" rx="2" fill="#0369a1" opacity="0.2"/>
+  <line x1="267" y1="220" x2="439" y2="220" stroke="#2c3e50" stroke-width="2" marker-end="url(#arr-sync)"/>
+  <text x="274" y="215" font-size="12" font-weight="bold" fill="#2c3e50">2. POST /api/v1/scans</text>
+  <text x="274" y="232" font-size="10" fill="#666">{"provider": "aws", "services": ["ec2"]}</text>
+
+  <!-- 3. Validation JWT + payload -->
+  <rect x="426" y="235" width="26" height="65" rx="2" fill="#0369a1" opacity="0.2"/>
+  <rect x="454" y="240" width="188" height="30" rx="4" fill="#fef9c3" stroke="#fbbf24" stroke-width="1"/>
+  <text x="548" y="260" text-anchor="middle" font-size="11" font-weight="bold" fill="#92400e">✓ Validation JWT + Payload</text>
+
+  <!-- 4. add_background_task() -->
+  <line x1="439" y1="278" x2="616" y2="278" stroke="#2c3e50" stroke-width="2" marker-end="url(#arr-sync)"/>
+  <text x="446" y="273" font-size="12" font-weight="bold" fill="#2c3e50">3. add_background_task(run_scan)</text>
+  <text x="446" y="290" font-size="10" fill="#666">provider="aws", service="ec2", user_id=7</text>
+
+  <!-- 5. Créer ScanRun status=queued -->
+  <rect x="603" y="295" width="26" height="50" rx="2" fill="#0369a1" opacity="0.2"/>
+  <line x1="616" y1="305" x2="1513" y2="305" stroke="#c0392b" stroke-width="1.5" marker-end="url(#arr-db)"/>
+  <text x="900" y="300" font-size="12" font-weight="bold" fill="#c0392b">4. INSERT scan_runs (status='queued')</text>
+  <rect x="1500" y="305" width="26" height="34" rx="2" fill="#be185d" opacity="0.25"/>
+  <line x1="1513" y1="339" x2="616" y2="339" stroke="#7f8c8d" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arr-return)"/>
+  <text x="900" y="334" font-size="11" fill="#666">scan_run_id = 42</text>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- 202 ACCEPTED — part IMMÉDIATEMENT                 -->
+  <!-- ══════════════════════════════════════════════════ -->
+
+  <rect x="34" y="354" width="1556" height="18" rx="3" fill="#dcfce7" stroke="#86efac" stroke-width="1"/>
+  <text x="800" y="367" text-anchor="middle" font-size="11" font-weight="bold" fill="#15803d">202 ACCEPTED — réponse immédiate avant la fin du scan</text>
+
+  <line x1="439" y1="378" x2="267" y2="378" stroke="#15803d" stroke-width="2.5" stroke-dasharray="5 3" marker-end="url(#arr-return)"/>
+  <text x="290" y="373" font-size="12" font-weight="bold" fill="#15803d">5. HTTP 202 Accepted</text>
+  <text x="290" y="390" font-size="10" fill="#166534">{"scan_id": 42, "status": "queued"}</text>
+
+  <line x1="267" y1="400" x2="95" y2="400" stroke="#7f8c8d" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arr-return)"/>
+  <text x="102" y="395" font-size="12" fill="#7f8c8d">6. Afficher "Scan lancé..."</text>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- PHASE 2 : BACKGROUND TASK (parallèle)             -->
+  <!-- ══════════════════════════════════════════════════ -->
+
+  <rect x="34" y="420" width="1556" height="18" rx="3" fill="#fce7f3" stroke="#f9a8d4" stroke-width="1"/>
+  <text x="800" y="433" text-anchor="middle" font-size="11" font-weight="bold" fill="#9d174d">PHASE 2 — Background Task (tourne en parallèle, client déjà répondu)</text>
+
+  <!-- Activation ScanEngine background -->
+  <rect x="603" y="442" width="26" height="430" rx="2" fill="#9d174d" opacity="0.12"/>
+
+  <!-- 7. create_scanner() -->
+  <line x1="616" y1="452" x2="801" y2="452" stroke="#2c3e50" stroke-width="2" marker-end="url(#arr-sync)"/>
+  <text x="622" y="447" font-size="12" font-weight="bold" fill="#2c3e50">7. create_scanner("aws", "ec2")</text>
+  <rect x="788" y="452" width="26" height="60" rx="2" fill="#0369a1" opacity="0.2"/>
+
+  <!-- 8. Factory → AWSConnection.connect() -->
+  <line x1="801" y1="468" x2="989" y2="468" stroke="#2c3e50" stroke-width="2" marker-end="url(#arr-sync)"/>
+  <text x="808" y="463" font-size="12" font-weight="bold" fill="#2c3e50">8. AWSConnection.connect()</text>
+  <text x="808" y="478" font-size="10" fill="#666">assume_role(arn, session)</text>
+  <rect x="976" y="468" width="26" height="38" rx="2" fill="#1d6a5a" opacity="0.25"/>
+  <line x1="989" y1="506" x2="801" y2="506" stroke="#7f8c8d" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arr-return)"/>
+  <text x="808" y="501" font-size="11" fill="#666">boto3_session prête</text>
+
+  <!-- 9. Factory retourne EC2Scanner -->
+  <line x1="801" y1="520" x2="616" y2="520" stroke="#7f8c8d" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arr-return)"/>
+  <text x="622" y="515" font-size="11" fill="#666">return ec2_scanner (avec connexion)</text>
+
+  <!-- UPDATE status=running -->
+  <line x1="616" y1="538" x2="1513" y2="538" stroke="#c0392b" stroke-width="1.5" marker-end="url(#arr-db)"/>
+  <text x="900" y="533" font-size="12" font-weight="bold" fill="#c0392b">10. UPDATE scan_runs SET status='running'</text>
+  <rect x="1500" y="538" width="26" height="24" rx="2" fill="#be185d" opacity="0.25"/>
+
+  <!-- 11. scan(regions) -->
+  <rect x="1156" y="568" width="26" height="200" rx="2" fill="#0369a1" opacity="0.2"/>
+  <line x1="616" y1="572" x2="1169" y2="572" stroke="#2c3e50" stroke-width="2" marker-end="url(#arr-sync)"/>
+  <text x="622" y="567" font-size="12" font-weight="bold" fill="#2c3e50">11. scan(regions=["eu-west-1"])</text>
+
+  <!-- 12. describe_instances() -->
+  <rect x="1330" y="590" width="26" height="50" rx="2" fill="#FF9900" opacity="0.25"/>
+  <line x1="1169" y1="595" x2="1343" y2="595" stroke="#2c3e50" stroke-width="2" marker-end="url(#arr-sync)"/>
+  <text x="1176" y="590" font-size="12" font-weight="bold" fill="#2c3e50">12. describe_instances()</text>
+  <text x="1176" y="604" font-size="10" fill="#666">ec2_client via AWSConnection</text>
+  <line x1="1343" y1="640" x2="1169" y2="640" stroke="#7f8c8d" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arr-return)"/>
+  <text x="1176" y="635" font-size="11" fill="#666">instances_data (12 instances)</text>
+
+  <!-- 13. get_metric_statistics() -->
+  <rect x="1330" y="652" width="26" height="50" rx="2" fill="#FF9900" opacity="0.25"/>
+  <line x1="1169" y1="658" x2="1343" y2="658" stroke="#2c3e50" stroke-width="2" marker-end="url(#arr-sync)"/>
+  <text x="1176" y="653" font-size="12" font-weight="bold" fill="#2c3e50">13. get_metric_statistics()</text>
+  <text x="1176" y="667" font-size="10" fill="#666">CloudWatch CPU/réseau</text>
+  <line x1="1343" y1="700" x2="1169" y2="700" stroke="#7f8c8d" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arr-return)"/>
+  <text x="1176" y="695" font-size="11" fill="#666">metrics_data</text>
+
+  <!-- 14. EC2Scanner → ScanEngine : résultats bruts -->
+  <line x1="1169" y1="722" x2="616" y2="722" stroke="#7f8c8d" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arr-return)"/>
+  <text x="622" y="717" font-size="11" fill="#666">scan_results (12 instances + métriques)</text>
+
+  <!-- 15. ScanEngine save_to_db() — c'est ScanEngine qui persiste, pas le scanner -->
+  <line x1="616" y1="742" x2="1513" y2="742" stroke="#c0392b" stroke-width="1.5" marker-end="url(#arr-db)"/>
+  <text x="900" y="737" font-size="12" font-weight="bold" fill="#c0392b">15. INSERT ec2_instances (scan_run_id=42, ...)</text>
+  <rect x="1500" y="742" width="26" height="34" rx="2" fill="#be185d" opacity="0.25"/>
+  <line x1="1513" y1="776" x2="616" y2="776" stroke="#7f8c8d" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arr-return)"/>
+  <text x="900" y="771" font-size="11" fill="#666">12 rows inserted</text>
+
+  <!-- 16. UPDATE status=success -->
+  <line x1="616" y1="796" x2="1513" y2="796" stroke="#c0392b" stroke-width="1.5" marker-end="url(#arr-db)"/>
+  <text x="900" y="791" font-size="12" font-weight="bold" fill="#c0392b">16. UPDATE scan_runs SET status='success', total=12</text>
+  <rect x="1500" y="796" width="26" height="24" rx="2" fill="#be185d" opacity="0.25"/>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- PHASE 3 : SSE POLLING                             -->
+  <!-- ══════════════════════════════════════════════════ -->
+
+  <rect x="34" y="836" width="1556" height="18" rx="3" fill="#ede9fe" stroke="#c4b5fd" stroke-width="1"/>
+  <text x="800" y="849" text-anchor="middle" font-size="11" font-weight="bold" fill="#6d28d9">PHASE 3 — Polling SSE (pendant et après le scan)</text>
+
+  <!-- SSE connect -->
+  <line x1="267" y1="862" x2="439" y2="862" stroke="#8e44ad" stroke-width="2" marker-end="url(#arr-sse)"/>
+  <text x="274" y="857" font-size="12" font-weight="bold" fill="#8e44ad">17. GET /api/v1/scans/42/stream (SSE)</text>
+
+  <!-- Poll 1 — running -->
+  <line x1="439" y1="882" x2="1513" y2="882" stroke="#c0392b" stroke-width="1.5" marker-end="url(#arr-db)"/>
+  <text x="600" y="877" font-size="11" fill="#c0392b">18. SELECT status FROM scan_runs WHERE id=42</text>
+  <rect x="1500" y="882" width="26" height="24" rx="2" fill="#be185d" opacity="0.25"/>
+  <line x1="1513" y1="906" x2="439" y2="906" stroke="#7f8c8d" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arr-return)"/>
+  <text x="600" y="901" font-size="11" fill="#666">status="running"</text>
+
+  <!-- SSE event running -->
+  <line x1="439" y1="918" x2="267" y2="918" stroke="#8e44ad" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arr-sse)"/>
+  <text x="274" y="913" font-size="11" fill="#8e44ad">event: progress {"status": "running", "pct": 60}</text>
+  <line x1="267" y1="930" x2="95" y2="930" stroke="#7f8c8d" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arr-return)"/>
+  <text x="102" y="925" font-size="11" fill="#666">Afficher barre de progression</text>
+
+  <!-- Poll 2 — success -->
+  <line x1="439" y1="952" x2="1513" y2="952" stroke="#c0392b" stroke-width="1.5" marker-end="url(#arr-db)"/>
+  <text x="600" y="947" font-size="11" fill="#c0392b">19. SELECT status FROM scan_runs WHERE id=42</text>
+  <rect x="1500" y="952" width="26" height="24" rx="2" fill="#be185d" opacity="0.25"/>
+  <line x1="1513" y1="976" x2="439" y2="976" stroke="#7f8c8d" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arr-return)"/>
+  <text x="600" y="971" font-size="11" fill="#166534" font-weight="bold">status="success", total_resources=12</text>
+
+  <!-- SSE event done -->
+  <line x1="439" y1="990" x2="267" y2="990" stroke="#8e44ad" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arr-sse)"/>
+  <text x="274" y="985" font-size="11" fill="#8e44ad">event: done {"status": "success", "total": 12}</text>
+  <line x1="267" y1="1002" x2="95" y2="1002" stroke="#7f8c8d" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arr-return)"/>
+  <text x="102" y="997" font-size="11" fill="#15803d" font-weight="bold">Afficher "Scan terminé : 12 instances"</text>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- LÉGENDE -->
+  <!-- ══════════════════════════════════════════════════ -->
+
+  <rect x="34" y="1030" width="1556" height="130" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/>
+  <text x="56" y="1054" font-size="14" font-weight="bold" fill="#1a1a2e">Légende</text>
+
+  <line x1="56" y1="1074" x2="130" y2="1074" stroke="#2c3e50" stroke-width="2" marker-end="url(#arr-sync)"/>
+  <text x="138" y="1079" font-size="12" fill="#444">Appel synchrone</text>
+
+  <line x1="56" y1="1100" x2="130" y2="1100" stroke="#7f8c8d" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arr-return)"/>
+  <text x="138" y="1105" font-size="12" fill="#444">Retour / réponse</text>
+
+  <line x1="56" y1="1126" x2="130" y2="1126" stroke="#c0392b" stroke-width="1.5" marker-end="url(#arr-db)"/>
+  <text x="138" y="1131" font-size="12" fill="#444">Opération base de données</text>
+
+  <line x1="56" y1="1148" x2="130" y2="1148" stroke="#8e44ad" stroke-width="2" marker-end="url(#arr-sse)"/>
+  <text x="138" y="1153" font-size="12" fill="#444">SSE (Server-Sent Events)</text>
+
+  <!-- Col 2 -->
+  <text x="440" y="1054" font-size="14" font-weight="bold" fill="#1a1a2e">Points clés</text>
+  <text x="440" y="1076" font-size="12" fill="#444">• HTTP 202 part avant la fin du scan (étape 5)</text>
+  <text x="440" y="1096" font-size="12" fill="#444">• Background Task tourne en parallèle côté serveur</text>
+  <text x="440" y="1116" font-size="12" fill="#444">• AWSConnection gère la session boto3 / AssumeRole</text>
+  <text x="440" y="1136" font-size="12" fill="#444">• ScanEngine orchestre la persistence (pas le scanner)</text>
+  <text x="440" y="1156" font-size="12" fill="#444">• SSE permet au client de suivre l'avancement en temps réel</text>
+
+  <!-- Col 3 -->
+  <text x="1000" y="1054" font-size="14" font-weight="bold" fill="#1a1a2e">Durées estimées</text>
+  <text x="1000" y="1076" font-size="12" fill="#444">• Validation + 202 : ~80ms</text>
+  <text x="1000" y="1096" font-size="12" fill="#444">• AssumeRole AWS : ~300ms</text>
+  <text x="1000" y="1116" font-size="12" fill="#444">• describe_instances : ~600ms</text>
+  <text x="1000" y="1136" font-size="12" fill="#444">• CloudWatch metrics : ~400ms</text>
+  <text x="1000" y="1156" font-size="12" fill="#444">• Save en base : ~150ms</text>
+
+  <!-- Footer -->
+  <text x="800" y="1395" text-anchor="middle" fill="#aaa" font-size="11">CloudDiagnoze — Diagramme de séquence asynchrone</text>
+
+</svg>

@@ -1,0 +1,307 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1600" width="1400" height="1600" style="font-family: Arial, sans-serif;">
+
+    <defs>
+        <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+
+        <linearGradient id="frontendGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+        </linearGradient>
+
+        <linearGradient id="apiGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#f093fb;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#f5576c;stop-opacity:1" />
+        </linearGradient>
+
+        <linearGradient id="businessGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#4facfe;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#00f2fe;stop-opacity:1" />
+        </linearGradient>
+
+        <linearGradient id="ormGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#43e97b;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#38f9d7;stop-opacity:1" />
+        </linearGradient>
+
+        <linearGradient id="dbGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#fa709a;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#fee140;stop-opacity:1" />
+        </linearGradient>
+
+        <linearGradient id="dockerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#2C5364;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#0F2027;stop-opacity:1" />
+        </linearGradient>
+
+        <marker id="arrow-flow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+            <polygon points="0 0, 10 5, 0 10" fill="#2c3e50" />
+        </marker>
+
+        <marker id="arrow-data" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+            <polygon points="0 0, 10 5, 0 10" fill="#e74c3c" />
+        </marker>
+    </defs>
+
+    <!-- Titre principal -->
+    <text x="700" y="50" text-anchor="middle" font-size="32" font-weight="bold" fill="#2c3e50">
+        Architecture Globale - CloudDiagnoze
+    </text>
+    <text x="700" y="80" text-anchor="middle" font-size="16" fill="#7f8c8d">
+        Architecture en couches - Séparation des responsabilités
+    </text>
+
+    <!-- ========================================== -->
+    <!-- CONTENEUR DOCKER (englobant) -->
+    <!-- ========================================== -->
+
+    <rect x="50" y="120" width="1300" height="1350" rx="15" ry="15"
+          fill="none" stroke="#2C5364" stroke-width="3" stroke-dasharray="10,5"/>
+
+    <text x="70" y="150" font-size="20" font-weight="bold" fill="#2C5364">
+        🐳 Docker Compose
+    </text>
+    <text x="70" y="175" font-size="13" fill="#546e7a">
+        Conteneurisation et orchestration
+    </text>
+
+    <!-- ========================================== -->
+    <!-- COUCHE 1 : FRONTEND -->
+    <!-- ========================================== -->
+
+    <g filter="url(#shadow)">
+        <rect x="100" y="220" width="1200" height="160" rx="12" ry="12" fill="url(#frontendGrad)"/>
+
+        <text x="700" y="255" text-anchor="middle" font-size="24" font-weight="bold" fill="white">
+            COUCHE 1 : FRONTEND (Interface Utilisateur)
+        </text>
+
+        <text x="120" y="290" font-size="15" fill="white" font-weight="bold">Technologies :</text>
+        <text x="140" y="315" font-size="14" fill="white">• Vanilla JavaScript (ES6+)</text>
+        <text x="140" y="338" font-size="14" fill="white">• Tailwind CSS 3.0</text>
+        <text x="140" y="361" font-size="14" fill="white">• HTML5 / CSS3</text>
+
+        <text x="500" y="290" font-size="15" fill="white" font-weight="bold">Responsabilités :</text>
+        <text x="520" y="315" font-size="14" fill="white">• Affichage de l'interface utilisateur</text>
+        <text x="520" y="338" font-size="14" fill="white">• Gestion des interactions (clics, formulaires)</text>
+        <text x="520" y="361" font-size="14" fill="white">• Appels HTTP vers l'API REST</text>
+
+        <rect x="1050" y="245" width="200" height="110" rx="8" ry="8" fill="rgba(255,255,255,0.2)" stroke="white" stroke-width="2"/>
+        <text x="1150" y="275" text-anchor="middle" font-size="13" font-weight="bold" fill="white">Pages principales</text>
+        <text x="1070" y="300" font-size="12" fill="white">→ Login / Signup</text>
+        <text x="1070" y="320" font-size="12" fill="white">→ Dashboard</text>
+        <text x="1070" y="340" font-size="12" fill="white">→ Scan Results</text>
+    </g>
+
+    <!-- Flèche Frontend → API -->
+    <line x1="700" y1="380" x2="700" y2="430" stroke="#2c3e50" stroke-width="3" marker-end="url(#arrow-flow)"/>
+    <text x="730" y="410" font-size="14" font-weight="bold" fill="#2c3e50">HTTP/REST</text>
+    <text x="730" y="428" font-size="12" fill="#7f8c8d">JSON payload</text>
+
+    <!-- ========================================== -->
+    <!-- COUCHE 2 : API -->
+    <!-- ========================================== -->
+
+    <g filter="url(#shadow)">
+        <rect x="100" y="450" width="1200" height="160" rx="12" ry="12" fill="url(#apiGrad)"/>
+
+        <text x="700" y="485" text-anchor="middle" font-size="24" font-weight="bold" fill="white">
+            COUCHE 2 : API (Endpoints REST)
+        </text>
+
+        <text x="120" y="520" font-size="15" fill="white" font-weight="bold">Technologies :</text>
+        <text x="140" y="545" font-size="14" fill="white">• FastAPI 0.104+</text>
+        <text x="140" y="568" font-size="14" fill="white">• Uvicorn (ASGI server)</text>
+        <text x="140" y="591" font-size="14" fill="white">• Pydantic (validation)</text>
+
+        <text x="500" y="520" font-size="15" fill="white" font-weight="bold">Responsabilités :</text>
+        <text x="520" y="545" font-size="14" fill="white">• Routage des requêtes HTTP</text>
+        <text x="520" y="568" font-size="14" fill="white">• Validation des données entrantes</text>
+        <text x="520" y="591" font-size="14" fill="white">• Authentification JWT / Sessions</text>
+
+        <rect x="1050" y="475" width="200" height="110" rx="8" ry="8" fill="rgba(255,255,255,0.2)" stroke="white" stroke-width="2"/>
+        <text x="1150" y="505" text-anchor="middle" font-size="13" font-weight="bold" fill="white">Endpoints</text>
+        <text x="1070" y="530" font-size="12" fill="white">→ POST /auth/login</text>
+        <text x="1070" y="550" font-size="12" fill="white">→ POST /scans</text>
+        <text x="1070" y="570" font-size="12" fill="white">→ GET /scans/{id}/export</text>
+    </g>
+
+    <!-- Flèche API → Business Logic -->
+    <line x1="700" y1="610" x2="700" y2="660" stroke="#2c3e50" stroke-width="3" marker-end="url(#arrow-flow)"/>
+    <text x="730" y="640" font-size="14" font-weight="bold" fill="#2c3e50">Appel de services</text>
+
+    <!-- ========================================== -->
+    <!-- COUCHE 3 : BUSINESS LOGIC -->
+    <!-- ========================================== -->
+
+    <g filter="url(#shadow)">
+        <rect x="100" y="680" width="1200" height="180" rx="12" ry="12" fill="url(#businessGrad)"/>
+
+        <text x="700" y="715" text-anchor="middle" font-size="24" font-weight="bold" fill="white">
+            COUCHE 3 : BUSINESS LOGIC (Logique Métier)
+        </text>
+
+        <text x="120" y="750" font-size="15" fill="white" font-weight="bold">Composants :</text>
+        <text x="140" y="775" font-size="14" fill="white">• ScannerFactory</text>
+        <text x="140" y="798" font-size="14" fill="white">• ConnectionFactory</text>
+        <text x="140" y="821" font-size="14" fill="white">• EC2/S3/VPC/RDS Scanners</text>
+        <text x="140" y="844" font-size="14" fill="white">• Storage Service</text>
+
+        <text x="500" y="750" font-size="15" fill="white" font-weight="bold">Responsabilités :</text>
+        <text x="520" y="775" font-size="14" fill="white">• Orchestration des scans</text>
+        <text x="520" y="798" font-size="14" fill="white">• Connexion aux services cloud (AWS)</text>
+        <text x="520" y="821" font-size="14" fill="white">• Récupération et traitement des données</text>
+        <text x="520" y="844" font-size="14" fill="white">• Gestion des erreurs et retry</text>
+
+        <rect x="1050" y="705" width="200" height="130" rx="8" ry="8" fill="rgba(255,255,255,0.2)" stroke="white" stroke-width="2"/>
+        <text x="1150" y="735" text-anchor="middle" font-size="13" font-weight="bold" fill="white">Design Patterns</text>
+        <text x="1070" y="760" font-size="12" fill="white">→ Factory Pattern</text>
+        <text x="1070" y="780" font-size="12" fill="white">→ Strategy Pattern</text>
+        <text x="1070" y="800" font-size="12" fill="white">→ Template Method</text>
+        <text x="1070" y="820" font-size="12" fill="white">→ Repository Pattern</text>
+    </g>
+
+    <!-- Flèche Business Logic → ORM -->
+    <line x1="700" y1="860" x2="700" y2="910" stroke="#2c3e50" stroke-width="3" marker-end="url(#arrow-flow)"/>
+    <text x="730" y="890" font-size="14" font-weight="bold" fill="#2c3e50">save_to_db() / query()</text>
+
+    <!-- ========================================== -->
+    <!-- COUCHE 4 : ORM -->
+    <!-- ========================================== -->
+
+    <g filter="url(#shadow)">
+        <rect x="100" y="930" width="1200" height="160" rx="12" ry="12" fill="url(#ormGrad)"/>
+
+        <text x="700" y="965" text-anchor="middle" font-size="24" font-weight="bold" fill="white">
+            COUCHE 4 : ORM (Object-Relational Mapping)
+        </text>
+
+        <text x="120" y="1000" font-size="15" fill="white" font-weight="bold">Technologies :</text>
+        <text x="140" y="1025" font-size="14" fill="white">• SQLAlchemy 2.0+</text>
+        <text x="140" y="1048" font-size="14" fill="white">• Alembic (migrations)</text>
+        <text x="140" y="1071" font-size="14" fill="white">• PyMySQL (driver)</text>
+
+        <text x="500" y="1000" font-size="15" fill="white" font-weight="bold">Responsabilités :</text>
+        <text x="520" y="1025" font-size="14" fill="white">• Mapping Objet ↔ Tables SQL</text>
+        <text x="520" y="1048" font-size="14" fill="white">• Génération des requêtes SQL</text>
+        <text x="520" y="1071" font-size="14" fill="white">• Gestion des transactions et sessions</text>
+
+        <rect x="1050" y="955" width="200" height="110" rx="8" ry="8" fill="rgba(255,255,255,0.2)" stroke="white" stroke-width="2"/>
+        <text x="1150" y="985" text-anchor="middle" font-size="13" font-weight="bold" fill="white">Modèles ORM</text>
+        <text x="1070" y="1010" font-size="12" fill="white">→ User</text>
+        <text x="1070" y="1030" font-size="12" fill="white">→ ScanRun</text>
+        <text x="1070" y="1050" font-size="12" fill="white">→ EC2Instance, S3Bucket...</text>
+    </g>
+
+    <!-- Flèche ORM → Database -->
+    <line x1="700" y1="1090" x2="700" y2="1140" stroke="#2c3e50" stroke-width="3" marker-end="url(#arrow-flow)"/>
+    <text x="730" y="1120" font-size="14" font-weight="bold" fill="#2c3e50">SQL Queries</text>
+
+    <!-- ========================================== -->
+    <!-- COUCHE 5 : DATABASE -->
+    <!-- ========================================== -->
+
+    <g filter="url(#shadow)">
+        <rect x="100" y="1160" width="1200" height="160" rx="12" ry="12" fill="url(#dbGrad)"/>
+
+        <text x="700" y="1195" text-anchor="middle" font-size="24" font-weight="bold" fill="white">
+            COUCHE 5 : DATABASE (Stockage Persistant)
+        </text>
+
+        <text x="120" y="1230" font-size="15" fill="white" font-weight="bold">Technologies :</text>
+        <text x="140" y="1255" font-size="14" fill="white">• MariaDB 11.2</text>
+        <text x="140" y="1278" font-size="14" fill="white">• Docker Volume (persistance)</text>
+        <text x="140" y="1301" font-size="14" fill="white">• InnoDB engine</text>
+
+        <text x="500" y="1230" font-size="15" fill="white" font-weight="bold">Responsabilités :</text>
+        <text x="520" y="1255" font-size="14" fill="white">• Stockage persistant des données</text>
+        <text x="520" y="1278" font-size="14" fill="white">• Garantie d'intégrité (FK, CASCADE)</text>
+        <text x="520" y="1301" font-size="14" fill="white">• Isolation multi-tenant (user_id)</text>
+
+        <rect x="1050" y="1185" width="200" height="110" rx="8" ry="8" fill="rgba(255,255,255,0.2)" stroke="white" stroke-width="2"/>
+        <text x="1150" y="1215" text-anchor="middle" font-size="13" font-weight="bold" fill="white">Tables principales</text>
+        <text x="1070" y="1240" font-size="12" fill="white">→ users</text>
+        <text x="1070" y="1260" font-size="12" fill="white">→ scan_runs</text>
+        <text x="1070" y="1280" font-size="12" fill="white">→ ec2_instances...</text>
+    </g>
+
+    <!-- ========================================== -->
+    <!-- SERVICE EXTERNE : AWS -->
+    <!-- ========================================== -->
+
+    <g filter="url(#shadow)">
+        <rect x="100" y="1360" width="550" height="100" rx="12" ry="12" fill="#FF9900" stroke="#232F3E" stroke-width="3"/>
+
+        <text x="375" y="1395" text-anchor="middle" font-size="20" font-weight="bold" fill="white">
+            SERVICE EXTERNE : AWS
+        </text>
+
+        <text x="120" y="1425" font-size="14" fill="white">• boto3 SDK</text>
+        <text x="120" y="1445" font-size="14" fill="white">• STS AssumeRole</text>
+
+        <text x="320" y="1425" font-size="14" fill="white">• EC2 / S3 / VPC / RDS</text>
+        <text x="320" y="1445" font-size="14" fill="white">• CloudWatch (métriques)</text>
+    </g>
+
+    <!-- Flèche Business Logic → AWS -->
+    <line x1="375" y1="860" x2="375" y2="1360" stroke="#e74c3c" stroke-width="2.5" stroke-dasharray="8,4" marker-end="url(#arrow-data)"/>
+    <text x="390" y="1100" font-size="13" font-weight="bold" fill="#e74c3c">API Calls</text>
+    <text x="390" y="1118" font-size="11" fill="#c0392b">(describe_instances, list_buckets...)</text>
+
+    <!-- ========================================== -->
+    <!-- LÉGENDE ET INFORMATIONS -->
+    <!-- ========================================== -->
+
+    <rect x="700" y="1360" width="600" height="100" rx="12" ry="12" fill="#ecf0f1" stroke="#95a5a6" stroke-width="2"/>
+
+    <text x="720" y="1390" font-size="16" font-weight="bold" fill="#2c3e50">
+        📖 Flux d'une requête de scan
+    </text>
+
+    <text x="720" y="1415" font-size="12" fill="#555">
+        1. Frontend : Utilisateur clique "Lancer un scan EC2"
+    </text>
+    <text x="720" y="1433" font-size="12" fill="#555">
+        2. API : POST /scans → Validation + Authentification JWT
+    </text>
+    <text x="720" y="1451" font-size="12" fill="#555">
+        3. Business Logic : Factory crée EC2Scanner → Connexion AWS (boto3)
+    </text>
+
+    <text x="1050" y="1415" font-size="12" fill="#555">
+        4. AWS : Récupération des instances EC2
+    </text>
+    <text x="1050" y="1433" font-size="12" fill="#555">
+        5. ORM : Insertion dans ec2_instances via SQLAlchemy
+    </text>
+    <text x="1050" y="1451" font-size="12" fill="#555">
+        6. Database : Stockage dans MariaDB
+    </text>
+
+    <!-- ========================================== -->
+    <!-- AVANTAGES ARCHITECTURE -->
+    <!-- ========================================== -->
+
+    <rect x="100" y="1490" width="1200" height="60" rx="10" ry="10" fill="#d4edda" stroke="#28a745" stroke-width="2"/>
+
+    <text x="700" y="1515" text-anchor="middle" font-size="16" font-weight="bold" fill="#155724">
+        ✅ Avantages de cette architecture en couches
+    </text>
+
+    <text x="120" y="1540" font-size="13" fill="#155724">
+        • Séparation des responsabilités (chaque couche a un rôle précis)
+    </text>
+    <text x="570" y="1540" font-size="13" fill="#155724">
+        • Testabilité (mock de chaque couche indépendamment)
+    </text>
+    <text x="1020" y="1540" font-size="13" fill="#155724">
+        • Maintenabilité et évolutivité
+    </text>
+
+    <!-- Signature -->
+    <text x="700" y="1585" text-anchor="middle" fill="#95a5a6" font-size="12">
+        CloudDiagnoze - Architecture logicielle professionnelle
+    </text>
+
+</svg>
