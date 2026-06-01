@@ -395,8 +395,14 @@ class ScanHistoryManager {
                     <button class="btn-icon btn-primary" title="Charger dans Dashboard" data-action="load">
                         <span class="material-symbols-outlined">dashboard</span>
                     </button>
+                    <button class="btn-icon" title="Renommer" data-action="rename">
+                        <span class="material-symbols-outlined">edit</span>
+                    </button>
                     <button class="btn-icon btn-success" title="Télécharger JSON" data-action="download">
                         <span class="material-symbols-outlined">download</span>
+                    </button>
+                    <button class="btn-icon bg-red-500/10 text-red-500 border-red-500/30 hover:bg-red-500/20" title="Supprimer" data-action="delete">
+                        <span class="material-symbols-outlined">delete</span>
                     </button>
                 </div>
             </td>
@@ -405,9 +411,66 @@ class ScanHistoryManager {
         // Événements
         row.querySelector('[data-action="details"]').addEventListener('click', () => this.showScanDetails(scanGroup));
         row.querySelector('[data-action="load"]').addEventListener('click', () => this.loadScanInDashboard(scanGroup));
+        row.querySelector('[data-action="rename"]').addEventListener('click', () => this.renameScan(scanGroup));
         row.querySelector('[data-action="download"]').addEventListener('click', () => this.downloadScanJSON(scanGroup));
+        row.querySelector('[data-action="delete"]').addEventListener('click', () => this.deleteScanGroup(scanGroup));
 
         return row;
+    }
+
+    /**
+     * Supprime un groupe de scans (une session complète)
+     */
+    async deleteScanGroup(scanGroup) {
+        if (!confirm(`⚠️ Êtes-vous sûr de vouloir supprimer définitivement le scan #${scanGroup.id} et toutes les données associées ?`)) {
+            return;
+        }
+
+        console.log('🗑️ Suppression du groupe de scans:', scanGroup.id);
+        
+        try {
+            // Supprimer chaque scan du groupe
+            const deletePromises = scanGroup.scans.map(scan => api.deleteScan(scan.scan_id));
+            await Promise.all(deletePromises);
+
+            this.showNotification('Scan supprimé avec succès', 'success');
+            
+            // Recharger les données
+            await this.loadScans();
+            this.applyFilters();
+
+        } catch (error) {
+            console.error('❌ Erreur lors de la suppression:', error);
+            alert('Erreur lors de la suppression du scan: ' + error.message);
+        }
+    }
+
+    /**
+     * Renomme un scan (met à jour le client_id)
+     */
+    async renameScan(scanGroup) {
+        const currentName = scanGroup.scans[0].client_id;
+        const newName = prompt('Entrez le nouveau nom pour ce scan :', currentName);
+
+        if (!newName || newName === currentName) return;
+
+        console.log('📝 Renommage du scan:', scanGroup.id, 'en', newName);
+
+        try {
+            // Mettre à jour chaque scan du groupe
+            const updatePromises = scanGroup.scans.map(scan => api.updateScan(scan.scan_id, { client_id: newName }));
+            await Promise.all(updatePromises);
+
+            this.showNotification('Scan renommé avec succès', 'success');
+
+            // Recharger les données
+            await this.loadScans();
+            this.applyFilters();
+
+        } catch (error) {
+            console.error('❌ Erreur lors du renommage:', error);
+            alert('Erreur lors du renommage du scan: ' + error.message);
+        }
     }
 
     /**

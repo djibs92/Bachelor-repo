@@ -1,12 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException
-from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Optional, List
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 
 from api.database import get_db, ScanRun, User
 from api.endpoints.auth import get_current_user
 
 router = APIRouter()
 
+class ScanUpdate(BaseModel):
+    client_id: Optional[str] = None
+    status: Optional[str] = None
 
 @router.get("/scans/latest-session", tags=["🔍 Scans"])
 async def get_latest_scan_session(
@@ -162,4 +166,46 @@ async def get_scans_history(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération des scans: {str(e)}")
+
+
+@router.patch("/scans/{scan_id}", tags=["🔍 Scans"])
+async def update_scan(
+    scan_id: int,
+    scan_update: ScanUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Met à jour un scan (ex: changer le nom/client_id).
+    """
+    scan = db.query(ScanRun).filter(ScanRun.id == scan_id, ScanRun.user_id == current_user.id).first()
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan non trouvé")
+
+    if scan_update.client_id is not None:
+        scan.client_id = scan_update.client_id
+    if scan_update.status is not None:
+        scan.status = scan_update.status
+
+    db.commit()
+    db.refresh(scan)
+    return {"message": "Scan mis à jour avec succès", "scan_id": scan.id, "new_client_id": scan.client_id}
+
+
+@router.delete("/scans/{scan_id}", tags=["🔍 Scans"], status_code=status.HTTP_204_NO_CONTENT)
+async def delete_scan(
+    scan_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Supprime un scan et toutes les ressources associées (Cascade).
+    """
+    scan = db.query(ScanRun).filter(ScanRun.id == scan_id, ScanRun.user_id == current_user.id).first()
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan non trouvé")
+
+    db.delete(scan)
+    db.commit()
+    return None
 
