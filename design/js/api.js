@@ -206,6 +206,25 @@ class CloudDiagnozeAPI {
     }
 
     /**
+     * 🗑️ Supprime un scan spécifique
+     */
+    async deleteScan(scanId) {
+        return await this.request(`/scans/${scanId}`, {
+            method: 'DELETE'
+        });
+    }
+
+    /**
+     * 📝 Met à jour un scan (ex: changer le nom/client_id)
+     */
+    async updateScan(scanId, data) {
+        return await this.request(`/scans/${scanId}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data)
+        });
+    }
+
+    /**
      * 🧹 Supprime toutes les données de l'utilisateur connecté (pour testing)
      */
     async clearUserData() {

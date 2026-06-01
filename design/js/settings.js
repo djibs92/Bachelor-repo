@@ -61,6 +61,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             await handleClearUserData();
         });
     }
+
+    // 6. Gérer le bouton de suppression définitive du compte
+    const btnDeleteAccount = document.getElementById('btn-delete-account');
+    if (btnDeleteAccount) {
+        btnDeleteAccount.addEventListener('click', async () => {
+            await handleDeleteAccount();
+        });
+    }
 });
 
 /**
@@ -324,6 +332,65 @@ async function handleClearUserData() {
     } catch (error) {
         console.error('❌ Erreur lors de la suppression:', error);
         showNotification('❌ Erreur lors de la suppression des données', 'error');
+    }
+}
+
+/**
+ * 🗑️ Gère la suppression définitive du compte utilisateur
+ */
+async function handleDeleteAccount() {
+    // Demander une confirmation
+    const confirmed = confirm(
+        '🚨 ATTENTION : ACTION CRITIQUE 🚨\n\n' +
+        'Vous êtes sur le point de SUPPRIMER DÉFINITIVEMENT votre compte CloudDiagnoze.\n\n' +
+        'Cette action va effacer :\n' +
+        '- Votre profil utilisateur\n' +
+        '- Votre configuration AWS (Role ARN)\n' +
+        '- TOUTES vos données de scan et historiques\n\n' +
+        'Cette action est TOTALEMENT IRRÉVERSIBLE.\n\n' +
+        'Voulez-vous vraiment supprimer votre compte ?'
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    // Demander de saisir "SUPPRIMER" pour confirmer
+    const textConfirm = prompt('Pour confirmer la suppression, veuillez saisir "SUPPRIMER" en majuscules :');
+
+    if (textConfirm !== 'SUPPRIMER') {
+        alert('Suppression annulée : le texte de confirmation est incorrect.');
+        return;
+    }
+
+    try {
+        showNotification('Suppression du compte en cours...', 'warning');
+
+        // Appeler l'API pour supprimer le compte
+        // On passe ?confirm=true car l'API le demande (RG05/RG11)
+        const response = await fetch(`${API_CONFIG.BASE_URL}/auth/me?confirm=true`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Erreur lors de la suppression du compte');
+        }
+
+        console.log('✅ Compte supprimé avec succès');
+
+        showNotification('Votre compte a été supprimé. Redirection...', 'success');
+
+        // Déconnexion locale et redirection
+        setTimeout(() => {
+            localStorage.clear();
+            window.location.href = 'signup.html';
+        }, 3000);
+
+    } catch (error) {
+        console.error('❌ Erreur lors de la suppression du compte:', error);
+        showNotification(error.message, 'error');
     }
 }
 
