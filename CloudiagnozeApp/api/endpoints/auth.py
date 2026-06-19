@@ -228,6 +228,11 @@ def get_current_user(
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Compte désactivé")
 
+    # Vérification anti-replay : le token_version du JWT doit correspondre à la BDD
+    token_version = payload.get("token_version", 0)
+    if user.token_version != token_version:
+        raise HTTPException(status_code=401, detail="Session révoquée — veuillez vous reconnecter")
+
     return user
 
 
@@ -340,8 +345,12 @@ async def login(
     user.last_login = datetime.now(timezone.utc)
     db.commit()
 
-    # 5. Créer le token JWT
-    access_token = create_access_token({"sub": user.email, "user_id": user.id})
+    # 5. Créer le token JWT (token_version inclus pour la révocation)
+    access_token = create_access_token({
+        "sub": user.email,
+        "user_id": user.id,
+        "token_version": user.token_version,
+    })
 
     # 6. Poser le cookie httpOnly (méthode d'auth principale côté navigateur)
     _set_access_token_cookie(response, access_token)
@@ -364,16 +373,45 @@ async def login(
 
 
 @router.post("/logout", response_model=MessageResponse)
-async def logout(response: Response):
+async def logout(
+    response: Response,
+    authorization: Optional[str] = Header(None),
+    access_token: Optional[str] = Cookie(default=None),
+    db: Session = Depends(get_db),
+):
     """
-    Déconnexion d'un utilisateur : supprime le cookie httpOnly `access_token`.
+    Déconnexion : supprime le cookie ET incrémente token_version en BDD pour
+    invalider tous les tokens existants (protection anti-replay).
 
     Args:
         response: Réponse HTTP (pour effacer le cookie)
+        authorization: Header Authorization optionnel
+        access_token: Cookie httpOnly contenant le JWT
+        db: Session de base de données
 
     Returns:
         Message de confirmation
     """
+    # Résoudre le token (cookie prioritaire, fallback header)
+    token: Optional[str] = access_token
+    if not token and authorization:
+        parts = authorization.split()
+        if len(parts) == 2 and parts[0].lower() == "bearer":
+            token = parts[1]
+
+    # Révoquer le token si valide : incrémenter token_version en BDD
+    if token:
+        payload = verify_token(token)
+        if payload:
+            user_id = payload.get("user_id")
+            token_ver = payload.get("token_version", 0)
+            if user_id:
+                user = db.query(User).filter(User.id == user_id).first()
+                if user and user.token_version == token_ver:
+                    user.token_version = user.token_version + 1
+                    db.commit()
+                    logger.info(f"🔒 Token révoqué pour user {user_id} (version → {user.token_version})")
+
     _clear_access_token_cookie(response)
     logger.info("🚪 Déconnexion : cookie access_token effacé")
     return MessageResponse(message="Déconnexion réussie")
@@ -496,13 +534,14 @@ async def reset_password(
     # 4. Hasher le nouveau mot de passe
     new_password_hash = hash_password(reset_data.new_password)
 
-    # 5. Mettre à jour le mot de passe et supprimer le token
+    # 5. Mettre à jour le mot de passe, supprimer le token et invalider les sessions
     user.password_hash = new_password_hash
     user.reset_token = None
     user.reset_token_expiry = None
+    user.token_version = user.token_version + 1
     db.commit()
 
-    logger.success(f"✅ Mot de passe réinitialisé pour {user.email}")
+    logger.success(f"✅ Mot de passe réinitialisé pour {user.email} (tokens révoqués)")
 
     return MessageResponse(message="Mot de passe réinitialisé avec succès")
 
@@ -596,11 +635,12 @@ async def change_password(
     if not is_valid:
         raise HTTPException(status_code=400, detail=error_message)
 
-    # 3. Hasher et sauvegarder le nouveau mot de passe
+    # 3. Hasher le nouveau mot de passe et invalider tous les tokens existants
     current_user.password_hash = hash_password(request.new_password)
+    current_user.token_version = current_user.token_version + 1
     db.commit()
 
-    logger.success(f"✅ Mot de passe changé pour {current_user.email}")
+    logger.success(f"✅ Mot de passe changé pour {current_user.email} (tokens révoqués)")
 
     return MessageResponse(message="Mot de passe changé avec succès")
 

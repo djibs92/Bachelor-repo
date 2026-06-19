@@ -29,6 +29,7 @@ class User(Base):
     is_active = Column(Boolean, default=True, comment="Compte actif ou désactivé")
     reset_token = Column(String(255), comment="Token pour réinitialisation du mot de passe")
     reset_token_expiry = Column(DateTime, comment="Date d'expiration du token de réinitialisation")
+    token_version = Column(Integer, default=0, nullable=False, comment="Incrémentée au logout/changement de mdp — invalide les anciens tokens")
 
     # Relations
     # Un User peut avoir plusieurs ScanRun
