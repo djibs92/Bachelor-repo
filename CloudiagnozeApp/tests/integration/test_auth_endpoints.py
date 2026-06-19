@@ -495,3 +495,113 @@ class TestResetPasswordEndpoint:
         data = response.json()
         assert "detail" in data
 
+
+# ========================================
+# TESTS : RÉVOCATION DE TOKEN (anti-replay)
+# ========================================
+
+class TestTokenRevocation:
+    """
+    Valide que les tokens JWT sont révoqués côté serveur après :
+    - un logout
+    - un changement de mot de passe
+    - un reset de mot de passe
+    """
+
+    def _login(self, client, email, password):
+        """Helper : connexion et récupération du token."""
+        response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+        assert response.status_code == 200
+        return response.json()["access_token"]
+
+    def _get_me(self, client, token):
+        """Helper : appel /me avec un token Bearer."""
+        return client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
+
+    def test_token_invalid_after_logout(self, client, sample_user):
+        """
+        Scénario prof : login → copier le token → logout → réutiliser le token.
+        Attendu : 401 après logout même avec le token brut.
+        """
+        # ARRANGE — connexion et récupération du token brut
+        token = self._login(client, sample_user.email, "TestPassword123")
+        assert self._get_me(client, token).status_code == 200
+
+        # ACT — logout avec le token dans le header Authorization
+        logout_response = client.post(
+            "/api/v1/auth/logout",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert logout_response.status_code == 200
+
+        # ASSERT — l'ancien token est maintenant rejeté
+        response = self._get_me(client, token)
+        assert response.status_code == 401
+        assert "révoquée" in response.json()["detail"].lower()
+
+    def test_token_invalid_after_change_password(self, client, sample_user):
+        """
+        Scénario prof : login → changer le mot de passe → réutiliser l'ancien token.
+        Attendu : 401 avec l'ancien token.
+        """
+        # ARRANGE — connexion
+        token = self._login(client, sample_user.email, "TestPassword123")
+        assert self._get_me(client, token).status_code == 200
+
+        # ACT — changement de mot de passe
+        change_response = client.post(
+            "/api/v1/auth/change-password",
+            json={"current_password": "TestPassword123", "new_password": "NewSecurePass456"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert change_response.status_code == 200
+
+        # ASSERT — l'ancien token est invalide
+        response = self._get_me(client, token)
+        assert response.status_code == 401
+        assert "révoquée" in response.json()["detail"].lower()
+
+    def test_token_invalid_after_reset_password(self, client, test_db, sample_user):
+        """
+        Scénario prof : login → reset password → réutiliser l'ancien token.
+        Attendu : 401 avec l'ancien token.
+        """
+        # ARRANGE — connexion + génération d'un reset token
+        token = self._login(client, sample_user.email, "TestPassword123")
+        assert self._get_me(client, token).status_code == 200
+
+        db = test_db()
+        user = db.query(User).filter(User.email == sample_user.email).first()
+        user.reset_token = generate_reset_token()
+        user.reset_token_expiry = create_reset_token_expiry(24)
+        db.commit()
+        reset_token = user.reset_token
+        db.close()
+
+        # ACT — reset du mot de passe
+        reset_response = client.post(
+            "/api/v1/auth/reset-password",
+            json={"token": reset_token, "new_password": "ResetPass789"},
+        )
+        assert reset_response.status_code == 200
+
+        # ASSERT — l'ancien token est invalide
+        response = self._get_me(client, token)
+        assert response.status_code == 401
+        assert "révoquée" in response.json()["detail"].lower()
+
+    def test_new_token_valid_after_logout(self, client, sample_user):
+        """
+        Après logout, un nouveau login doit produire un token valide.
+        """
+        # ARRANGE — login, logout
+        old_token = self._login(client, sample_user.email, "TestPassword123")
+        client.post("/api/v1/auth/logout", headers={"Authorization": f"Bearer {old_token}"})
+
+        # ACT — nouveau login
+        new_token = self._login(client, sample_user.email, "TestPassword123")
+
+        # ASSERT — nouveau token fonctionne, ancien toujours révoqué
+        assert self._get_me(client, new_token).status_code == 200
+        assert self._get_me(client, old_token).status_code == 401
+
