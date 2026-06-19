@@ -601,7 +601,9 @@ class TestTokenRevocation:
         # ACT — nouveau login
         new_token = self._login(client, sample_user.email, "TestPassword123")
 
-        # ASSERT — nouveau token fonctionne, ancien toujours révoqué
+        # ASSERT — nouveau token fonctionne
         assert self._get_me(client, new_token).status_code == 200
+        # Vider le cookie pour forcer l'usage du header Authorization avec l'ancien token
+        client.cookies.clear()
         assert self._get_me(client, old_token).status_code == 401
 
