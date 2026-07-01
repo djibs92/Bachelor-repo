@@ -396,3 +396,273 @@ async def export_scan_session(
 
     return export_data
 
+
+# ── Tarifs EC2 approximatifs ($/heure) ──────────────────────────────────────
+EC2_HOURLY_PRICES = {
+    "t2.micro": 0.0116, "t2.small": 0.023, "t2.medium": 0.0464,
+    "t2.large": 0.0928, "t2.xlarge": 0.1856, "t2.2xlarge": 0.3712,
+    "t3.micro": 0.0104, "t3.small": 0.0208, "t3.medium": 0.0416,
+    "t3.large": 0.0832, "t3.xlarge": 0.1664, "t3.2xlarge": 0.3328,
+    "m5.large": 0.096, "m5.xlarge": 0.192, "m5.2xlarge": 0.384,
+    "m5.4xlarge": 0.768, "m5.8xlarge": 1.536,
+    "c5.large": 0.085, "c5.xlarge": 0.17, "c5.2xlarge": 0.34,
+    "r5.large": 0.126, "r5.xlarge": 0.252, "r5.2xlarge": 0.504,
+}
+S3_PRICE_PER_GB = 0.023
+
+
+def _generate_ec2_findings(instance: dict) -> list:
+    findings = []
+    if instance.get("state") == "stopped":
+        findings.append({
+            "pillar": "Cost",
+            "severity": "HIGH",
+            "rule": "EC2_STOPPED_INSTANCE",
+            "message": f"Instance {instance.get('instance_id')} is stopped but still incurring EBS costs.",
+            "recommendation": "Terminate or snapshot the instance if no longer needed."
+        })
+    if not instance.get("iam_profile"):
+        findings.append({
+            "pillar": "Compliance",
+            "severity": "MEDIUM",
+            "rule": "EC2_NO_IAM_PROFILE",
+            "message": f"Instance {instance.get('instance_id')} has no IAM instance profile attached.",
+            "recommendation": "Attach an IAM role to avoid hardcoded credentials."
+        })
+    if not instance.get("tags"):
+        findings.append({
+            "pillar": "Best Practices",
+            "severity": "LOW",
+            "rule": "EC2_NO_TAGS",
+            "message": f"Instance {instance.get('instance_id')} has no tags.",
+            "recommendation": "Add Name, Environment and Owner tags for cost allocation."
+        })
+    perf = instance.get("performance") or {}
+    cpu = perf.get("cpu_utilization_avg")
+    if cpu is not None and cpu < 5:
+        findings.append({
+            "pillar": "Cost",
+            "severity": "MEDIUM",
+            "rule": "EC2_LOW_CPU_UTILIZATION",
+            "message": f"Instance {instance.get('instance_id')} has average CPU utilization of {cpu:.1f}%.",
+            "recommendation": "Consider downsizing or terminating this underutilized instance."
+        })
+    return findings
+
+
+def _generate_s3_findings(bucket: dict) -> list:
+    findings = []
+    if not bucket.get("encryption_enabled"):
+        findings.append({
+            "pillar": "Compliance",
+            "severity": "HIGH",
+            "rule": "S3_NO_ENCRYPTION",
+            "message": f"Bucket {bucket.get('bucket_name')} does not have server-side encryption enabled.",
+            "recommendation": "Enable AES-256 or AWS KMS encryption."
+        })
+    if not bucket.get("public_access_blocked"):
+        findings.append({
+            "pillar": "Compliance",
+            "severity": "CRITICAL",
+            "rule": "S3_PUBLIC_ACCESS_NOT_BLOCKED",
+            "message": f"Bucket {bucket.get('bucket_name')} does not block public access.",
+            "recommendation": "Enable Block Public Access settings immediately."
+        })
+    if bucket.get("public_read_enabled"):
+        findings.append({
+            "pillar": "Compliance",
+            "severity": "CRITICAL",
+            "rule": "S3_PUBLIC_READ_ENABLED",
+            "message": f"Bucket {bucket.get('bucket_name')} allows public read access via ACL.",
+            "recommendation": "Remove AllUsers read grant from the bucket ACL."
+        })
+    if not bucket.get("versioning_enabled"):
+        findings.append({
+            "pillar": "Best Practices",
+            "severity": "MEDIUM",
+            "rule": "S3_NO_VERSIONING",
+            "message": f"Bucket {bucket.get('bucket_name')} does not have versioning enabled.",
+            "recommendation": "Enable versioning to protect against accidental deletions."
+        })
+    if not bucket.get("lifecycle_enabled"):
+        findings.append({
+            "pillar": "Cost",
+            "severity": "MEDIUM",
+            "rule": "S3_NO_LIFECYCLE",
+            "message": f"Bucket {bucket.get('bucket_name')} has no lifecycle policy.",
+            "recommendation": "Add lifecycle rules to transition or expire old objects."
+        })
+    if not bucket.get("logging_enabled"):
+        findings.append({
+            "pillar": "Best Practices",
+            "severity": "LOW",
+            "rule": "S3_NO_LOGGING",
+            "message": f"Bucket {bucket.get('bucket_name')} does not have access logging enabled.",
+            "recommendation": "Enable server access logging for audit purposes."
+        })
+    return findings
+
+
+@router.get("/scans/{scan_session_id}/export/2cbp")
+async def export_scan_2cbp(
+    scan_session_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Exporte une session de scan au format 2CBP (Cost / Compliance / Best Practices).
+    Inclut resources, metrics, costs estimés et findings par pilier.
+    """
+    from api.database import ScanRun, EC2Instance, S3Bucket
+    from datetime import datetime, timedelta, timezone
+
+    reference_scan = db.query(ScanRun).filter(
+        ScanRun.id == int(scan_session_id),
+        ScanRun.user_id == current_user.id
+    ).first()
+
+    if not reference_scan:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Scan '{scan_session_id}' not found or access denied"
+        )
+
+    session_start = reference_scan.scan_timestamp - timedelta(seconds=30)
+    session_end   = reference_scan.scan_timestamp + timedelta(seconds=30)
+
+    scan_runs = db.query(ScanRun).filter(
+        ScanRun.user_id == current_user.id,
+        ScanRun.scan_timestamp >= session_start,
+        ScanRun.scan_timestamp <= session_end
+    ).order_by(ScanRun.scan_timestamp.desc()).all()
+
+    resources = {"ec2_instances": [], "s3_buckets": []}
+    metrics   = {"ec2": [], "s3": []}
+    findings  = []
+    regions_set = set()
+
+    ec2_cost_total = 0.0
+    s3_cost_total  = 0.0
+
+    for scan_run in scan_runs:
+        if scan_run.service_type == "ec2":
+            instances = db.query(EC2Instance).filter(
+                EC2Instance.scan_run_id == scan_run.id
+            ).all()
+            for inst in instances:
+                if inst.region:
+                    regions_set.add(inst.region)
+                perf = None
+                if inst.performance:
+                    perf = {
+                        "cpu_utilization_avg": inst.performance.cpu_utilization_avg,
+                        "memory_utilization_avg": inst.performance.memory_utilization_avg,
+                        "network_in_bytes": inst.performance.network_in_bytes,
+                        "network_out_bytes": inst.performance.network_out_bytes,
+                    }
+                    metrics["ec2"].append({
+                        "resource_id": inst.resource_id,
+                        "instance_id": inst.instance_id,
+                        **perf
+                    })
+
+                inst_dict = {
+                    "resource_id": inst.resource_id,
+                    "instance_id": inst.instance_id,
+                    "instance_type": inst.instance_type,
+                    "state": inst.state,
+                    "region": inst.region,
+                    "availability_zone": inst.availability_zone,
+                    "iam_profile": inst.iam_profile,
+                    "tags": inst.tags,
+                    "launch_time": inst.launch_time.isoformat() if inst.launch_time else None,
+                    "performance": perf,
+                }
+                resources["ec2_instances"].append(inst_dict)
+
+                hourly = EC2_HOURLY_PRICES.get(inst.instance_type or "", 0.05)
+                monthly = hourly * 24 * 30
+                ec2_cost_total += monthly
+
+                inst_findings = _generate_ec2_findings(inst_dict)
+                findings.extend(inst_findings)
+
+        elif scan_run.service_type == "s3":
+            buckets = db.query(S3Bucket).filter(
+                S3Bucket.scan_run_id == scan_run.id
+            ).all()
+            for bkt in buckets:
+                if bkt.region:
+                    regions_set.add(bkt.region)
+                perf = None
+                if bkt.performance:
+                    perf = {
+                        "all_requests": bkt.performance.all_requests,
+                        "get_requests": bkt.performance.get_requests,
+                        "put_requests": bkt.performance.put_requests,
+                        "bytes_downloaded": bkt.performance.bytes_downloaded,
+                        "bytes_uploaded": bkt.performance.bytes_uploaded,
+                        "errors_4xx": bkt.performance.errors_4xx,
+                        "errors_5xx": bkt.performance.errors_5xx,
+                    }
+                    metrics["s3"].append({
+                        "bucket_name": bkt.bucket_name,
+                        **perf
+                    })
+
+                bkt_dict = {
+                    "bucket_name": bkt.bucket_name,
+                    "region": bkt.region,
+                    "encryption_enabled": bkt.encryption_enabled,
+                    "public_access_blocked": bkt.public_access_blocked,
+                    "public_read_enabled": bkt.public_read_enabled,
+                    "versioning_enabled": bkt.versioning_enabled,
+                    "lifecycle_enabled": bkt.lifecycle_enabled,
+                    "logging_enabled": bkt.logging_enabled,
+                    "cors_enabled": bkt.cors_enabled,
+                    "replication_enabled": bkt.replication_enabled,
+                    "performance": perf,
+                }
+                resources["s3_buckets"].append(bkt_dict)
+
+                s3_cost_total += S3_PRICE_PER_GB * 5
+                bkt_findings = _generate_s3_findings(bkt_dict)
+                findings.extend(bkt_findings)
+
+    findings_by_pillar = {"Cost": 0, "Compliance": 0, "Best Practices": 0}
+    for f in findings:
+        pillar = f.get("pillar", "")
+        if pillar in findings_by_pillar:
+            findings_by_pillar[pillar] += 1
+
+    return {
+        "client_id": reference_scan.client_id,
+        "scan_id": scan_session_id,
+        "timestamp": reference_scan.scan_timestamp.isoformat(),
+        "provider": "aws",
+        "account_id": current_user.email,
+        "regions": list(regions_set),
+        "resources": resources,
+        "metrics": metrics,
+        "costs": {
+            "currency": "USD",
+            "estimated": True,
+            "note": "Monthly cost estimates based on public AWS pricing",
+            "by_service": {
+                "ec2": round(ec2_cost_total, 2),
+                "s3": round(s3_cost_total, 2),
+            },
+            "total": round(ec2_cost_total + s3_cost_total, 2),
+        },
+        "findings": findings,
+        "summary": {
+            "total_resources": len(resources["ec2_instances"]) + len(resources["s3_buckets"]),
+            "total_findings": len(findings),
+            "findings_by_pillar": findings_by_pillar,
+            "findings_by_severity": {
+                s: sum(1 for f in findings if f.get("severity") == s)
+                for s in ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+            }
+        }
+    }
+
