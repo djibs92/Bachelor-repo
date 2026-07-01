@@ -1,8 +1,11 @@
 from typing import List, Dict, Any
+from datetime import datetime
 from loguru import logger
 from api.services.factories.connection_factory import ConnectionFactory
 from api.services.factories.scanner_factory import ScannerFactory
 from api.services.storage_service import save_ec2_scan, save_s3_scan
+from api.database.connection import SessionLocal
+from api.database.models import ScanRun
 
 
 SAVE_FUNCTIONS = {
@@ -67,5 +70,28 @@ async def scan_list_service(scan_id: str, provider: str, services: List[str], au
 
     except Exception as e:
         logger.error(f"❌ Erreur scan {scan_id}: {str(e)}")
-        raise
-        
+        _mark_scan_failed(session_id, services, client_id, user_id)
+
+
+def _mark_scan_failed(session_id: str, services: List[str], client_id: str, user_id: int):
+    db = SessionLocal()
+    try:
+        for service in services:
+            scan_run = ScanRun(
+                session_id=session_id,
+                client_id=client_id,
+                service_type=service,
+                scan_timestamp=datetime.now(),
+                total_resources=0,
+                status='failed',
+                user_id=user_id
+            )
+            db.add(scan_run)
+        db.commit()
+        logger.info(f"💾 Scan {session_id} marqué comme failed en BDD")
+    except Exception as db_err:
+        logger.error(f"❌ Impossible de marquer le scan comme failed: {db_err}")
+        db.rollback()
+    finally:
+        db.close()
+
