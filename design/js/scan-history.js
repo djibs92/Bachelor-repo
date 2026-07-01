@@ -401,6 +401,9 @@ class ScanHistoryManager {
                     <button class="btn-icon btn-success" title="Télécharger JSON" data-action="download">
                         <span class="material-symbols-outlined">download</span>
                     </button>
+                    <button class="btn-icon" style="background:rgba(139,92,246,0.15);color:#8B5CF6;border-color:rgba(139,92,246,0.35);font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;padding:0 8px;min-width:56px;" title="Télécharger rapport 2CBP" data-action="download2cbp">
+                        2CBP
+                    </button>
                     <button class="btn-icon bg-red-500/10 text-red-500 border-red-500/30 hover:bg-red-500/20" title="Supprimer" data-action="delete">
                         <span class="material-symbols-outlined">delete</span>
                     </button>
@@ -413,6 +416,7 @@ class ScanHistoryManager {
         row.querySelector('[data-action="load"]').addEventListener('click', () => this.loadScanInDashboard(scanGroup));
         row.querySelector('[data-action="rename"]').addEventListener('click', () => this.renameScan(scanGroup));
         row.querySelector('[data-action="download"]').addEventListener('click', () => this.downloadScanJSON(scanGroup));
+        row.querySelector('[data-action="download2cbp"]').addEventListener('click', () => this.downloadScan2CBP(scanGroup));
         row.querySelector('[data-action="delete"]').addEventListener('click', () => this.deleteScanGroup(scanGroup));
 
         return row;
@@ -674,6 +678,50 @@ class ScanHistoryManager {
             // Afficher juste un message pour les autres erreurs
             if (!error.message.includes('Session expirée')) {
                 alert(`Erreur lors du téléchargement du scan: ${error.message}`);
+            }
+        }
+    }
+
+    /**
+     * Télécharge les détails complets d'un scan au format 2CBP
+     */
+    async downloadScan2CBP(scanGroup) {
+        console.log('📥 Téléchargement du scan en format 2CBP:', scanGroup);
+
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/scans/${scanGroup.id}/export/2cbp`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erreur API: ${response.status} ${response.statusText}`);
+            }
+
+            const exportData = await response.json();
+            const jsonString = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+
+            const date = new Date(scanGroup.timestamp);
+            const dateStr = date.toISOString().split('T')[0];
+            const timeStr = date.toTimeString().split(' ')[0].replace(/:/g, '-');
+            a.download = `2cbp-report-${scanGroup.id}-${dateStr}-${timeStr}.json`;
+
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            console.log('✅ Rapport 2CBP exporté:', scanGroup.id);
+
+        } catch (error) {
+            console.error('❌ Erreur lors du téléchargement 2CBP:', error);
+            if (!error.message.includes('Session expirée')) {
+                alert(`Erreur lors du téléchargement du rapport 2CBP: ${error.message}`);
             }
         }
     }
